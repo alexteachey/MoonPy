@@ -24,7 +24,7 @@ cone size by adjusting the "search_radius" keyword. Some targets have multiple a
 is not either a KOI, kepler planet or KIC star, an attempt will be made to find this name amongst the aliases.
 Also note that your options for coord_format are 'degrees' and "sexagesimal", but if you input sexagesimal
 without indicating it an attempt is made to recognize this and change the coord_format on the fly. Appropriate
-syntax for sexagesimal coordinates is '9h36m43.5s' for RA and '+39d42m46.83s'. I think you can go arbitrarily
+syntax for sexagesimal coordinates is '9h36m43.5s' for RA and '+39d42m46.83s' for Dec. I think you can go arbitrarily
 precise with the decimal places but I haven't tested this extensively.
 
 You may also download only select quarters if you wish by supplying an array of quarter numbers in the 'quarters' keyword.
