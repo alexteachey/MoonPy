@@ -47,7 +47,9 @@ plot the light curve simply by calling
 >>> lc_objectname.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))
 
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
-warning that the light curve has not yet been detrended and you will see instead the raw light curve.
+warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
+
+Errorbar support not yet available.
 
 
 3.) DETREND THE DATA.
