@@ -31,8 +31,7 @@ from astroquery.simbad import Simbad
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
 #rc('text', usetex=True)
 
-
-
+savepath = '/Users/hal9000/Documents/Software/MoonPy/saved_lcs'
 
 """
 This is the MoonPy master script! To open, you should only have to type 'import moonpy'
@@ -58,7 +57,7 @@ class MoonPy_LC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', lc_format='pdc', coord_format='degrees', search_radius=5, sc=False, RA=None, Dec=None, telescope=None, ffi='y', lc_meta=None, save_lc='y', loadfile='n'):
+	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', loadfile='n'):
 		if (lc_times != None) and (lc_fluxes != None) and (lc_errors != None):
 			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
 			self.target = None
@@ -137,14 +136,12 @@ class MoonPy_LC(object):
 		self.times = lc_times
 		self.fluxes = lc_fluxes
 		self.errors = lc_errors
-		#self.fluxes_detrend = lc_fluxes
-		#self.errors_detrend = lc_errors
 		self.flags = lc_flags
 		self.quarters = lc_quarters
 
 		if save_lc == 'y':
 			### write to a file!
-			lcfile = open('saved_lcs/'+str(target_name)+'_lightcurve.csv', mode='w')
+			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.csv', mode='w')
 			lcfile.write('BKJD,fluxes,errors,flags,quarter\n')
 			for qidx in np.arange(0,len(self.quarters),1):
 				qtq = lc_quarters[qidx]
@@ -191,7 +188,7 @@ class MoonPy_LC(object):
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
 			
-			lcfile = open('saved_lcs/'+str(self.target)+'_lightcurve.csv', mode='w')
+			lcfile = open(savepath+'/'+str(self.target)+'_lightcurve.csv', mode='w')
 			lcfile.write('BKJD,fluxes,errors,fluxes_detrended,errors_detrended,flags,quarter\n')
 
 			for qidx in np.arange(0,len(self.quarters),1):
