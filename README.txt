@@ -34,7 +34,7 @@ Currently supported formats for the light curve download is "sap" and "pdc". If 
 The first time you use the code you will want to specify your SAVEPATH at the very top of the code.
 Unless you specify otherwise your light curve will be saved in the savepath ('save_lc' keyword).
 
-Other functionality listed above is forthcoming.
+Other functionality listed above is forthcoming, including support for TESS light curves!
 
 ##########
 
