@@ -10,7 +10,7 @@ a few things.
 >>> lc_objectname = MoonPy_LC(lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', loadfile='n')
 
 This object is designed to be versatile. You can either
-a) supply times, fluxes, and errors;
+a) supply times, fluxes, and errors as arrays;
 b) supply a targetID (either a KOI, Kepler planet, or KIC); or
 c) supply coordinates for an object search
 
@@ -22,6 +22,10 @@ If it's a 'kic', input the targetID as the KIC number without the prefix, as a f
 The coordinate search (c) performs a cone search with a 5 arcsecond radius through Simbad. You may change the 
 cone size by adjusting the "search_radius" keyword. Some targets have multiple aliases, and if the first hit
 is not either a KOI, kepler planet or KIC star, an attempt will be made to find this name amongst the aliases.
+Also note that your options for coord_format are 'degrees' and "sexagesimal", but if you input sexagesimal
+without indicating it an attempt is made to recognize this and change the coord_format on the fly. Appropriate
+syntax for sexagesimal coordinates is '9h36m43.5s' for RA and '+39d42m46.83s'. I think you can go arbitrarily
+precise with the decimal places but I haven't tested this extensively.
 
 You may also download only select quarters if you wish by supplying an array of quarter numbers in the 'quarters' keyword.
 Currently supported formats for the light curve download is "sap" and "pdc". If you wish to download both
