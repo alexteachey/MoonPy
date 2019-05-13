@@ -2,14 +2,14 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import pymultinest
-import emcee
-import untrendy
-import sklearn
+#import pymultinest
+#import emcee
+#import untrendy
+#import sklearn
 import kplr
-import everest
-import eleanor
-import corner
+#import everest
+#import eleanor
+#import corner
 #import forecaster
 #import pyluna
 #import tensorflow
@@ -24,7 +24,14 @@ from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend
 from mp_fit import mp_multinest, mp_emcee
 #from pyluna import run_LUNA
 import mp_tools
+import traceback
 from astroquery.simbad import Simbad 
+#from matplotlib import rc
+
+#rc('font', **{'family':'serif','serif':['computer modern roman']})
+#rc('text', usetex=True)
+
+
 
 
 """
@@ -51,13 +58,12 @@ class MoonPy_LC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', lc_format='pdc', coord_format='degrees', search_radius=5, sc=False, RA=None, Dec=None, telescope=None, ffi='y', lc_meta=None):
+	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', lc_format='pdc', coord_format='degrees', search_radius=5, sc=False, RA=None, Dec=None, telescope=None, ffi='y', lc_meta=None, save_lc='y', loadfile='n'):
 		if (lc_times != None) and (lc_fluxes != None) and (lc_errors != None):
 			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
 			self.target = None
 			self.telescope = None 
 			self.meta = None
-
 
 		### HANDLING FOR DOWNLOADING A LIGHT CURVE.
 		elif (targetID != None) and (telescope != None):
@@ -88,38 +94,113 @@ class MoonPy_LC(object):
 		elif (targetID == None) and (RA != None) and (Dec != None) and (telescope != None): 
 			### implies you have coordinates but not a valid target.
 			if telescope == 'kepler':
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
+				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 			elif telescope == 'tess':
 				lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
 
+			self.target = target_name
 
 
 		### YOU HAVEN'T DOWNLOADED A LIGHT CURVE OR SUPPLIED ONE, SO WHAT ARE YOU DOING?
 		else:
-			raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
-				lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
+			if loadfile == 'n':
+				raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
+					lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
 
-		self.times = lc_times 
+			if loadfile == 'y':
+				raise Exception("This functionality not yet available.")
+
+
+		### MAKE THEM INTO ARRAYS
+		lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
+		
+		for qidx in np.arange(0,lc_times.shape[0],1):
+
+			### remove nans
+			nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
+			lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], nan_idxs), np.delete(lc_fluxes[qidx], nan_idxs), np.delete(lc_errors[qidx], nan_idxs), np.delete(lc_fluxes_detrend[qidx], nan_idxs), np.delete(lc_errors_detrend[qidx], nan_idxs), np.delete(lc_flags[qidx], nan_idxs)
+
+			assert np.all(np.isfinite(lc_fluxes[qidx]))
+			assert np.all(np.isfinite(lc_errors[qidx]))
+
+			### sort the times here!
+			timesort = np.argsort(lc_times[qidx])
+			lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
+
+			for nlct,lct in enumerate(lc_times[qidx]):
+				try:
+					if lc_times[qidx][nlct+1] - lc_times[qidx][nlct] < 0: 
+						print("times are not strictly ascending!")
+				except:
+					pass 
+
+		self.times = lc_times
 		self.fluxes = lc_fluxes
 		self.errors = lc_errors
-		self.fluxes_detrend = lc_fluxes ### this will be updated when you run detrend
-		self.errors_detrend = lc_errors ### this will be updated when you run detrend
+		#self.fluxes_detrend = lc_fluxes
+		#self.errors_detrend = lc_errors
 		self.flags = lc_flags
 		self.quarters = lc_quarters
 
+		if save_lc == 'y':
+			### write to a file!
+			lcfile = open('saved_lcs/'+str(target_name)+'_lightcurve.csv', mode='w')
+			lcfile.write('BKJD,fluxes,errors,flags,quarter\n')
+			for qidx in np.arange(0,len(self.quarters),1):
+				qtq = lc_quarters[qidx]
+				qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
+				for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
+					lcfile.write(str(qt)+','+str(qf)+','+str(qe)+','+str(qfl)+','+str(qtq)+'\n')
+			lcfile.close()
 
 	### DETRENDING!
 
-	def detrend(self, detrend_algorithm='cofiam'):
+	def detrend(self, dmeth='cofiam', save_lc='y'):
 		### optional values for method are "cofiam", "untrendy", and "george"
-		if detrend_algorithm == 'cofiam':
-			self.fluxes_detrend, self.errors_detrend = cofiam_detrend(self.times, self.fluxes, self.errors)
-		elif detrend_algorithm == 'untrendy':
-			### needs to change
-			self.fluxes_detrend, self.errors_detrend = untrendy_detrend(self.times, self.fluxes, self.errors)		
-		elif detrend_algorithm == 'george':
-			### needs to change
-			self.fluxes_detrend, self.errors_detrend = george_detrend(self.times, self.fluxes, self.errors)
+		### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
+
+		master_detrend, master_error_detrend = [], []
+
+		for qidx in np.arange(0,self.times.shape[0],1):
+			print('quarter = ', self.quarters[qidx])
+			dtimes, dfluxes, derrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			print('dtimes.shape = ', dtimes.shape)
+
+			dtimesort = np.argsort(dtimes)
+			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
+
+			if dmeth == 'cofiam':
+				fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors)
+			elif dmeth == 'untrendy':
+				fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors)		
+			elif dmeth == 'george':
+				fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors)
+
+			### update self -- just this quarter!
+			assert np.all(dfluxes != fluxes_detrend)
+			assert np.all(derrors != errors_detrend)
+
+			master_detrend.append(np.array(fluxes_detrend))
+			master_error_detrend.append(np.array(errors_detrend))
+
+		### this is the first initialization of the detrended fluxes.
+		self.fluxes_detrend = master_detrend
+		self.errors_detrend = master_error_detrend
+
+		if save_lc == 'y':
+			### overwrite the existing file!
+			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
+			
+			lcfile = open('saved_lcs/'+str(self.target)+'_lightcurve.csv', mode='w')
+			lcfile.write('BKJD,fluxes,errors,fluxes_detrended,errors_detrended,flags,quarter\n')
+
+			for qidx in np.arange(0,len(self.quarters),1):
+				qtq = self.quarters[qidx]
+				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
+				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
+					lcfile.write(str(qt)+','+str(qf)+','+str(qe)+','+str(qfd)+','+str(qed)+','+str(qfl)+','+str(qtq)+'\n')
+			lcfile.close()
+
 
 
 
@@ -143,7 +224,15 @@ class MoonPy_LC(object):
 
 
 	def plot(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'):
-		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
+		try:
+			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
+
+		except:
+			print("WARNING: light curve has not been detrended yet!")
+			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes, self.errors, self.flags, self.quarters		
+
+
+	
 
 		### first step is to stitch the light curve together
 		if quarters != 'all':

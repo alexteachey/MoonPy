@@ -79,20 +79,72 @@ def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', sc
 def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', sc=False):
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
+	### try to interpret the coordinate_format 
+	if 'h' in ra:
+		coord_format == 'sexagesimal'
+
 	if coord_format=='degrees':
 		nearby_objects = Simbad.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'), radius='0d0m5s')
 	elif coord_format=='sexagesimal':
 		nearby_objects = Simbad.query_region(coord.SkyCoord(str(ra)+' '+str(dec), frame='icrs'), radius='0d0m'+str(search_radius)+'s')
 
+
 	best_hit = nearby_objects[0][0].decode('UTF-8')
+	print("best_hit = ", best_hit)
+
+	if (best_hit.startswith('KOI') == False) and (best_hit.startswith('Kepler') == False) and (best_hit.startswith("KIC") == False):
+		### look for aliases
+		alias_query = Simbad.query_objectids(str(best_hit))['ID']
+		search_idx = 0
+		while search_idx < 10: ### maximum tries
+			try:
+				alias = alias_query[search_idx]
+				if alias.startswith('KOI') or alias.statswith('Kepler') or alias.startswith("KIC"):
+					best_hit = alias
+					break
+				else:
+					search_idx += 1
+			except:
+				break 
+
+		print("alias = ", alias)
+		best_hit = alias
+
 	if best_hit.startswith('KOI'):
 		object_number = float(best_hit[4:]) ### strips off "KOI-"
-		kplr_target_download(object_number, type='koi', quarters=quarters, lc_format=lc_format, sc=sc)
+		### it's valuable to keep the quarters separated like this, because they should be detrended separately!
+		targtype = 'koi'
+		object_name = "KOI-"+str(object_number)
 
 	elif best_hit.startswith('Kepler'):
-		object_number = str(int(best_hit[7:])) ### strips off "Kepler-"
-		object_name = object_number+'b'
-		kplr_target_download(object_name, type='planet', quarters=quarters, lc_format=lc_format, sc=sc)
+		object_number = str(int(best_hit[7:]))+'b' ### strips off "Kepler-", adds b because we don't care which planet it is.
+		#object_number = object_number+'b'
+		targtype = 'planet'
+		object_name = 'Kepler-'+str(object_number)
+
+	elif best_hit.startswith("KIC"):
+		object_number = int(best_hit[4:])
+		targtype = 'kic'
+		object_name = 'KIC'+str(object_number)
+
+	print("object_number = ", object_number)
+
+
+	if lc_format == 'pdc':
+		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+	elif lc_format == 'sap':
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+	elif lc_format == 'both':
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+
+
+	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
+	if lc_format == 'pdc':
+		return kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters, object_name
+	elif lc_format == 'sap':
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters, object_name
+	elif lc_format == 'both':
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters, object_name
 
 
 
