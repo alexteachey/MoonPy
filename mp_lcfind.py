@@ -68,11 +68,11 @@ def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', sc
 
 	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
 	if lc_format == 'pdc':
-		return kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, quarters
+		return kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters
 	elif lc_format == 'sap':
-		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, quarters 
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters 
 	elif lc_format == 'both':
-		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, quarters 
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters 
 
 
 
