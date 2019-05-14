@@ -52,12 +52,26 @@ NOTES to Alex:
 """
 
 
-class MoonPy_LC(object):
+class MoonPyLC(object):
 	### this is the light curve object. You can detrend this light curve, or fit it.
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', loadfile='n'):
+	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y'):
+		
+
+		### intuit whether the targetID is a 'planet' (includes 'b'), a KOI (includes a decimal), or a KIC (neither).
+		if target_type==None: ### not specified.
+			if '.' in str(targetID):
+				target_type='koi'
+			elif 'b' in str(targetID):
+				target_type='planet'
+			else:
+				target_type='kic'
+
+		print("targetID = ", targetID)
+		print('target_type = ', target_type)
+
 		if (lc_times != None) and (lc_fluxes != None) and (lc_errors != None):
 			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
 			self.target = None
@@ -102,12 +116,8 @@ class MoonPy_LC(object):
 
 		### YOU HAVEN'T DOWNLOADED A LIGHT CURVE OR SUPPLIED ONE, SO WHAT ARE YOU DOING?
 		else:
-			if loadfile == 'n':
-				raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
-					lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
-
-			if loadfile == 'y':
-				raise Exception("This functionality not yet available.")
+			raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
+				lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
 
 
 		### MAKE THEM INTO ARRAYS
