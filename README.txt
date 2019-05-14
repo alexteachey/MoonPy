@@ -9,6 +9,27 @@ a few things.
 
 >>> lc_objectname = MoonPyLC(lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
 
+
+lc_times: array of times.
+lc_fluxes: array of fluxes.
+lc_errors: array of errors.
+targetID: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope.
+target_type: May be "kic", "koi", or "planet" (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
+quarters: acceptable values are "all" or an array of quarters.
+telescope: may be "Kepler" / "kepler", "K2" / "k2", and eventually "TESS" / "Tess" / "tess".
+RA: sexagesimal of the form 12h34m14.5s or decimal form.
+Dec: sexagesimal of the form +50d38m14.25s or decimal form.
+coord_format: format of your supplied coordinates. An attempt is made to intuit this.
+search_radius: in arcseconds, the size of the search cone when supploying coordinates.
+lc_format: May be "sap" (simple aperture photometry) or "pdc" (pre-search data conditioning). Default is "pdc".
+sc: Boolean, stands for "short cadence". Not doing anything right now.
+ffi: stands for "Full-Frame Images." Not doing anything right now.
+lc_meta: not doing anything right now.
+save_lc: option to save your light curve once you've generated it as a .csv file.
+tau0: doing nothing right now.
+Pplan: doing nothing right now.
+
+NOTES:
 This object is designed to be versatile. You can either
 a) supply times, fluxes, and errors as arrays;
 b) supply a targetID (either a KOI, Kepler planet, KIC, or K2 planet) and the name of the telescope; or
@@ -35,7 +56,7 @@ Currently supported formats for the light curve download is "sap" and "pdc". If 
 The first time you use the code you will want to specify your SAVEPATH at the very top of the code.
 Unless you specify otherwise your light curve will be saved in the savepath ('save_lc' keyword).
 
-Other functionality listed above is forthcoming, including support for TESS light curves!
+Other functionality listed above is forthcoming, including support for TESS light curves! 
 
 ##########
 
