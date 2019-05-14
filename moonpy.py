@@ -57,20 +57,49 @@ class MoonPyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y'):
-		
+	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y'):
+	
+		if telescope == None: # if user hasn't specified, figure it out!
+			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('KOI'):
+				telescope='kepler'
+			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
+				telescope='tess'
+			else:
+				telescope = input('Please specify the telescope: ')
+
+		### strip off prefixes from the targetID
+		if str(targetID).startswith('KIC'):
+			targetID = targetID[3:]
+		elif str(targetID).startswith('TIC'):
+			targetID = targetID[3:]
+		elif str(targetID).startswith('Kepler-'):
+			targetID = targetID[7:]
+		elif str(targetID).startswith('KOI-'):
+			targetID = targetID[4:]
+		elif str(targetID).startswith('TOI-'):
+			targetID = targetID[4:]
+
+		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
+			targetID = targetID[1:]
+
 
 		### intuit whether the targetID is a 'planet' (includes 'b'), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
-			if '.' in str(targetID):
+			if '.' in str(targetID) and telescope=='kepler':
 				target_type='koi'
-			elif 'b' in str(targetID):
+			elif '.' in str(targetID) and telescope=='tess':
+				target_type='toi'
+			elif 'b' in str(targetID) and telescope=='kepler':
 				target_type='planet'
 			else:
-				target_type='kic'
+				if telescope == 'kepler':
+					target_type='kic'
+				elif telescope == 'tess':
+					target_type = 'tic'
 
 		print("targetID = ", targetID)
 		print('target_type = ', target_type)
+		print('telescope = ', telescope)
 
 		if (lc_times != None) and (lc_fluxes != None) and (lc_errors != None):
 			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
@@ -93,10 +122,14 @@ class MoonPyLC(object):
 			self.telescope = telescope
 			if target_type == 'koi':
 				target_name = "KOI-"+str(targetID)
+			elif target_type == 'toi':
+				target_name = 'TOI-'+str(targetID)
 			elif target_type == 'planet':
 				target_name = "Kepler-"+str(targetID)
 			elif target_type == 'kic':
 				target_name = "KIC "+str(targetID)
+			elif target_type == 'tic':
+				target_name = "TIC "+str(targetID)
 
 			self.target = target_name 
 			self.RA = Simbad.query_object(target_name)[0]['RA']

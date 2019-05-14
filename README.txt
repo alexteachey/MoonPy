@@ -11,13 +11,12 @@ a few things.
 
 This object is designed to be versatile. You can either
 a) supply times, fluxes, and errors as arrays;
-b) supply a targetID (either a KOI, Kepler planet, or KIC); or
+b) supply a targetID (either a KOI, Kepler planet, or KIC) and the name of the telescope; or
 c) supply coordinates for an object search
 
-If you choose option (b), you must specify the target_type as "koi", "planet", or "kic". 
-If it's a 'koi', input the targetID as a the koi number including the decimal as a float. Example: 5084.01
-If it's a 'planet', input the targetID as the planet number and 'b' as a string. Example: "1625b".
-If it's a 'kic', input the targetID as the KIC number without the prefix, as a float. Example: 4760478
+If you choose option (b), you need to make it explicit somehow which telescope you want to use.
+For example, you can either enter a targetID like "Kepler-1625b", "KOI-5084.01", or "KIC4760478", OR
+you may enter "1625b", "5084.01", or "4760478" for the targetID and specify the telescope as "kepler".
 
 The coordinate search (c) performs a cone search with a 5 arcsecond radius through Simbad. You may change the 
 cone size by adjusting the "search_radius" keyword. Some targets have multiple aliases, and if the first hit
