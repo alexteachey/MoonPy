@@ -1,5 +1,5 @@
 ### Welcome to MoonPy!
-README last updated: May 13, 2019.
+README last updated: May 14, 2019.
 
 This document will walk you through the basics of using the MoonPy code. 
 In time this code will become more sophisticated, but right now we can just do
@@ -7,16 +7,18 @@ a few things.
 
 1.) INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
 
->>> lc_objectname = MoonPy_LC(lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type='koi', quarters='all', telescope='kepler', RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', loadfile='n')
+>>> lc_objectname = MoonPyLC(lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
 
 This object is designed to be versatile. You can either
 a) supply times, fluxes, and errors as arrays;
-b) supply a targetID (either a KOI, Kepler planet, or KIC) and the name of the telescope; or
+b) supply a targetID (either a KOI, Kepler planet, KIC, or K2 planet) and the name of the telescope; or
 c) supply coordinates for an object search
 
-If you choose option (b), you need to make it explicit somehow which telescope you want to use.
+If you choose option (b), you may need to make it explicit somehow which telescope you want to use.
 For example, you can either enter a targetID like "Kepler-1625b", "KOI-5084.01", or "KIC4760478", OR
 you may enter "1625b", "5084.01", or "4760478" for the targetID and specify the telescope as "kepler".
+The code will do its best to determine the telescope. It should also accept "Kepler" as well as "kepler",
+and "K2" as well as "k2". TESS support is in the works.
 
 The coordinate search (c) performs a cone search with a 5 arcsecond radius through Simbad. You may change the 
 cone size by adjusting the "search_radius" keyword. Some targets have multiple aliases, and if the first hit
@@ -63,8 +65,15 @@ As before, you may choose to save this light curve or not by altering the "save_
 you will need to fill in your savepath the first time you use the code.
 
 
+4.) GET PROPERTIES.
 
-4.) FUTURE FUNCTIONALITY
+New feature as of May 14, 2019 is the "get_properties" method. This function queries the NASA Exoplanet Archive
+to retrieve your target's impact parameter, transit duration, orbital period, and reference transit midtime.
+More attributes may be added in the future.
+
+
+
+5.) FUTURE FUNCTIONALITY
 
 Additional detrending options are in the works, as are implementations of MultiNest and emcee. BATMAN support
 is also planned, and (hopefully), implementation of David Kipping's LUNA code for generating planet+moon light curves.
