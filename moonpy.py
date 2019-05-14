@@ -16,11 +16,14 @@ import kplr
 #import cofiam
 import astropy
 import warnings
+from astropy.io import ascii
+import time
+import datetime
 
 ### The packages below interface with standard packages, but within the context
 ### of what you want here... maybe change this usage below!
 from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_download, eleanor_coord_download
-from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend
+from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
 from mp_fit import mp_multinest, mp_emcee
 #from pyluna import run_LUNA
 import mp_tools
@@ -57,7 +60,7 @@ class MoonPyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y'):
+	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
 	
 		if telescope == None: # if user hasn't specified, figure it out!
 			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('KOI'):
@@ -89,7 +92,7 @@ class MoonPyLC(object):
 				target_type='koi'
 			elif '.' in str(targetID) and telescope=='tess':
 				target_type='toi'
-			elif 'b' in str(targetID) and telescope=='kepler':
+			elif (('b' in str(targetID)) or ('c' in str(targetID)) or ('d' in str(targetID)) or ('e' in str(targetID)) or ('f' in str(targetID))) and (telescope=='kepler'):
 				target_type='planet'
 			else:
 				if telescope == 'kepler':
@@ -195,8 +198,8 @@ class MoonPyLC(object):
 
 	### DETRENDING!
 
-	def detrend(self, dmeth='cofiam', save_lc='y'):
-		### optional values for method are "cofiam", "untrendy", and "george"
+	def detrend(self, dmeth='cofiam', save_lc='y', max_degree=30):
+		### optional values for method are "cofiam", "untrendy", 
 		### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
 
 		master_detrend, master_error_detrend = [], []
@@ -210,11 +213,25 @@ class MoonPyLC(object):
 			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
 
 			if dmeth == 'cofiam':
-				fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors)
+				"""
+				CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
+				specifying a maximum order, above which the algorithm will not fit.
+				This maximum degree should be calculated based on the transit duration, 
+				but in practice going above k=30 is computational impractical. 
+				You can specify "max_degree" below, or calculate it using the max_order function
+				within cofiam.py.
+				"""
+				fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, max_degree=max_degree)
+
 			elif dmeth == 'untrendy':
 				fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors)		
+
 			elif dmeth == 'george':
 				fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors)
+
+			elif dmeth == 'medfilt':
+				fluxes_detrend, errors_detrend = medfilt_detrend(dfluxes, derrors)
+
 
 			### update self -- just this quarter!
 			assert np.all(dfluxes != fluxes_detrend)
@@ -272,8 +289,6 @@ class MoonPyLC(object):
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes, self.errors, self.flags, self.quarters		
 
 
-	
-
 		### first step is to stitch the light curve together
 		if quarters != 'all':
 			### means you want only selected quarters, which should be in an array!
@@ -300,6 +315,64 @@ class MoonPyLC(object):
 		plt.xlabel('BKJD')
 		plt.ylabel('Flux')
 		plt.show()
+
+
+	def get_properties(self):
+		### first check to see if this file was already downloaded today. If not, download it!
+		try:
+			filecreated_time = os.path.getctime('cumkois.txt')
+			current_time = time.time()
+			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
+				### download a new version!
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+		except:
+			os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+
+		### find by KICID, KOI number of planet!
+		cumkoi_data = ascii.read('cumkois.txt')
+		cumkoi_columns = cumkoi_data.columns
+
+		if str(self.target).startswith('Kepler-'):
+			target_letter = str(self.target)[-1]
+			if ' ' in self.target: ### already in the correct format, with a space between the letter.
+				NEA_targetname = self.target
+			else: #### there isn't a space, so add it!
+				NEA_targetname = self.target[:-1]+' '+target_letter
+			rowidx = np.where(cumkoi_data['kepler_name'] == NEA_targetname)[0]
+
+		elif str(self.target).startswith('KIC'):
+			NEA_targetname = int(self.target[4:])
+			rowidx = np.where(cumkoi_data['kepid'] == NEA_targetname)[0]
+
+		elif str(self.target).startswith('KOI'):
+			NEA_targetname = str(self.target[4:])
+			if len(NEA_targetname) == 7: ### of the form 5084.01
+				NEA_targetname = 'K0'+str(NEA_targetname)
+			elif len(NEA_targetname) == 6: ### of the form 163.01
+				NEA_targetname = 'K00'+str(NEA_targetname)
+			elif len(NEA_targetname) == 5: ### of the form 23.01
+				NEA_targetname = 'K000'+str(NEA_targetname)
+			elif len(NEA_targetname) == 4: ### of the form 1.01
+				NEA_targetname = 'K0000'+str(NEA_targetname)
+			rowidx = np.where(cumkoi_data['kepoi_name'] == NEA_targetname)[0]
+
+
+		### now with the rowidx we can access the other properties we want!
+		target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
+		target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
+		target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
+		target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
+
+		### update properties!
+		self.period = float(target_period)
+		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
+		self.tau0 = float(target_tau0)
+		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
+		self.impact = float(target_impact)
+		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
+		self.duration = float(target_duration)
+		self.duration_err = (float(target_duration_lowerr), float(target_duration_uperr))
+
 
 
 

@@ -5,6 +5,7 @@ import numpy as np
 import astropy
 from astroquery.simbad import Simbad 
 import astropy.coordinates as coord 
+from astropy import units as u
 
 
 
@@ -80,7 +81,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	### try to interpret the coordinate_format 
-	if 'h' in ra:
+	if 'h' in ra or ':' in ra:
 		coord_format == 'sexagesimal'
 
 	if coord_format=='degrees':
@@ -88,7 +89,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 	elif coord_format=='sexagesimal':
 		nearby_objects = Simbad.query_region(coord.SkyCoord(str(ra)+' '+str(dec), frame='icrs'), radius='0d0m'+str(search_radius)+'s')
 
-
+	print(nearby_objects)
 	best_hit = nearby_objects[0][0].decode('UTF-8')
 	print("best_hit = ", best_hit)
 
