@@ -1,5 +1,6 @@
 from __future__ import division
 import kplr
+import k2plr
 import eleanor
 import numpy as np
 import astropy
@@ -9,9 +10,12 @@ from astropy import units as u
 
 
 
-def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', sc=False):
+def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
 	#print("nothing happening right now.")
-	client = kplr.API()
+	if telescope == 'kepler':
+		client = kplr.API()
+	elif telescope == 'k2':
+		client = k2plr.API()
 
 	if type == 'koi':
 		kplr_obj = client.koi(targID)
@@ -152,9 +156,35 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def eleanor_target_download(targID, sectors='all', sc=False):
-	print("nothing happening right now.")
+def eleanor_target_download(targID, sectors='all', sc=False, lc_format='pdc'):
+	if sectors=='all':
+		sector_array = np.array([1,2])
+
+	tic_times, tic_sap_flux, tic_pdc_flux, tic_errors = [], [], [], []
+	for sector in sector_array:
+		try:
+			ticstar = eleanor.Source(tic=targID, sector=sector)
+			ticdata = eleanor.TargetData(ticstar, height=15, width=15, bkg_size=31, do_psf=True, do_pca=True)
+			qflag0 = ticdata.quality == 0 
+			tic_time, tic_raw_flux, tic_corr_flux, tic_error = ticdata.time[qlfag0], ticdata.raw_flux[qflag0], ticdata.corr_flux[qflag0], ticdata.flux_err[qflag0]
+
+			tic_times.append(tic_time)
+			tic_sap_flux.append(tic_raw_flux)
+			tic_pdc_flux.append(tic_pdc_flux)
+			tic_errors.append(tic_error)
+
+		except:
+			pass
+
+	if lc_format=='pdc':
+		return tic_times, tic_pdc_flux, tic_errors
+	elif lc_format=='sap':
+		return tic_times, tic_sap_flux, tic_errors 
+
+
+
+
 
 def eleanor_coord_download(ra,dec, sectors='all', sc=False):
-	print("Nothing happening right now.")
+	print("nothing doing right now.")
 

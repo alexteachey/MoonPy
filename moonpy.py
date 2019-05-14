@@ -67,8 +67,12 @@ class MoonPyLC(object):
 				telescope='kepler'
 			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
 				telescope='tess'
+			if (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')):
+				telescope='k2'
 			else:
 				telescope = input('Please specify the telescope: ')
+
+			self.telescope = telescope
 
 		### strip off prefixes from the targetID
 		if str(targetID).startswith('KIC'):
@@ -81,6 +85,8 @@ class MoonPyLC(object):
 			targetID = targetID[4:]
 		elif str(targetID).startswith('TOI-'):
 			targetID = targetID[4:]
+		elif str(targetID).startswith('K2-'):
+			targetID = targetID[3:]
 
 		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
 			targetID = targetID[1:]
@@ -88,16 +94,18 @@ class MoonPyLC(object):
 
 		### intuit whether the targetID is a 'planet' (includes 'b'), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
-			if '.' in str(targetID) and telescope=='kepler':
+			if '.' in str(targetID) and ((telescope=='kepler') or (telescope=="Kepler")):
 				target_type='koi'
-			elif '.' in str(targetID) and telescope=='tess':
+			elif '.' in str(targetID) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
 				target_type='toi'
 			elif (('b' in str(targetID)) or ('c' in str(targetID)) or ('d' in str(targetID)) or ('e' in str(targetID)) or ('f' in str(targetID))) and (telescope=='kepler'):
 				target_type='planet'
+			elif (telescope=='k2') or (telescope=='K2'):
+				target_type='planet'
 			else:
-				if telescope == 'kepler':
+				if ((telescope == 'kepler') or (telescope=='Kepler')):
 					target_type='kic'
-				elif telescope == 'tess':
+				elif ((telescope == 'tess') or (telescope=='Tess') or (telescope=='TESS')):
 					target_type = 'tic'
 
 		print("targetID = ", targetID)
@@ -113,12 +121,12 @@ class MoonPyLC(object):
 		### HANDLING FOR DOWNLOADING A LIGHT CURVE.
 		elif (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
-			if telescope == 'kepler':
+			if (telescope == 'kepler') or (telescope=='k2'):
 				### download the light curve with kplr
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, lc_format=lc_format, sc=sc)
+				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 			elif telescope == 'tess':
 				if ffi == 'y':
-					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID)
+					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 				elif ffi == 'n':
 					lc_times, lc_fluxes, lc_errors = tess_target_download(targetID)
 
@@ -128,7 +136,10 @@ class MoonPyLC(object):
 			elif target_type == 'toi':
 				target_name = 'TOI-'+str(targetID)
 			elif target_type == 'planet':
-				target_name = "Kepler-"+str(targetID)
+				if telescope == 'kepler':
+					target_name = "Kepler-"+str(targetID)
+				elif telescope == 'k2':
+					target_name = 'K2-'+str(targetID)
 			elif target_type == 'kic':
 				target_name = "KIC "+str(targetID)
 			elif target_type == 'tic':
@@ -142,7 +153,7 @@ class MoonPyLC(object):
 		### HANDLING FOR A USER-SUPPLIED LIGHT CURVE.
 		elif (targetID == None) and (RA != None) and (Dec != None) and (telescope != None): 
 			### implies you have coordinates but not a valid target.
-			if telescope == 'kepler':
+			if (telescope == 'kepler') or (telescope == 'k2'):
 				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 			elif telescope == 'tess':
 				lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
@@ -211,6 +222,7 @@ class MoonPyLC(object):
 
 			dtimesort = np.argsort(dtimes)
 			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
+
 
 			if dmeth == 'cofiam':
 				"""
@@ -320,48 +332,80 @@ class MoonPyLC(object):
 	def get_properties(self):
 		### first check to see if this file was already downloaded today. If not, download it!
 		try:
-			filecreated_time = os.path.getctime('cumkois.txt')
+			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+				filecreated_time = os.path.getctime('cumkois.txt')
+			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+				filecreated_time = os.path.getctime('cumk2ois.txt')
+
 			current_time = time.time()
 			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
 				### download a new version!
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+				if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+				elif (self.telescope == 'k2') or (self.telescope == "K2"):
+					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 		except:
-			os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+			if (self.telescope == 'kepler') or (self.telescope=='Kepler'):
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+
 
 		### find by KICID, KOI number of planet!
-		cumkoi_data = ascii.read('cumkois.txt')
+		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+			cumkoi_data = ascii.read('cumkois.txt')
+		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+			cumkoi_data = ascii.read('cumk2ois.txt')
 		cumkoi_columns = cumkoi_data.columns
 
-		if str(self.target).startswith('Kepler-'):
-			target_letter = str(self.target)[-1]
-			if ' ' in self.target: ### already in the correct format, with a space between the letter.
-				NEA_targetname = self.target
-			else: #### there isn't a space, so add it!
-				NEA_targetname = self.target[:-1]+' '+target_letter
-			rowidx = np.where(cumkoi_data['kepler_name'] == NEA_targetname)[0]
+		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
+			if str(self.target).startswith('Kepler-'):
+				target_letter = str(self.target)[-1]
+				if ' ' in self.target: ### already in the correct format, with a space between the letter.
+					NEA_targetname = self.target
+				else: #### there isn't a space, so add it!
+					NEA_targetname = self.target[:-1]+' '+target_letter
+				rowidx = np.where(cumkoi_data['kepler_name'] == NEA_targetname)[0]
 
-		elif str(self.target).startswith('KIC'):
-			NEA_targetname = int(self.target[4:])
-			rowidx = np.where(cumkoi_data['kepid'] == NEA_targetname)[0]
+			elif str(self.target).startswith('KIC'):
+				NEA_targetname = int(self.target[4:])
+				rowidx = np.where(cumkoi_data['kepid'] == NEA_targetname)[0]
 
-		elif str(self.target).startswith('KOI'):
-			NEA_targetname = str(self.target[4:])
-			if len(NEA_targetname) == 7: ### of the form 5084.01
-				NEA_targetname = 'K0'+str(NEA_targetname)
-			elif len(NEA_targetname) == 6: ### of the form 163.01
-				NEA_targetname = 'K00'+str(NEA_targetname)
-			elif len(NEA_targetname) == 5: ### of the form 23.01
-				NEA_targetname = 'K000'+str(NEA_targetname)
-			elif len(NEA_targetname) == 4: ### of the form 1.01
-				NEA_targetname = 'K0000'+str(NEA_targetname)
-			rowidx = np.where(cumkoi_data['kepoi_name'] == NEA_targetname)[0]
+			elif str(self.target).startswith('KOI'):
+				NEA_targetname = str(self.target[4:])
+				if len(NEA_targetname) == 7: ### of the form 5084.01
+					NEA_targetname = 'K0'+str(NEA_targetname)
+				elif len(NEA_targetname) == 6: ### of the form 163.01
+					NEA_targetname = 'K00'+str(NEA_targetname)
+				elif len(NEA_targetname) == 5: ### of the form 23.01
+					NEA_targetname = 'K000'+str(NEA_targetname)
+				elif len(NEA_targetname) == 4: ### of the form 1.01
+					NEA_targetname = 'K0000'+str(NEA_targetname)
+				rowidx = np.where(cumkoi_data['kepoi_name'] == NEA_targetname)[0]
+
+		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+			if str(self.target).startswith('K2-'):
+				target_letter = str(self.target[-1])
+				if ' ' in self.target:
+					NEA_targetname = self.target
+				rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
+
+				print("number of rows matching this description = ", len(rowidx))
 
 
 		### now with the rowidx we can access the other properties we want!
-		target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
-		target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
-		target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
-		target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
+		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
+			target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
+			target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
+			target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
+		
+		elif (self.telescope == 'k2') or (self.telescope == "K2"):
+			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(cumkoi_data['pl_orbper'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr1'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr2'][rowidx])
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(cumkoi_data['pl_tranmid'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr1'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr2'][rowidx])
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(cumkoi_data['pl_imppar'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr2'][rowidx])
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(cumkoi_data['pl_trandur'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr2'][rowidx])
+
 
 		### update properties!
 		self.period = float(target_period)
