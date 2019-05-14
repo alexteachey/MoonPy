@@ -67,9 +67,10 @@ you will need to fill in your savepath the first time you use the code.
 
 4.) GET PROPERTIES.
 
-New feature as of May 14, 2019 is the "get_properties" method. This function queries the NASA Exoplanet Archive
+New feature as of May 14, 2019 is the "get_properties()" method. This function queries the NASA Exoplanet Archive
 to retrieve your target's impact parameter, transit duration, orbital period, and reference transit midtime.
-More attributes may be added in the future.
+More attributes may be added in the future. The first time you run this function it will download an ascii table
+from NASA Exoplanet Archive, but should not download the table again until 24 hours have elapsed.
 
 
 
