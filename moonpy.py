@@ -6,7 +6,7 @@ import os
 #import emcee
 #import untrendy
 #import sklearn
-import kplr
+#import kplr
 #import everest
 #import eleanor
 #import corner
@@ -29,6 +29,9 @@ from mp_fit import mp_multinest, mp_emcee
 import mp_tools
 import traceback
 from astroquery.simbad import Simbad 
+from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
+
+
 #from matplotlib import rc
 
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
@@ -63,11 +66,11 @@ class MoonPyLC(object):
 	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
 	
 		if telescope == None: # if user hasn't specified, figure it out!
-			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('KOI'):
+			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('kepler') or str(targetID).startswith('KOI'):
 				telescope='kepler'
 			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
 				telescope='tess'
-			if (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')):
+			if (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC')):
 				telescope='k2'
 			else:
 				telescope = input('Please specify the telescope: ')
@@ -87,6 +90,8 @@ class MoonPyLC(object):
 			targetID = targetID[4:]
 		elif str(targetID).startswith('K2-'):
 			targetID = targetID[3:]
+		elif str(targetID).startswith("EPIC"):
+			targetID = targetID[4:]
 
 		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
 			targetID = targetID[1:]
@@ -98,7 +103,7 @@ class MoonPyLC(object):
 				target_type='koi'
 			elif '.' in str(targetID) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
 				target_type='toi'
-			elif (('b' in str(targetID)) or ('c' in str(targetID)) or ('d' in str(targetID)) or ('e' in str(targetID)) or ('f' in str(targetID))) and (telescope=='kepler'):
+			elif (('b' in str(targetID)) or ('c' in str(targetID)) or ('d' in str(targetID)) or ('e' in str(targetID)) or ('f' in str(targetID)) or ('g' in str(targetID))) and ((telescope=='kepler') or (telescope=='Kepler')):
 				target_type='planet'
 			elif (telescope=='k2') or (telescope=='K2'):
 				target_type='planet'
@@ -341,12 +346,12 @@ class MoonPyLC(object):
 			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
 				### download a new version!
 				if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
 				elif (self.telescope == 'k2') or (self.telescope == "K2"):
 					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 		except:
 			if (self.telescope == 'kepler') or (self.telescope=='Kepler'):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
 			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 
@@ -399,7 +404,9 @@ class MoonPyLC(object):
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
 			target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
 			target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
-		
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = cumkoi_data['koi_ror'][rowidx], cumkoi_data['koi_ror_err1'][rowidx], cumkoi_data['koi_ror_err2'][rowidx]
+			target_rp, target_rp_uperr, target_rp_lowerr = cumkoi_data['koi_prad'][rowidx], cumkoi_data['koi_prad_err1'][rowidx], cumkoi_data['koi_prad_err2'][rowidx]
+
 		elif (self.telescope == 'k2') or (self.telescope == "K2"):
 			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(cumkoi_data['pl_orbper'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr1'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr2'][rowidx])
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(cumkoi_data['pl_tranmid'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr1'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr2'][rowidx])
@@ -416,6 +423,15 @@ class MoonPyLC(object):
 		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
 		self.duration = float(target_duration)
 		self.duration_err = (float(target_duration_lowerr), float(target_duration_uperr))
+		self.rprstar = float(target_rprstar)
+		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
+		self.rp_rearth = float(target_rp) ### earth radii
+		self.rp_rjup = float(target_rp) * (R_earth.value / R_jup.value)
+		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
+		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
+		self.depth = self.rprstar**2
+
+
 
 
 
