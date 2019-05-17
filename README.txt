@@ -5,28 +5,51 @@ This document will walk you through the basics of using the MoonPy code.
 In time this code will become more sophisticated, but right now we can just do
 a few things.
 
+
+
+##########
+##########
+##########
+
 1.) INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
 
->>> lc_objectname = MoonPyLC(lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
+>>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
 
-
+### KEYWORDS
 lc_times: array of times.
+
 lc_fluxes: array of fluxes.
+
 lc_errors: array of errors.
+
 targetID: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope.
+
 target_type: May be "kic", "koi", or "planet" (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
+
 quarters: acceptable values are "all" or an array of quarters.
+
 telescope: may be "Kepler" / "kepler", "K2" / "k2", and eventually "TESS" / "Tess" / "tess".
+
 RA: sexagesimal of the form 12h34m14.5s or decimal form.
+
 Dec: sexagesimal of the form +50d38m14.25s or decimal form.
+
 coord_format: format of your supplied coordinates. An attempt is made to intuit this.
+
 search_radius: in arcseconds, the size of the search cone when supploying coordinates.
+
 lc_format: May be "sap" (simple aperture photometry) or "pdc" (pre-search data conditioning). Default is "pdc".
+
 sc: Boolean, stands for "short cadence". Not doing anything right now.
+
 ffi: stands for "Full-Frame Images." Not doing anything right now.
+
 lc_meta: not doing anything right now.
+
 save_lc: option to save your light curve once you've generated it as a .csv file.
+
 tau0: doing nothing right now.
+
 Pplan: doing nothing right now.
 
 NOTES:
@@ -41,7 +64,7 @@ you may enter "1625b", "5084.01", or "4760478" for the targetID and specify the 
 The code will do its best to determine the telescope. It should also accept "Kepler" as well as "kepler",
 and "K2" as well as "k2". TESS support is in the works.
 
-The coordinate search (c) performs a cone search with a 5 arcsecond radius through Simbad. You may change the 
+The coordinate search (c) performs a cone search with a (default) 5 arcsecond radius through Simbad. You may change the 
 cone size by adjusting the "search_radius" keyword. Some targets have multiple aliases, and if the first hit
 is not either a KOI, kepler planet or KIC star, an attempt will be made to find this name amongst the aliases.
 Also note that your options for coord_format are 'degrees' and "sexagesimal", but if you input sexagesimal
@@ -59,41 +82,103 @@ Unless you specify otherwise your light curve will be saved in the savepath ('sa
 Other functionality listed above is forthcoming, including support for TESS light curves! 
 
 ##########
+##########
+##########
 
 
 2.) PLOT THE DATA.
 
-Plotting the data is simple. Once you have generated your light curve object (step 1 above), you can
-plot the light curve simply by calling 
+>>> lc_object.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y', show_errors='n')
+
+Plotting the data is simple, and I expect the keywords are all self-explanatory. 
+
+Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
 
 >>> lc_objectname.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))
 
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
 
-Errorbar support not yet available.
+
+
+##########
+##########
+##########
 
 
 3.) DETREND THE DATA.
 
-At this time the only detrending option is the Cosine Filtering Autocorrelation Minimization (CoFiAM) algorithm.
-This is the default. Future options may include Dan Foreman-Mackey's "untrendy" and "george" packages, and possibly
-others. The usage is simple:
+At this time the only detrending option is the Cosine Filtering Autocorrelation Minimization (CoFiAM) algorithm "cofiam", and
+a median filter "medfilt". Dan Foreman-Mackey's "untrendy" package is also supported, but right now Scipy is throwing
+an error saying that the x-values must be strictly increasing. Not sure what that's about. 
 
->>> lc_objectname.detrend(dmeth='cofiam', save_lc='y')
+Anyway the usage is simple:
 
-As before, you may choose to save this light curve or not by altering the "save_lc" keyword. Once again,
-you will need to fill in your savepath the first time you use the code.
+>>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', skip_ntqs='n', kernel=None, max_degree=30)
+
+### KEYWORDS
+dmeth: currently supported are "cofiam", "medfilt", and "untrendy" (though the last is breaking a lot).
+save_lc: default is on. Note that this will overwrite the light curve file you've generated by default in initializing the object, so that now there are five columns: times, fluxes, errors, and fluxes and errors from the detrending. Once again, you will need to fill in your savepath the first time you use the code.
+
+mask_transits: by default, transits are masked by calculating the transit times (assuming linear ephemeris), and one full transit duration
+is masked on either side of the transit midtime. That is, the total mask is twice the width of the transit. 
+
+skip_ntqs: this option allows you to only detrend the quarters that actually contain a transit of the planet you're interested in.
+This can be useful with cofiam, for example, since each quarter can take ~1 minute to detrend. Off by default.
+
+kernel: this allows you specify the size of the kernel for median filtering.
+
+max_degree: for cofiam, this is maximum order k you'll allow cofiam to explore. Practically speaking anything much above this
+because too computationally expensive.
+
+
+
+##########
+##########
+##########
 
 
 4.) GET PROPERTIES.
 
 New feature as of May 14, 2019 is the "get_properties()" method. This function queries the NASA Exoplanet Archive
-to retrieve your target's impact parameter, transit duration, orbital period, and reference transit midtime.
+to retrieve your target's impact parameter, transit duration, orbital period, all transit midtimes within the 
+dataset baseline, the ratio of radii, and the isolated radii for the planet and the star. Uncertainties
+for many of these parameters are also available as a tuple, quoting lower and upper sigmas.
+
+The following attributes are supported;
+
+lc_object.period # days
+lc_object.period_err # tuple
+lc_object.tau0 # BKJD
+lc_object.tau0_err # tuple
+lc_object.impact 
+lc_object.impact_err # tuple
+lc_object.duration_hours
+lc_object.duration_hours_err # tuple 
+lc_object.duration_days
+lc_object.duration_days_err # tuple
+lc_object.rprstar 
+lc_object.rprstar_err # tuple
+lc_object.rp_rearth # units of Earth radii (native unit on NASA Exoplanet Archive)
+lc_object.rp_rearth_err # tuple
+lc_object.rp_rjup # units of Jupiter radii (converted without uncertainties)
+lc_object.rstar_rsol # units of Solar radii (converted from Rp/Rstar, without propagating uncertainties)
+lc_object.depth 
+lc_object.taus # all BKJD transit midtimes in the baseline, assuming linear ephemeris
+
+If an attribute doesn't come with an uncertainty tuple, it's probably because this is a non-native value
+and I haven't bothered to propagate the uncertainties. Will try to implement this in the future.
+
 More attributes may be added in the future. The first time you run this function it will download an ascii table
 from NASA Exoplanet Archive, but should not download the table again until 24 hours have elapsed.
 
 
+
+
+
+##########
+##########
+##########
 
 5.) FUTURE FUNCTIONALITY
 
