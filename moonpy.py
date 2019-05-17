@@ -63,7 +63,7 @@ class MoonPyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, lc_times=None, lc_fluxes=None, lc_errors=None, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
+	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
 	
 		if telescope == None: # if user hasn't specified, figure it out!
 			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('kepler') or str(targetID).startswith('KOI'):
@@ -126,10 +126,10 @@ class MoonPyLC(object):
 		### HANDLING FOR DOWNLOADING A LIGHT CURVE.
 		elif (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
-			if (telescope == 'kepler') or (telescope=='k2'):
+			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope=='k2') (telescope=='K2'):
 				### download the light curve with kplr
 				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
-			elif telescope == 'tess':
+			elif (telescope == 'tess') or (telescope == "Tess") or (telescope == "TESS"):
 				if ffi == 'y':
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 				elif ffi == 'n':
@@ -141,9 +141,9 @@ class MoonPyLC(object):
 			elif target_type == 'toi':
 				target_name = 'TOI-'+str(targetID)
 			elif target_type == 'planet':
-				if telescope == 'kepler':
+				if (telescope == 'kepler') or (telescope=="Kepler"):
 					target_name = "Kepler-"+str(targetID)
-				elif telescope == 'k2':
+				elif (telescope == 'k2') or (telescope=='K2'):
 					target_name = 'K2-'+str(targetID)
 			elif target_type == 'kic':
 				target_name = "KIC "+str(targetID)

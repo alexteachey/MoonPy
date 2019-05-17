@@ -12,9 +12,9 @@ from astropy import units as u
 
 def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
 	#print("nothing happening right now.")
-	if telescope == 'kepler':
+	if (telescope == 'kepler') or (telescope=="Kepler"):
 		client = kplr.API()
-	elif telescope == 'k2':
+	elif (telescope == 'k2') or (telescope == "K2"):
 		client = k2plr.API()
 
 	if type == 'koi':
