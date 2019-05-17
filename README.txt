@@ -70,7 +70,8 @@ is not either a KOI, kepler planet or KIC star, an attempt will be made to find 
 Also note that your options for coord_format are 'degrees' and "sexagesimal", but if you input sexagesimal
 without indicating it an attempt is made to recognize this and change the coord_format on the fly. Appropriate
 syntax for sexagesimal coordinates is '9h36m43.5s' for RA and '+39d42m46.83s' for Dec. I think you can go arbitrarily
-precise with the decimal places but I haven't tested this extensively.
+precise with the decimal places but I haven't tested this extensively. Spaces between hours/minutes/seconds and degrees/minutes/seconds
+should be OK.
 
 You may also download only select quarters if you wish by supplying an array of quarter numbers in the 'quarters' keyword.
 Currently supported formats for the light curve download is "sap" and "pdc". If you wish to download both

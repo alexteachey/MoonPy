@@ -87,6 +87,8 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 	### try to interpret the coordinate_format 
 	if 'h' in ra or ':' in ra:
 		coord_format == 'sexagesimal'
+		ra = ra.replace(' ', '') ### remove the spaces
+		dec = dec.replace(' ', '') ### remove the spaces
 
 	if coord_format=='degrees':
 		nearby_objects = Simbad.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'), radius='0d0m5s')

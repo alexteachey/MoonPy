@@ -100,7 +100,7 @@ class MoonpyLC(object):
 			targetID = targetID[1:]
 
 
-		### intuit whether the targetID is a 'planet' (includes 'b'), a KOI (includes a decimal), or a KIC (neither).
+		### intuit whether the targetID is a 'planet' (includes a letter), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
 			if '.' in str(targetID) and ((telescope=='kepler') or (telescope=="Kepler")):
 				target_type='koi'
@@ -129,7 +129,7 @@ class MoonpyLC(object):
 		### HANDLING FOR DOWNLOADING A LIGHT CURVE.
 		elif (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
-			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope=='k2') (telescope=='K2'):
+			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope=='k2') or (telescope=='K2'):
 				### download the light curve with kplr
 				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 			elif (telescope == 'tess') or (telescope == "Tess") or (telescope == "TESS"):
