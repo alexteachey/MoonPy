@@ -64,7 +64,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
+	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
 	
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
@@ -120,7 +120,7 @@ class MoonpyLC(object):
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
 
-		if (lc_times != None) and (lc_fluxes != None) and (lc_errors != None):
+		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
 			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
 			self.target = None
 			self.telescope = None 
@@ -186,6 +186,10 @@ class MoonpyLC(object):
 
 			assert np.all(np.isfinite(lc_fluxes[qidx]))
 			assert np.all(np.isfinite(lc_errors[qidx]))
+
+			if remove_flagged == 'y':
+				flag_idxs = np.where(lc_flags[qidx] != 0)[0]
+				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
 
 			### sort the times here!
 			timesort = np.argsort(lc_times[qidx])
@@ -351,7 +355,7 @@ class MoonpyLC(object):
 
 
 		### first step is to stitch the light curve together
-		if quarters != 'all':
+		if type(quarters) != type('all'):
 			### means you want only selected quarters, which should be in an array!
 			qstokeep_idxs = []
 			for quarter in quarters:

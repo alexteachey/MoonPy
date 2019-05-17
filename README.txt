@@ -13,7 +13,7 @@ a few things.
 
 1.) INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
 
->>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
+>>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None)
 
 ### KEYWORDS
 lc_times: array of times.
@@ -39,6 +39,8 @@ coord_format: format of your supplied coordinates. An attempt is made to intuit 
 search_radius: in arcseconds, the size of the search cone when supploying coordinates.
 
 lc_format: May be "sap" (simple aperture photometry) or "pdc" (pre-search data conditioning). Default is "pdc".
+
+remove_flagged: automatically removes data points that have quality flags != 0.
 
 sc: Boolean, stands for "short cadence". Not doing anything right now.
 
