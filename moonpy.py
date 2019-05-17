@@ -25,6 +25,7 @@ import datetime
 from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_download, eleanor_coord_download
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
 from mp_fit import mp_multinest, mp_emcee
+from cofiam import max_order
 #from pyluna import run_LUNA
 import mp_tools
 import traceback
@@ -58,7 +59,7 @@ NOTES to Alex:
 """
 
 
-class MoonPyLC(object):
+class MoonpyLC(object):
 	### this is the light curve object. You can detrend this light curve, or fit it.
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
@@ -66,11 +67,11 @@ class MoonPyLC(object):
 	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
 	
 		if telescope == None: # if user hasn't specified, figure it out!
-			if str(targetID).startswith("KIC") or str(targetID).startswith('Kepler') or str(targetID).startswith('kepler') or str(targetID).startswith('KOI'):
+			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
 				telescope='kepler'
 			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
 				telescope='tess'
-			if (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC')):
+			elif (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC')):
 				telescope='k2'
 			else:
 				telescope = input('Please specify the telescope: ')
@@ -83,6 +84,8 @@ class MoonPyLC(object):
 		elif str(targetID).startswith('TIC'):
 			targetID = targetID[3:]
 		elif str(targetID).startswith('Kepler-'):
+			targetID = targetID[7:]
+		elif str(targetID).startswith('kepler-'):
 			targetID = targetID[7:]
 		elif str(targetID).startswith('KOI-'):
 			targetID = targetID[4:]
@@ -158,7 +161,7 @@ class MoonPyLC(object):
 		### HANDLING FOR A USER-SUPPLIED LIGHT CURVE.
 		elif (targetID == None) and (RA != None) and (Dec != None) and (telescope != None): 
 			### implies you have coordinates but not a valid target.
-			if (telescope == 'kepler') or (telescope == 'k2'):
+			if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
 				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 			elif telescope == 'tess':
 				lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
@@ -214,13 +217,19 @@ class MoonPyLC(object):
 
 	### DETRENDING!
 
-	def detrend(self, dmeth='cofiam', save_lc='y', max_degree=30):
-		### optional values for method are "cofiam", "untrendy", 
+	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', skip_ntqs='n', kernel=None, max_degree=30):
+		### optional values for method are "cofiam", "untrendy", "medfilt"
 		### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
+
+		try:
+			self.duration_hours ### tests whether you've called get_properties yet.
+		except:
+			self.get_properties()
 
 		master_detrend, master_error_detrend = [], []
 
 		for qidx in np.arange(0,self.times.shape[0],1):
+			skip_quarter = 'n'
 			print('quarter = ', self.quarters[qidx])
 			dtimes, dfluxes, derrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
 			print('dtimes.shape = ', dtimes.shape)
@@ -228,31 +237,66 @@ class MoonPyLC(object):
 			dtimesort = np.argsort(dtimes)
 			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
 
+			for ndt,dt in enumerate(dtimes):
+				try:
+					timediff = dtimes[ndt+1] - dtimes[ndt]
+					if timediff <= 0:
+						print("WARNING: timestamps are not sorted.")
+				except:
+					pass
 
-			if dmeth == 'cofiam':
-				"""
-				CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
-				specifying a maximum order, above which the algorithm will not fit.
-				This maximum degree should be calculated based on the transit duration, 
-				but in practice going above k=30 is computational impractical. 
-				You can specify "max_degree" below, or calculate it using the max_order function
-				within cofiam.py.
-				"""
-				fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, max_degree=max_degree)
+			### identify in-transit idxs, and mask them!
+			if mask_transits == 'y':
+				### find out which transit midtimes, if any, are in this quarter
+				mask_transit_idxs = []
+				quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]
+				for qtt in quarter_transit_taus:
+					in_transit_idxs = np.where((dtimes >= qtt - self.duration_days) & (dtimes <= qtt + self.duration_days))[0]
+					mask_transit_idxs.append(in_transit_idxs)
+				try:
+					print("transit midtimes this quarter: ", quarter_transit_taus)
+					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
+					mask_transit_idxs = np.concatenate((mask_transit_idxs))
+					print("transit in this quarter.")
+				except:
+					mask_transit_idxs = np.array([])
+					print('no transits in this quarter.')
+					if skip_ntqs == 'y':
+						### skip this quarter! there are no transits present.
+						fluxes_detrend, errors_detrend = dfluxes, derrors
+						skip_quarter = 'y'
 
-			elif dmeth == 'untrendy':
-				fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors)		
+			elif mask_transits == 'n':
+				mask_transit_idxs = None 
 
-			elif dmeth == 'george':
-				fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors)
+			if skip_quarter == 'n':
+				if dmeth == 'cofiam':
+					max_degree = max_order(dtimes, self.duration_days)
+					print("cofiam maximum k = "+str(max_degree))
+					"""
+					CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
+					specifying a maximum order, above which the algorithm will not fit.
+					This maximum degree should be calculated based on the transit duration, 
+					but in practice going above k=30 is computational impractical. 
+					You can specify "max_degree" below, or calculate it using the max_order function
+					within cofiam.py.
+					"""
+					fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
-			elif dmeth == 'medfilt':
-				fluxes_detrend, errors_detrend = medfilt_detrend(dfluxes, derrors)
+				elif dmeth == 'untrendy':
+					fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)		
+
+				elif dmeth == 'george':
+					fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+
+				elif dmeth == 'medfilt':
+					fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, size=kernel, mask_idxs=mask_transit_idxs)
 
 
 			### update self -- just this quarter!
-			assert np.all(dfluxes != fluxes_detrend)
-			assert np.all(derrors != errors_detrend)
+			if skip_ntqs == 'n':
+				assert np.all(dfluxes != fluxes_detrend)
+				assert np.all(derrors != errors_detrend)
 
 			master_detrend.append(np.array(fluxes_detrend))
 			master_error_detrend.append(np.array(errors_detrend))
@@ -421,8 +465,10 @@ class MoonPyLC(object):
 		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
 		self.impact = float(target_impact)
 		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
-		self.duration = float(target_duration)
-		self.duration_err = (float(target_duration_lowerr), float(target_duration_uperr))
+		self.duration_hours = float(target_duration)
+		self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
+		self.duration_days = float(target_duration)/24
+		self.duration_days_err = (float(target_duration_lowerr)/24, float(target_duration_uperr)/24)
 		self.rprstar = float(target_rprstar)
 		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
 		self.rp_rearth = float(target_rp) ### earth radii
@@ -430,6 +476,14 @@ class MoonPyLC(object):
 		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
 		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
 		self.depth = self.rprstar**2
+
+		###	identify in-transit times
+		transit_midtimes = [self.tau0]
+		next_transit = transit_midtimes[-1]+self.period
+		while next_transit < np.nanmax(np.concatenate((self.times))):
+			transit_midtimes.append(next_transit)
+			next_transit = transit_midtimes[-1]+self.period
+		self.taus = np.array(transit_midtimes)
 
 
 
