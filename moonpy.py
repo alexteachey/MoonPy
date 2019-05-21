@@ -45,7 +45,7 @@ This is the MoonPy master script! To open, you should only have to type 'import 
 
 This package is designed to do the following:
 
-1) download light curves from Kepler, K2 or TESS (kplr, tess)
+1) download light curves from Kepler, K2 or TESS (kplr, k2plr, tess)
 2) generate moon models based on user specifications
 3) detrend data using CoFiAM or untrendy
 4) fit a model to the data using MultiNest or emcee
@@ -328,21 +328,74 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, fitter='multinest', params=None, cost_function=None):
+	def fit(self, custom_param_dict=None, fitter='multinest', model='LUNA', nlive=1000):
 		### optional values for code are "multinest" and "emcee"
-		if type(params) != dict:
-			raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
+		#if type(params) != dict:
+		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
 
-		if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
-			warnings.warn("light curve has not been detrended. It will be performed now.")
-			### alternatively, just detrend!
-			self.detrend()
+		try:
+			print(self.fluxes_detrend)
+		except:
+			if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
+				warnings.warn("light curve has not been detrended. It will be performed now.")
+				### alternatively, just detrend!
+				self.detrend()
+			else:
+				self.detrend()
+
+		### have default param_labels, prior forms, and limits set!
+		param_uber_dict = {}
+		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
+		param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
+		param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
+		param_uber_dict['q1'] = ['uniform', (0,1)]
+		param_uber_dict['q2'] = ['uniform', (0,1)]
+		param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
+		param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
+		param_uber_dict['bplan'] = ['uniform', (0,1)]
+		param_uber_dict['Pplan'] = ['uniform', (1,3000)]
+		param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
+		param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
+		param_uber_dict['sat_sma'] = ['uniform', (1,10000)] #### units of Rp!
+		param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
+		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+		param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
+
+		if custom_param_dict != None:
+			### update the parameter dictionary values!!!
+			for cpdkey in custom_param_dict.keys():
+				param_uber_dict[cpdkey] = custom_param_dict[cpdkey]
+
+		param_labels = []
+		param_prior_forms = []
+		param_limit_tuple = []
+
+		for pkey in param_uber_dict.keys():
+			param_labels.append(pkey)
+			param_prior_forms.append(param_uber_dict[pkey][0])
+			param_limit_tuple.append(param_uber_dict[pkey][1])
+
+		#param_labels = np.array(param_labels)
+		#param_prior_forms = np.array(param_prior_forms)
+		#param_limit_tuple = np.array(param_limit_tuple)
+
+		#print('param_labels = ', param_labels)
+		#print(' ')
+		#print('param_prior_forms = ', param_prior_forms)
+		#print(' ')
+		#print('param_limit_tuple = ', param_limit_tuple)
+		#raise Exception('this is all you want to do right now.')
 
 		if fitter == 'multinest':
-			mp_multinest(params, cost_function) ### outputs to a file
+			mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
 
 		elif fitter == 'emcee':
 			mp_emcee(params, cost_function) ### outputs to a file
+
+
+
+
+
 
 
 	def plot(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y', show_errors='n'):
