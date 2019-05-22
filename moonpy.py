@@ -31,6 +31,7 @@ import mp_tools
 import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
+from pyluna import run_LUNA, prepare_files
 
 
 #from matplotlib import rc
@@ -57,6 +58,26 @@ NOTES to Alex:
 
 
 """
+
+### STANDARD LUNA FIT PRIOR DICTIONARY. YOU MAY CHANGE INDIVIDUAL ASPECTS WHEN CALLING THE FUNCTION!
+### have default param_labels, prior forms, and limits set!
+### tau0 is planet specific. This will also allow you to generate the moon outside pymultinest.
+param_uber_dict = {}
+#param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
+param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
+param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
+param_uber_dict['q1'] = ['uniform', (0,1)]
+param_uber_dict['q2'] = ['uniform', (0,1)]
+param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
+param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
+param_uber_dict['bplan'] = ['uniform', (0,1)]
+param_uber_dict['Pplan'] = ['uniform', (1,3000)]
+param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
+param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
+param_uber_dict['sat_sma'] = ['uniform', (1,10000)] #### units of Rp!
+param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
+param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
 
 
 class MoonpyLC(object):
@@ -343,28 +364,24 @@ class MoonpyLC(object):
 			else:
 				self.detrend()
 
-		### have default param_labels, prior forms, and limits set!
-		param_uber_dict = {}
+
+
+		### prepare seriesP.jam and plotit.f90... only needs to be done once!
+		prepare_files(np.hstack(self.times))
+
+
+		### the param_uber_dict is initialized at the top of this script.
+		### the only standard, object-specific parameter that must be supplied is tau0.
 		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
-		param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
-		param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
-		param_uber_dict['q1'] = ['uniform', (0,1)]
-		param_uber_dict['q2'] = ['uniform', (0,1)]
-		param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
-		param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
-		param_uber_dict['bplan'] = ['uniform', (0,1)]
-		param_uber_dict['Pplan'] = ['uniform', (1,3000)]
-		param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
-		param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
-		param_uber_dict['sat_sma'] = ['uniform', (1,10000)] #### units of Rp!
-		param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
-		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
-		param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
 
 		if custom_param_dict != None:
 			### update the parameter dictionary values!!!
 			for cpdkey in custom_param_dict.keys():
 				param_uber_dict[cpdkey] = custom_param_dict[cpdkey]
+
+		global param_labels
+		global param_prior_forms
+		global param_limit_tuple
 
 		param_labels = []
 		param_prior_forms = []
@@ -375,19 +392,25 @@ class MoonpyLC(object):
 			param_prior_forms.append(param_uber_dict[pkey][0])
 			param_limit_tuple.append(param_uber_dict[pkey][1])
 
+
 		#param_labels = np.array(param_labels)
 		#param_prior_forms = np.array(param_prior_forms)
 		#param_limit_tuple = np.array(param_limit_tuple)
 
-		#print('param_labels = ', param_labels)
-		#print(' ')
-		#print('param_prior_forms = ', param_prior_forms)
-		#print(' ')
-		#print('param_limit_tuple = ', param_limit_tuple)
-		#raise Exception('this is all you want to do right now.')
+		print('moonpy param_labels = ', param_labels)
+		print(' ')
+		print('moonpy param_prior_forms = ', param_prior_forms)
+		print(' ')
+		print('moonpy param_limit_tuple = ', param_limit_tuple)
+
+		#global param_labels
+		#global param_prior_forms
+		#global param_limit_tuple
 
 		if fitter == 'multinest':
 			mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
+			#mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), nlive=nlive, targetID=self.target) ### outputs to a file
+
 
 		elif fitter == 'emcee':
 			mp_emcee(params, cost_function) ### outputs to a file
@@ -532,8 +555,10 @@ class MoonpyLC(object):
 		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
 		self.rp_rearth = float(target_rp) ### earth radii
 		self.rp_rjup = float(target_rp) * (R_earth.value / R_jup.value)
+		self.rp_meters = self.rp_rjup * mp_tools.eq_RJup
 		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
 		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
+		self.rstar_meters = self.rstar_rsol * mp_tools.eq_RSun
 		self.depth = self.rprstar**2
 
 		###	identify in-transit times
@@ -546,14 +571,46 @@ class MoonpyLC(object):
 
 
 
+### test that you can generate a moon model with pyluna from here.
+### IT WORKS!
+
+ktest = MoonpyLC(targetID='Kepler-1625b', quarters=np.array([7,13,16]))
+ktest.get_properties()
+
+ktest.detrend()
+
+prepare_files(np.hstack(ktest.times))
+print('seriesP.jam and plotit.f90 have been prepared and compiled.')
+
+
+ktest_modtimes, ktest_modfluxes= run_LUNA(np.hstack(ktest.times), ktest.tau0, ktest.rstar_meters, 1e31, 0.5, 0.5, ktest.rp_meters, 1e28, ktest.impact, ktest.period, mp_tools.eq_RNep, mp_tools.MNep, 25.0, 0.0, 0.0, 0.0)
 
 
 
+#ready_to_fit = input('Ready to fit? y/n: ')
+#if ready_to_fit == 'y':
+#	ktest.fit()
+
+
+### calculate a loglikelihood for this random test!
+loglikelihood = np.nansum(-0.5 * ((ktest_modfluxes - np.hstack(ktest.fluxes_detrend)) / np.hstack(ktest.errors_detrend))**2)
+print("loglikelihood = ", loglikelihood)
+
+plt.scatter(np.hstack(ktest.times), np.hstack(ktest.fluxes_detrend), facecolors='b', alpha=0.5, s=10)
+plt.scatter(ktest_modtimes, ktest_modfluxes, facecolors='LightCoral', edgecolors='k', s=10)
+plt.show()
+
+
+
+#pyluna.run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='n')
+
+
+"""
 ### build a function that allows you to easily make a moon model, based on user specifications.
 def moon_generator(tau0, nepochs, time_from_midtime_days, cadence_minutes, noise_ppm, star_params, plan_params, sat_params, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='y'):
-	run_LUNA(tau0, nepochs, time_from_midtime_days, cadence_minutes, noise_ppm, star_params, plan_params, sat_params, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='y')
-
-
+	#run_LUNA(tau0, nepochs, time_from_midtime_days, cadence_minutes, noise_ppm, star_params, plan_params, sat_params, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='y')
+	run_LUNA(np.hstack(self.times), tau0=self.tau0, **param_dict, add_noise='n', show_plots='y')
+"""
 
 
 

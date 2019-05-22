@@ -10,7 +10,7 @@ import mp_tools
 
 
 ### DIRECTORIES
-LUNAdir = '/Users/hal9000/Documents/Software/MoonPy/LUNA'
+LUNAdir = '/Users/hal9000/Documents/Software/MoonPy'
 outputdir = LUNAdir+'/output'
 
 
@@ -24,67 +24,17 @@ HERE IS THE MASTER FUNCTION! THIS IS WHAT YOU WILL CALL TO GENERATE THE MOONS YO
 #	assert len(plan_params) == 4
 #	assert len(sat_params) == 6
 
+def prepare_files(all_times):
+	seriesP_file = open('seriesP.jam', mode='w')
 
-def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='n'):
-	#Rstar, Mstar, q1, q2 = star_params
-	#Rplan, Mplan, bplan, Pplan = plan_params
-	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
-
-	### make sure units make sense
-	if runit == 'meters':
-		assert (Rstar > 1e4) and (Rplan > 1e3) and (Rsat > 0) and (sat_sma < 1000)
-	else:
-		pass ### build something ehre
-	if munit == 'kg':
-		assert (Mstar > 1e27) and (Mplan > 1e20) and (Msat > 0)
-	else:
-		pass
-
-	if ang_unit=='radians':
-		assert (sat_inc <= 2*np.pi) and (sat_phase <= 2*np.pi) and (sat_omega <= 2*np.pi)
-	elif ang_unit=='degrees':
-		assert (sat_inc <= 360) and (sat_phase <= 360) and (sat_omega <= 360)
-		### convert into radians!
-		sat_inc = deg2rad(sat_inc)
-		sat_phase = deg2rad(sat_phase)
-		sat_omega = deg2rad(sat_omega)
-
-	assert (bplan >= 0) and (bplan <= 2)
-
-	### make the necessary conversions
-	RpRstar = Rplan / Rstar 
-	rhostar = density_conversion(Mstar, Rstar)
-	rhoplan = density_conversion(Mplan, Rplan)
-	rhosat = density_conversion(Msat, Rsat)
-	MsatMp = Msat / Mplan 
-	RsatRp = Rsat / Rplan 
-
-	### misc conversions
-	native_cadence = 0.2942439984 ### minutes
-	native_cadence_days = native_cadence / (60 * 24) ### native for seriesP.jam
-	cadence_days = cadence_minutes / (60 * 24)
-	#epoch_midtimes = np.linspace(tau0, tau0+((nepochs-1)*Pplan), nepochs)
-
-
-	### now the first thing you need to do is generate the seriesP.jam file... this is read in to create the light curves.
-	seriesP_file = open(LUNAdir+'/seriesP.jam', mode='w')
-	#for nep, epoch_midtime in enumerate(epoch_midtimes):
-	#	epoch_times = np.arange(epoch_midtime-time_from_midtime_days, epoch_midtime+time_from_midtime_days+native_cadence_days, native_cadence_days)
-	#	if nep == 0:
-	#		all_times = epoch_times
-	#	else:
-	#		all_times = np.concatenate((all_times, epoch_times))
-	all_times = times 
-	#	for transit_time in epoch_times:
-	#		seriesP_file.write(str(transit_time)+'\t1.\t0.001\t1\n')
 	for at in all_times:
 		seriesP_file.write(str(at)+'\t1.\t0.001\t1\n')
 	seriesP_file.close()
 
 
 	### need to update plotit.f90 to make nplen = len(all_times)
-	plotitf90 = open(LUNAdir+'/plotit.f90', mode='r')
-	plotitf90_update = open(LUNAdir+'/plotit_update.f90', mode='w')
+	plotitf90 = open('plotit.f90', mode='r')
+	plotitf90_update = open('plotit_update.f90', mode='w')
 
 	for nline, line in enumerate(plotitf90):
 		try:
@@ -97,12 +47,60 @@ def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat
 		plotitf90_update.write(newline)
 	plotitf90.close()
 	plotitf90_update.close()
-	os.system('mv '+LUNAdir+'/plotit_update.f90 '+str(LUNAdir)+'/plotit.f90')
+	os.system('mv plotit_update.f90 plotit.f90')
+
+	os.system('sh make.sh')
 
 
 
+
+
+def run_LUNA(all_times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+	#Rstar, Mstar, q1, q2 = star_params
+	#Rplan, Mplan, bplan, Pplan = plan_params
+	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
+
+	### have to make the file first! (Didn't use to be a problem).
+
+	#### make sure units make sense
+	#if runit == 'meters':
+	#	assert (Rstar > 1e4) and (Rplan > 1e3) and (Rsat > 0) and (sat_sma < 1000)
+	#else:
+	#	pass ### build something ehre
+	#if munit == 'kg':
+	#	assert (Mstar > 1e27) and (Mplan > 1e20) and (Msat > 0)
+	#lse:
+	#	pass
+
+	if ang_unit=='radians':
+		#assert (sat_inc <= 2*np.pi) and (sat_phase <= 2*np.pi) and (sat_omega <= 2*np.pi)
+		pass
+	elif ang_unit=='degrees':
+		#assert (sat_inc <= 360) and (sat_phase <= 360) and (sat_omega <= 360)
+		### convert into radians!
+		sat_inc = deg2rad(sat_inc)
+		sat_phase = deg2rad(sat_phase)
+		sat_omega = deg2rad(sat_omega)
+
+	#assert (bplan >= 0) and (bplan <= 2)
+
+	### make the necessary conversions
+	RpRstar = Rplan / Rstar 
+	rhostar = mp_tools.density_conversion(Mstar, Rstar)
+	rhoplan = mp_tools.density_conversion(Mplan, Rplan)
+	rhosat = mp_tools.density_conversion(Msat, Rsat)
+	MsatMp = Msat / Mplan 
+	RsatRp = Rsat / Rplan 
+
+	### misc conversions
+	native_cadence = 0.2942439984 ### minutes
+	native_cadence_days = native_cadence / (60 * 24) ### native for seriesP.jam
+	cadence_days = cadence_minutes / (60 * 24)
+	#epoch_midtimes = np.linspace(tau0, tau0+((nepochs-1)*Pplan), nepochs)
+
+	#print('generating the input file...')
 	### now you have to generate the input file!
-	input_file = open(LUNAdir+'/inputs.jam', mode='w')
+	input_file = open('inputs.jam', mode='w')
 	### inputs are 1) Rp/Rstar, rhostar, impact, Pplan, tau0, q1, q2, rho_plan, asp, phi_s, is, )s, Msp, Rsp.
 	input_file.write(str(round(RpRstar,7))+'D0\n') #Rp(1)
 	input_file.write(str(round(rhostar,7))+'D0\n') #Rp(2)
@@ -158,8 +156,19 @@ def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat
 
 	### now you should have light curves... load them and plot them
 	moon_file = np.genfromtxt(outputdir+'/PRI_full.0.jam')
-	times, fluxes = moon_file.T[0], moon_file.T[1]
+	output_times, output_fluxes = moon_file.T[0], moon_file.T[1]
 
+	#if np.all(output_fluxes == 1):
+	#	raise Exception('flat light curve.')
+
+	#if len(times) != len(output_times):
+	#	raise Exception('len(data) != len(model).')
+
+	#print("pyluna times = ", output_times)
+	#print('pyluna fluxes = ', output_fluxes)
+
+
+	"""
 	if binned_output == 'y':
 		binned_fluxes = []
 		### bin the results!
@@ -177,10 +186,10 @@ def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat
 
 
 		print("lc_bins = ", lc_bins)
-		lc_binidxs = np.digitize(times, lc_bins)
+		lc_binidxs = np.digitize(output_times, lc_bins)
 		for nlcbin, lcbin in enumerate(lc_bins):
 			### grab the fluxes for this bin
-			bin_fluxes = fluxes[np.where(lc_binidxs == nlcbin)]
+			bin_fluxes = output_fluxes[np.where(lc_binidxs == nlcbin)]
 			avg_bin_fluxes = np.nanmean(bin_fluxes)
 			binned_fluxes.append(avg_bin_fluxes)
 		binned_fluxes = np.array(binned_fluxes)
@@ -191,7 +200,7 @@ def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat
 		if binned_output == 'y':
 			plt.scatter(lc_bins, binned_fluxes, facecolors='LightCoral', edgecolors='k', s=20)
 		elif binned_output == 'n':
-			plt.scatter(times, fluxes, facecolors='LightCoral', edgecolors='k', s=20)
+			plt.scatter(output_times, output_fluxes, facecolors='LightCoral', edgecolors='k', s=20)
 
 		plt.xlabel('Time')
 		plt.ylabel('Flux')
@@ -199,27 +208,31 @@ def run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat
 
 		if add_noise == 'y':
 			if binned_output == 'y':
-				noisy_fluxes = np.random.normal(loc=fluxes, scale=noise_ppm*1e-6)
+				noisy_fluxes = np.random.normal(loc=output_fluxes, scale=noise_ppm*1e-6)
 			elif binned_output == 'n':
-				noisy_fluxes = np.random.normal(loc=fluxes, scale=noise_ppm*1e-6)
+				noisy_fluxes = np.random.normal(loc=output_fluxes, scale=noise_ppm*1e-6)
 			
-			plt.scatter(times, noisy_fluxes, facecolors='LightCoral', edgecolors='k', s=20)
+			plt.scatter(output_times, noisy_fluxes, facecolors='LightCoral', edgecolors='k', s=20)
 			plt.xlabel('Time')
 			plt.ylabel('Flux')
 			plt.show()
+	"""
 
-
+	"""
 	if add_noise == 'n':
 		if binned_output == 'y':
 			return lc_bins, binned_fluxes
 		elif binned_output == 'n':
-			return times, fluxes
+			return output_times, output_fluxes
 
 	elif add_noise == 'y':
 		if binned_output == 'y':
 			return lc_bins, noisy_fluxes
 		elif binned_output == 'n':
-			return times, noisy_fluxes 
+			return output_times, noisy_fluxes 
+	"""
+
+	return output_times, output_fluxes 
 
 
 """

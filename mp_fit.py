@@ -31,7 +31,8 @@ def transform_truncated_normal(x,mu,sigma,a=0.,b=1.):
 
 def pymn_prior(cube, ndim, nparams):
 	### hopefully you can inherit these within the mp_multinest function!
-	for pidx, parprior, partuple in zip(np.arange(0,len(param_prior_forms),1), param_prior_forms, param_limit_tuple):
+	#for pidx, parprior, partuple in zip(np.arange(0,len(param_prior_forms),1), param_prior_forms, param_limit_tuple):
+	for pidx, parprior, partuple in zip(np.arange(0,len(mn_prior_forms),1), mn_prior_forms, mn_limit_tuple):
 		if parprior == 'uniform':
 			cube[pidx] = transform_uniform(cube[pidx], partuple[0], partuple[1])
 		elif parprior == 'loguniform':
@@ -50,13 +51,16 @@ def pymn_loglike_LUNA(cube, ndim, nparams):
 	### with the keys equal to the keywords and it will interpret it! use run_LUNA(**dictionary)
 
 	param_dict = {} ### initialize it
-	for pidx, parlab in enumerate(param_labels):
+	#for pidx, parlab in enumerate(param_labels):
+	for pidx, parlab in enumerate(mn_param_labels):
 		param_dict[parlab] = cube[pidx]
 
 	### now you should be able to run_LUNA(param_dict)
-	LUNA_times, LUNA_fluxes = run_LUNA(data_times, **param_dict, add_noise='n', show_plots='y')
-	loglikelihood = np.nanmsum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
+
+	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	return loglikelihood 
+
 
 
 def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, LUNAfit='y', show_plot='y'):
@@ -67,9 +71,31 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 	- param_limit_tuble is an array of tuples dictating the limits or shape parameters of the priors.
 	"""
 
-	data_times, data_fluxes, data_errors = times, fluxes, errors 
+	global mn_param_labels
+	global mn_prior_forms
+	global mn_limit_tuple
+	global data_times
+	global data_fluxes
+	global data_errors
 
-	assert len(param_labels) == len(param_prior_forms) == len(param_limit_tuple)
+	mn_param_labels = []
+	mn_prior_forms = []
+	mn_limit_tuple = []
+	data_times = []
+	data_fluxes = []
+	data_errors = []
+
+
+	for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
+		mn_param_labels.append(parlab)
+		mn_prior_forms.append(parprior)
+		mn_limit_tuple.append(partup)
+
+	for t,f,e in zip(times, fluxes, errors):
+		data_times.append(t)
+		data_fluxes.append(f)
+		data_errors.append(e)
+
 
 	if os.path.exists('MultiNest_fits'):
 		pass
@@ -86,7 +112,7 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 			os.system('mkdir '+outputdir+'/chains')
 		outputdir = outputdir+'/chains'
 
-		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=len(param_labels), n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), verbose=True)
+		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=len(param_labels), n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 		json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
 
 		"""
