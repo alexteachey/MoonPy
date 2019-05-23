@@ -43,20 +43,15 @@ savepath = '/Users/hal9000/Documents/Software/MoonPy/saved_lcs'
 
 """
 This is the MoonPy master script! To open, you should only have to type 'import moonpy'
-
 This package is designed to do the following:
-
 1) download light curves from Kepler, K2 or TESS (kplr, k2plr, tess)
 2) generate moon models based on user specifications
 3) detrend data using CoFiAM or untrendy
 4) fit a model to the data using MultiNest or emcee
 5) visualize the results
-
 NOTES to Alex:
 -a light curve should be an OBJECT, which you can manipulate with methods such as 'detrend', and 'fit'.
 -build the skeleton first, and then start filling out the functionality.
-
-
 """
 
 ### STANDARD LUNA FIT PRIOR DICTIONARY. YOU MAY CHANGE INDIVIDUAL ASPECTS WHEN CALLING THE FUNCTION!
@@ -418,6 +413,20 @@ class MoonpyLC(object):
 
 
 
+	def fold(self, detrended='y'):
+		### this method will phase fold your light curve. 
+		fold_times = np.hstack(self.times) - np.nanmin(np.hstack(self.times)) - (0.5*self.period)
+		fold_times = fold_times % self.period
+
+		if detrended == 'y':
+			plt.scatter(fold_times, np.hstack(self.fluxes_detrend), facecolors='LightCoral', edgecolors='k', s=10)
+		else:
+			plt.scatter(fold_times, np.hstack(self.fluxes_detrend), facecolors='LightCoral', edgecolors='k', s=10)
+		plt.show()
+
+		self.fold_times = fold_times
+		self.fold_fluxes = np.hstack(self.fluxes_detrend)
+		self.fold_errors = np.hstack(self.errors_detrend)
 
 
 
@@ -574,7 +583,7 @@ class MoonpyLC(object):
 
 ### test that you can generate a moon model with pyluna from here.
 ### IT WORKS!
-
+"""
 ktest = MoonpyLC(targetID='Kepler-1625b', quarters=np.array([7,13,16]))
 ktest.get_properties()
 
@@ -600,7 +609,7 @@ print("loglikelihood = ", loglikelihood)
 plt.scatter(np.hstack(ktest.times), np.hstack(ktest.fluxes_detrend), facecolors='b', alpha=0.5, s=10)
 plt.scatter(ktest_modtimes, ktest_modfluxes, facecolors='LightCoral', edgecolors='k', s=10)
 plt.show()
-
+"""
 
 
 #pyluna.run_LUNA(times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='n')
@@ -612,8 +621,6 @@ def moon_generator(tau0, nepochs, time_from_midtime_days, cadence_minutes, noise
 	#run_LUNA(tau0, nepochs, time_from_midtime_days, cadence_minutes, noise_ppm, star_params, plan_params, sat_params, munit='kg', runit='meters', ang_unit='radians', add_noise='y', show_plots='n', print_params='n', binned_output='y')
 	run_LUNA(np.hstack(self.times), tau0=self.tau0, **param_dict, add_noise='n', show_plots='y')
 """
-
-
 
 
 
