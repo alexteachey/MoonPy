@@ -470,24 +470,6 @@ class MoonpyLC(object):
 			param_uber_dict['RsatRp'] = ['uniform', (1e-6, 1e-6)]
 
 
-		"""
-		param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
-		param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
-		param_uber_dict['q1'] = ['uniform', (0,1)]
-		param_uber_dict['q2'] = ['uniform', (0,1)]
-		param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
-		param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
-		param_uber_dict['bplan'] = ['uniform', (0,1)]
-		#param_uber_dict['Pplan'] = ['uniform', (1,3000)]
-		param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
-		param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
-		param_uber_dict['sat_sma'] = ['loguniform', (1,1e3)] #### units of Rp!
-		param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
-		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
-		param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
-		"""
-
-
 		if custom_param_dict != None:
 			### update the parameter dictionary values!!!
 			for cpdkey in custom_param_dict.keys():
