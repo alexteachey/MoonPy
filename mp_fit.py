@@ -44,6 +44,26 @@ def pymn_prior(cube, ndim, nparams):
 		elif parprior == 'truncnorm':
 			cube[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
 
+"""
+def emcee_lnprior(param_dict, param_limit_tuple):
+	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
+	in_bounds = 'y'
+	for param, parlim in zip(param_dict, param_limit_tuple):
+		### test that they are in bounds
+		if (param < parlim[0]) or (param > parlim[0]):
+			in_bounds = 'n'
+			break
+	if in_bounds == 'n':
+		return -np.inf 
+	else:
+		return 0.0 
+
+
+def emcee_lnlike(params, xvals, yvals, yerrs):
+	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(xvals, **param_dict, add_noise='n', show_plots='n')
+"""
+
+
 def pymn_loglike_LUNA(cube, ndim, nparams):
 	### have to generate a model here, test it against the data, compute residuals, ultimately a log-likelihood
 	### use a dictionary!

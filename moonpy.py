@@ -2,18 +2,6 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-#import pymultinest
-#import emcee
-#import untrendy
-#import sklearn
-#import kplr
-#import everest
-#import eleanor
-#import corner
-#import forecaster
-#import pyluna
-#import tensorflow
-#import cofiam
 import astropy
 import warnings
 from astropy.io import ascii
@@ -28,7 +16,6 @@ from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
-#from pyluna import run_LUNA
 import mp_tools
 import traceback
 from astroquery.simbad import Simbad 
@@ -60,21 +47,20 @@ NOTES to Alex:
 ### have default param_labels, prior forms, and limits set!
 ### tau0 is planet specific. This will also allow you to generate the moon outside pymultinest.
 param_uber_dict = {}
-#param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
-param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
-param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
+
+#all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp
+param_uber_dict['RpRstar'] = ['loguniform', (1e-6, 1)]
+param_uber_dict['rhostar'] = ['loguniform', (1e-6, 1e5)] ## roughly the density of betelgeuse to the density of Mercury.
+param_uber_dict['bplan'] = ['uniform', (0,2)]
 param_uber_dict['q1'] = ['uniform', (0,1)]
 param_uber_dict['q2'] = ['uniform', (0,1)]
-param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
-param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
-param_uber_dict['bplan'] = ['uniform', (0,1)]
-#param_uber_dict['Pplan'] = ['uniform', (1,3000)]
-param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
-param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
-param_uber_dict['sat_sma'] = ['loguniform', (1,1e3)] #### units of Rp!
-param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
+param_uber_dict['rhoplan'] = ['loguniform', (1e2, 1e5)]
+param_uber_dict['sat_sma'] = ['uniform', (1,5e2)]
 param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
 param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
+param_uber_dict['MsatMp'] = ['loguniform', (1e-6, 1)]
+param_uber_dict['RsatRp'] = ['loguniform', (1e-4, 1)]
 
 
 class MoonpyLC(object):
@@ -420,10 +406,14 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', model='LUNA', skip_ntqs='y', nlive=500):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=500):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
+
+		### FOUR MODELS MAY BE RUN: a planet-only model (P) with no TTVs, a TTV model (T), freely fitting the transit times, 
+		### a (Z) model, which gives the moon a mass but no radius, and an (M) model, which is a fully physical moon fit.
+
 		self.get_properties()
 
 		try:
@@ -460,6 +450,43 @@ class MoonpyLC(object):
 		### the only standard, object-specific parameter that must be supplied is tau0.
 		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
+
+		if model == 'M':
+			pass
+		elif (model == 'P') or (model=='T'):
+			param_uber_dict['RsatRp'] = ['uniform', (1e-6,1e-6)]
+			param_uber_dict['MsatMp'] = ['uniform', (1e-6,1e-6)]
+			param_uber_dict['sat_sma'] = ['uniform', (1e-6, 1e-6)]
+			param_uber_dict['sat_phase'] = ['uniform', (0,0)]
+			param_uber_dict['sat_omega'] = ['uniform', (0,0)]
+
+		if model == 'T':
+			ntransits = len(self.taus)
+			for i in np.arange(1,ntransits+1,1):
+				taukeyname = 'tau'+str(i)
+				param_uber_dict[taukeyname] = ['uniform', (self.tau0 + i*self.period -0.1, self.tau0 + i*self.period + 0.1)]
+
+		if model == 'Z':
+			param_uber_dict['RsatRp'] = ['uniform', (1e-6, 1e-6)]
+
+
+		"""
+		param_uber_dict['Rstar'] = ['loguniform', (1e6, 1e10)] ### meters 
+		param_uber_dict['Mstar'] = ['loguniform', (1e29, 1e33)] ### kg
+		param_uber_dict['q1'] = ['uniform', (0,1)]
+		param_uber_dict['q2'] = ['uniform', (0,1)]
+		param_uber_dict['Rplan'] = ['loguniform', (1e6, 1e8)]
+		param_uber_dict['Mplan'] = ['loguniform', (1e22, 1e30)]
+		param_uber_dict['bplan'] = ['uniform', (0,1)]
+		#param_uber_dict['Pplan'] = ['uniform', (1,3000)]
+		param_uber_dict['Rsat'] = ['loguniform', (1e5, 1e7)]
+		param_uber_dict['Msat'] = ['loguniform', (1e21, 1e27)]
+		param_uber_dict['sat_sma'] = ['loguniform', (1,1e3)] #### units of Rp!
+		param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
+		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+		param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
+		"""
+
 
 		if custom_param_dict != None:
 			### update the parameter dictionary values!!!

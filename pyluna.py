@@ -55,7 +55,8 @@ def prepare_files(all_times):
 
 
 
-def run_LUNA(all_times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+#def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
@@ -85,12 +86,12 @@ def run_LUNA(all_times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, 
 	#assert (bplan >= 0) and (bplan <= 2)
 
 	### make the necessary conversions
-	RpRstar = Rplan / Rstar 
-	rhostar = mp_tools.density_conversion(Mstar, Rstar)
-	rhoplan = mp_tools.density_conversion(Mplan, Rplan)
-	rhosat = mp_tools.density_conversion(Msat, Rsat)
-	MsatMp = Msat / Mplan 
-	RsatRp = Rsat / Rplan 
+	#RpRstar = Rplan / Rstar 
+	#rhostar = mp_tools.density_conversion(Mstar, Rstar)
+	#rhoplan = mp_tools.density_conversion(Mplan, Rplan)
+	#rhosat = mp_tools.density_conversion(Msat, Rsat)
+	#MsatMp = Msat / Mplan 
+	#RsatRp = Rsat / Rplan 
 
 	### misc conversions
 	native_cadence = 0.2942439984 ### minutes
@@ -102,18 +103,32 @@ def run_LUNA(all_times, tau0, Rstar, Mstar, q1, q2, Rplan, Mplan, bplan, Pplan, 
 	### now you have to generate the input file!
 	input_file = open('inputs.jam', mode='w')
 	### inputs are 1) Rp/Rstar, rhostar, impact, Pplan, tau0, q1, q2, rho_plan, asp, phi_s, is, )s, Msp, Rsp.
-	input_file.write(str(round(RpRstar,7))+'D0\n') #Rp(1)
-	input_file.write(str(round(rhostar,7))+'D0\n') #Rp(2)
+	if 'e' in str(RpRstar):
+		input_file.write(str('%.7f' % RpRstar)+'D0\n') #Rp(1)
+	else:
+		input_file.write(str(round(RpRstar,7))+'D0\n') #Rp(1)
+
+	if 'e' in str(rhostar):
+		input_file.write(str('%.7f' % rhostar)+'D0\n') #Rp(2)
+	else:
+		input_file.write(str(round(rhostar,7))+'D0\n') #Rp(2)
+
 	input_file.write(str(round(bplan,7))+'D0\n') #Rp(3)
 	input_file.write(str(round(Pplan,7))+'D0\n') #Rp(4)
 	input_file.write(str(round(tau0,7))+'D0\n') # Rp(5)
 	input_file.write(str(round(q1,7))+'D0\n') #Rp(6) ### UPDATED FEBRUARY 18th, 2019!
 	input_file.write(str(round(q2,7))+'D0\n') #Rp(7) ### UPDATED FEBRUARY 18th, 2019!
-	input_file.write(str(round(rhoplan,7))+'D0\n') #Rp(8)
+
+	if 'e' in str(rhoplan):
+		input_file.write(str('%.7f' % rhoplan)+'D0\n') #Rp(8)
+	else:
+		input_file.write(str(round(rhoplan,7))+'D0\n') #Rp(8)
+
 	input_file.write(str(round(sat_sma,7))+'D0\n') #Rp(9)
 	input_file.write(str(round(sat_phase,7))+'D0\n') #Rp(10)
 	input_file.write(str(round(sat_inc,7))+'D0\n') # Rp(11)
 	input_file.write(str(round(sat_omega,7))+'D0\n') # RP(12)
+	
 	if 'e' in str(MsatMp):
 		input_file.write(str('%.7f' % MsatMp)+'D0\n')
 	else:
