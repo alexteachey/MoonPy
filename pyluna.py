@@ -113,28 +113,62 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 	else:
 		input_file.write(str(round(rhostar,7))+'D0\n') #Rp(2)
 
-	input_file.write(str(round(bplan,7))+'D0\n') #Rp(3)
-	input_file.write(str(round(Pplan,7))+'D0\n') #Rp(4)
-	input_file.write(str(round(tau0,7))+'D0\n') # Rp(5)
-	input_file.write(str(round(q1,7))+'D0\n') #Rp(6) ### UPDATED FEBRUARY 18th, 2019!
-	input_file.write(str(round(q2,7))+'D0\n') #Rp(7) ### UPDATED FEBRUARY 18th, 2019!
+	if 'e' in str(bplan):
+		input_file.write(str('%.7f' % bplan)+'D0\n') #Rp(3)
+	else:
+		input_file.write(str(round(bplan,7))+'D0\n') #Rp(3)
+
+	if 'e' in str(Pplan):
+		input_file.write(str('%.7f' % Pplan)+'D0\n') #Rp(4)
+	else:
+		input_file.write(str(round(Pplan,7))+'D0\n') #Rp(4)
+
+	if 'e' in str(tau0):
+		input_file.write(str('%.7f' % tau0)+'D0\n') #Rp(5)
+	else:
+		input_file.write(str(round(tau0,7))+'D0\n') #Rp(5)
+
+	if 'e' in str(q1):
+		input_file.write(str('%.7f' % q1)+'D0\n') #Rp(6)
+	else:
+		input_file.write(str(round(q1,7))+'D0\n') #Rp(6)
+
+	if 'e' in str(q2):
+		input_file.write(str('%.7f' % q2)+'D0\n') #Rp(7)
+	else:
+		input_file.write(str(round(q2,7))+'D0\n') #Rp(7)
 
 	if 'e' in str(rhoplan):
 		input_file.write(str('%.7f' % rhoplan)+'D0\n') #Rp(8)
 	else:
 		input_file.write(str(round(rhoplan,7))+'D0\n') #Rp(8)
 
-	input_file.write(str(round(sat_sma,7))+'D0\n') #Rp(9)
-	input_file.write(str(round(sat_phase,7))+'D0\n') #Rp(10)
-	input_file.write(str(round(sat_inc,7))+'D0\n') # Rp(11)
-	input_file.write(str(round(sat_omega,7))+'D0\n') # RP(12)
-	
+	if 'e' in str(sat_sma):
+		input_file.write(str('%.7f' % sat_sma)+'D0\n') #Rp(9)
+	else:
+		input_file.write(str(round(sat_sma,7))+'D0\n') #Rp(9)
+
+	if 'e' in str(sat_phase):
+		input_file.write(str('%.7f' % sat_phase)+'D0\n') #Rp(10)
+	else:
+		input_file.write(str(round(sat_phase,7))+'D0\n') #Rp(10)
+
+	if 'e' in str(sat_inc):
+		input_file.write(str('%.7f' % sat_inc)+'D0\n') #Rp(11)
+	else:
+		input_file.write(str(round(sat_inc,7))+'D0\n') #Rp(11)
+
+	if 'e' in str(sat_omega):
+		input_file.write(str('%.7f' % sat_omega)+'D0\n') #Rp(12)
+	else:
+		input_file.write(str(round(sat_omega,7))+'D0\n') #Rp(12)
+
 	if 'e' in str(MsatMp):
-		input_file.write(str('%.7f' % MsatMp)+'D0\n')
+		input_file.write(str('%.7f' % MsatMp)+'D0\n') # Rp(13)
 	else:
 		input_file.write(str(round(MsatMp,7))+'D0\n') # Rp(13)
 	if 'e' in str(RsatRp):
-		input_file.write(str('%.7f' % RsatRp)+'D0\n')
+		input_file.write(str('%.7f' % RsatRp)+'D0\n') # Rp(14)
 	else:
 		input_file.write(str(round(RsatRp,7))+'D0\n') # Rp(14)	
 

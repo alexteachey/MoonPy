@@ -28,6 +28,7 @@ from pyluna import run_LUNA, prepare_files
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
 #rc('text', usetex=True)
 
+moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 savepath = '/Users/hal9000/Documents/Software/MoonPy/saved_lcs'
 
 """
@@ -49,18 +50,19 @@ NOTES to Alex:
 param_uber_dict = {}
 
 #all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp
-param_uber_dict['RpRstar'] = ['loguniform', (1e-6, 1)]
-param_uber_dict['rhostar'] = ['loguniform', (1e-6, 1e5)] ## roughly the density of betelgeuse to the density of Mercury.
+param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
+param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.
 param_uber_dict['bplan'] = ['uniform', (0,2)]
+### skipping Pplan  and tau0, they're defined below and based on the individual target.
 param_uber_dict['q1'] = ['uniform', (0,1)]
 param_uber_dict['q2'] = ['uniform', (0,1)]
-param_uber_dict['rhoplan'] = ['loguniform', (1e2, 1e5)]
-param_uber_dict['sat_sma'] = ['uniform', (1,5e2)]
+param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
+#param_uber_dict['sat_sma'] = ['uniform', (1,5e2)]
 param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
-param_uber_dict['sat_inc'] = ['uniform', (0,2*np.pi)]
-param_uber_dict['sat_omega'] = ['uniform', (0,2*np.pi)]
-param_uber_dict['MsatMp'] = ['loguniform', (1e-6, 1)]
-param_uber_dict['RsatRp'] = ['loguniform', (1e-4, 1)]
+param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
+param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
+param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
+param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
 
 
 class MoonpyLC(object):
@@ -406,7 +408,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=500):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -450,6 +452,7 @@ class MoonpyLC(object):
 		### the only standard, object-specific parameter that must be supplied is tau0.
 		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
+		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
 
 		if model == 'M':
 			pass
@@ -566,6 +569,39 @@ class MoonpyLC(object):
 		except:
 			pass
 		plt.show()
+
+
+
+	def plot_fit(self):
+		### use this to generate a corner plot from the fit results.
+		fit_resultsdir = moonpydir+'/MultiNest_fits/'+str(self.target)+'/chains'
+		PEWfile = np.genfromtxt(fit_resultsdir+'/'+str(self.target)+'post_equal_weights.dat')
+
+		json_file = open(fit_resultsdir+'/'+str(self.target)+'_params.json', mode='r')
+		json_params = json_file.readline()
+		json_params = json_params.split(',')
+
+		PEWdict = {}
+		for njpar, jpar in enumerate(json_params):
+			while jpar.startswith(' '):
+				jpar = jpar[1:]
+			while jpar[-1] == ' ':
+				jpar = jpar[:-1]
+			while jpar.startswith('"'):
+				jpar = jpar[1:]
+			while jpar[-1] == '"':
+				jpar = jpar[:-1]
+			PEWdict[jpar] = PEWfile.T[njpar]
+
+		### as a test, just generate a simple histogram
+		for param in PEWdict.keys():
+			n, bins, edges = plt.hist(PEWdict[param], bins=50, facecolor='green', edgecolor='k', alpha=0.7)
+			plt.title(param)
+			plt.show()
+
+
+
+
 
 
 	def get_properties(self):
