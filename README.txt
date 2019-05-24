@@ -217,9 +217,8 @@ If you wish to keep the default parameters there is no need to supply these.
 
 6.) FUTURE FUNCTIONALITY
 
-Additional detrending options are in the works, as are implementations of MultiNest and emcee. BATMAN support
-is also planned, and (hopefully), implementation of David Kipping's LUNA code for generating planet+moon light curves.
-STAY TUNED!
+Additional detrending options are in the works, as well as support for emcee, batman, eleanor, and others. Stay tuned!
+
 
 
 
