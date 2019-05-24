@@ -420,10 +420,11 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', model='LUNA', nlive=1000):
+	def fit(self, custom_param_dict=None, fitter='multinest', model='LUNA', skip_ntqs='y', nlive=500):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
+		self.get_properties()
 
 		try:
 			print(self.fluxes_detrend)
@@ -436,9 +437,23 @@ class MoonpyLC(object):
 				self.detrend()
 
 
+		if skip_ntqs == 'y':
+			### only feed in the quarters that include a transit!
+			lc_times, lc_fluxes, lc_errors = self.times, self.fluxes_detrend, self.errors_detrend
+			fit_times, fit_fluxes, fit_errors = [], [], []
+			for qidx in np.arange(0,self.times.shape[0],1):
+				qtimes, qfluxes, qerrors = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx]
+				for stau in self.taus:
+					if (stau >= np.nanmin(qtimes)) and (stau <+ np.nanmax(qtimes)):
+						### transit in this quarter:
+						fit_times.append(qtimes)
+						fit_fluxes.append(qfluxes)
+						fit_errors.append(qerrors)
+						break
+			fit_times, fit_fluxes, fit_errors = np.array(fit_times), np.array(fit_fluxes), np.array(fit_errors)
 
 		### prepare seriesP.jam and plotit.f90... only needs to be done once!
-		prepare_files(np.hstack(self.times))
+		prepare_files(np.hstack(fit_times))
 
 
 		### the param_uber_dict is initialized at the top of this script.
@@ -472,7 +487,7 @@ class MoonpyLC(object):
 
 
 		if fitter == 'multinest':
-			mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
+			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
 
 		elif fitter == 'emcee':
 			mp_emcee(params, cost_function) ### outputs to a file
@@ -537,6 +552,10 @@ class MoonpyLC(object):
 				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 		plt.xlabel('BKJD')
 		plt.ylabel('Flux')
+		try:
+			plt.title(str(self.target))
+		except:
+			pass
 		plt.show()
 
 
