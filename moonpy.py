@@ -19,6 +19,8 @@ import warnings
 from astropy.io import ascii
 import time
 import datetime
+import pandas
+import traceback
 
 ### The packages below interface with standard packages, but within the context
 ### of what you want here... maybe change this usage below!
@@ -80,8 +82,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', lc_meta=None, save_lc='y', tau0=None, Pplan=None):
-	
+	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n'):
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
 				telescope='kepler'
@@ -94,7 +95,13 @@ class MoonpyLC(object):
 
 			self.telescope = telescope
 
-		### strip off prefixes from the targetID
+		if load_lc == 'y':
+			save_lc = 'n'
+
+
+		target_name = targetID 
+		self.target = target_name
+
 		if str(targetID).startswith('KIC'):
 			targetID = targetID[3:]
 		elif str(targetID).startswith('TIC'):
@@ -135,15 +142,63 @@ class MoonpyLC(object):
 		print("targetID = ", targetID)
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
+		self.telescope = telescope
 
-		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
-			### implies you've supplied times, fluxes, and errorsm, so these attributes are meaningless.
-			self.target = None
-			self.telescope = None 
-			self.meta = None
 
-		### HANDLING FOR DOWNLOADING A LIGHT CURVE.
-		elif (targetID != None) and (telescope != None):
+		if load_lc == 'y':
+			if self.target.startswith('K2') or self.target.startswith('k2'):
+				self.telescope = "k2"
+			elif self.target.startswith('Kepler') or self.target.startswith("kepler"):
+				self.telescope = "kepler"
+			else:
+				telescope = input('Please specify the telescope: ')
+				self.telescope = telescope 
+
+			try:
+				pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.csv')
+				ptimes = np.array(pandafile['BKJD'])
+				pfluxes = np.array(pandafile['fluxes'])
+				perrors = np.array(pandafile['errors'])
+				pquarters = np.array(pandafile['quarter'])
+				pflags = np.array(pandafile['flags'])
+				try:
+					pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
+					perrors_detrend = np.array(pandafile['errors_detrended'])
+				except:
+					pass
+
+				unique_quarters = np.unique(pquarters)
+				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], []
+
+				for uq in unique_quarters:
+					uqidxs = np.where(pquarters == uq)[0]
+					lc_times.append(ptimes[uqidxs])
+					lc_fluxes.append(pfluxes[uqidxs])
+					lc_errors.append(perrors[uqidxs])
+					lc_flags.append(pflags[uqidxs])
+					lc_quarters.append(uq)
+					try:
+						lc_fluxes_detrend.append(pfluxes_detrend[uqidxs])
+						lc_errors_detrend.append(perrors_detrend[uqidxs])
+					except:
+						pass
+	
+				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
+				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
+				try:
+					lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
+					self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
+				except:
+					pass
+
+			except:
+				print("could not load the light curve from file. Will download.")
+				load_lc = 'n'
+
+
+
+		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
+		if (load_lc=='n') and (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
 			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope=='k2') or (telescope=='K2'):
 				### download the light curve with kplr
@@ -174,42 +229,63 @@ class MoonpyLC(object):
 			self.Dec = Simbad.query_object(target_name)[0]['DEC']
 
 
-		### HANDLING FOR A USER-SUPPLIED LIGHT CURVE.
-		elif (targetID == None) and (RA != None) and (Dec != None) and (telescope != None): 
-			### implies you have coordinates but not a valid target.
-			if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
-			elif telescope == 'tess':
-				lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+		### HANDLING FOR USER-SUPPLIED COORDINATES.
+		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
+			try:	
+				if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
+				elif telescope == 'tess':
+					lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+			except:
+				telescope = input('Specify the telescope: ')
+				self.telescope = telescope 
+				if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
+				elif telescope == 'tess':
+					lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+
 
 			self.target = target_name
 
 
 		### YOU HAVEN'T DOWNLOADED A LIGHT CURVE OR SUPPLIED ONE, SO WHAT ARE YOU DOING?
+		elif load_lc == 'y':
+			pass
+
 		else:
 			raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
 				lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
 
 
-		### MAKE THEM INTO ARRAYS
-		lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
+
+
+		### BELOW THIS LINE IS HANDLING FOR EVERY DIFFERENT WAY YOU MIGHT HAVE LOADED THE LIGHT CURVE ABOVE.
+		if load_lc == 'y':
+			pass ### you've already turned them into arrays.
+		else:
+			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
 		
 		for qidx in np.arange(0,lc_times.shape[0],1):
 
 			### remove nans
+			#if load_lc == 'n': ### if you loaded a light curve file, the NaNs will already be removed.
 			nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
-			lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], nan_idxs), np.delete(lc_fluxes[qidx], nan_idxs), np.delete(lc_errors[qidx], nan_idxs), np.delete(lc_fluxes_detrend[qidx], nan_idxs), np.delete(lc_errors_detrend[qidx], nan_idxs), np.delete(lc_flags[qidx], nan_idxs)
+			if len(nan_idxs) > 0:
+				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], nan_idxs), np.delete(lc_fluxes[qidx], nan_idxs), np.delete(lc_errors[qidx], nan_idxs), np.delete(lc_fluxes_detrend[qidx], nan_idxs), np.delete(lc_errors_detrend[qidx], nan_idxs), np.delete(lc_flags[qidx], nan_idxs)
 
 			assert np.all(np.isfinite(lc_fluxes[qidx]))
 			assert np.all(np.isfinite(lc_errors[qidx]))
 
+			#if load_lc == 'n':
 			if remove_flagged == 'y':
 				flag_idxs = np.where(lc_flags[qidx] != 0)[0]
-				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
+				if len(flag_idxs) > 0:
+					lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
 
 			### sort the times here!
-			timesort = np.argsort(lc_times[qidx])
-			lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
+			if load_lc == 'n': ### if you loaded a light curve, this has already been performed.
+				timesort = np.argsort(lc_times[qidx])
+				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
 
 			for nlct,lct in enumerate(lc_times[qidx]):
 				try:
@@ -388,25 +464,15 @@ class MoonpyLC(object):
 			param_prior_forms.append(param_uber_dict[pkey][0])
 			param_limit_tuple.append(param_uber_dict[pkey][1])
 
-
-		#param_labels = np.array(param_labels)
-		#param_prior_forms = np.array(param_prior_forms)
-		#param_limit_tuple = np.array(param_limit_tuple)
-
 		print('moonpy param_labels = ', param_labels)
 		print(' ')
 		print('moonpy param_prior_forms = ', param_prior_forms)
 		print(' ')
 		print('moonpy param_limit_tuple = ', param_limit_tuple)
 
-		#global param_labels
-		#global param_prior_forms
-		#global param_limit_tuple
 
 		if fitter == 'multinest':
 			mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
-			#mp_multinest(np.hstack(self.times), np.hstack(self.fluxes_detrend), np.hstack(self.errors_detrend), nlive=nlive, targetID=self.target) ### outputs to a file
-
 
 		elif fitter == 'emcee':
 			mp_emcee(params, cost_function) ### outputs to a file
@@ -418,20 +484,13 @@ class MoonpyLC(object):
 		fold_times = np.hstack(self.times) - np.nanmin(np.hstack(self.times)) - (0.5*self.period)
 		fold_times = fold_times % self.period
 
-		if detrended == 'y':
-			plt.scatter(fold_times, np.hstack(self.fluxes_detrend), facecolors='LightCoral', edgecolors='k', s=10)
-		else:
-			plt.scatter(fold_times, np.hstack(self.fluxes_detrend), facecolors='LightCoral', edgecolors='k', s=10)
-		plt.show()
-
 		self.fold_times = fold_times
 		self.fold_fluxes = np.hstack(self.fluxes_detrend)
 		self.fold_errors = np.hstack(self.errors_detrend)
 
 
 
-
-	def plot(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y', show_errors='n'):
+	def plot(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n'):
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
 
@@ -462,9 +521,20 @@ class MoonpyLC(object):
 			stitched_times, stitched_fluxes, stitched_errors, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
 			assert np.all(stitched_flags == 0)
 
-		plt.scatter(stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-		if show_errors == 'y':
-			plt.errorbar(stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+		if folded == 'n':
+			plt.scatter(stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			if show_errors == 'y':
+				plt.errorbar(stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+		elif folded == 'y':
+			try:
+				self.fold()
+			except:
+				self.get_properties()
+				self.fold()
+			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			if show_errors == 'y':
+				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 		plt.xlabel('BKJD')
 		plt.ylabel('Flux')
 		plt.show()
