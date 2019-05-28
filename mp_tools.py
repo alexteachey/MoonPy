@@ -37,20 +37,27 @@ def effective_radius(density, mass):
 def RHill(sma_plan, m_star, m_plan): ### will work as long as both masses are in the same units!
 	return sma_plan * ((m_plan / (3*m_star)))**(1/3)
 
-def Kep3_pfroma(sma, m1, m2, sma_unit = 'meters', output_format='days'):
+def Kep3_pfroma(sma, m1, m2, sma_unit = 'meters', output_format='days', val_only='y'):
 	### CALCULATE THE PERIOD BASED ON THE SEMIMAJOR AXIS
 	native_solution = np.sqrt((sma**3 * 4 * np.pi**2)/(G*(m1+m2)))
 	if output_format == 'days':
 		output = native_solution / (24 * 60 * 60)
 	else:
 		output = native_solution
+	if val_only == 'y':
+		output = output.value 
 	return output 
 
-def Kep3_afromp(period, m1, m2):
+def Kep3_afromp(period, m1, m2, val_only='y', unit='days'):
+	if unit=='days':
+		period = period * (24 * 60 * 60) ### convert to seconds!
 	### CALCULATE THE SEMIMAJOR AXIS BASED ON THE PERIOD
 	numerator = period**2 * G * (m1 + m2)
 	denominator = 4*np.pi**2
-	return (numerator/denominator)**(1/3)
+	sma = (numerator/denominator)**(1/3)
+	if val_only == 'y':
+		sma = sma.value
+	return sma 
 
 def mass_from_density(density, radius):
 	### density and radius should have matching units!
@@ -62,7 +69,9 @@ def inc_from_impact(impact, rstar, sma, unit='radians'):
 	### units must be consistent!
 	inclination = np.arccos((impact * rstar)/sma)
 	if unit == 'degrees':
-		inclination = inclination * (180 / np.pi)
+		inclination = (inclination * (180 / np.pi))
+	else:
+		inclination = inclination
 	return inclination 
 
 
