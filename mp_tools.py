@@ -71,6 +71,20 @@ def rad2deg(radians):
 	return radians * (180/np.pi)
 
 
+def u1u2_to_q1q2(u1, u2): 
+	### this function converts the standard, quadratic limb darkening coefficents to 
+	### David Kipping's q1 and q2, which are the standard inputs for LUNA. 
+	### see arXiv 1308.0009 equations 17 and 18 for this reparameterization
+	q1 = (u1 + u2)**2
+	q2 = (0.5 * u1) / (u1 + u2)
+	return q1, q2 
+
+def q1q2_to_u1u2(q1, q2):
+	u1 = 2*q2*np.sqrt(q1)
+	u2 = -2*(q2 - 0.5) * np.sqrt(q1)
+	return u1, u2
+
+
 def Rp_timescale(times, impact, sma_plan, Rplan, Rstar, Pplan, Tmid):
 	### note that all time and size units must be the same!
 	### this is equation 8 in Teachey et al 2018
