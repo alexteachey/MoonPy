@@ -415,7 +415,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -522,7 +522,7 @@ class MoonpyLC(object):
 			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 		elif fitter == 'emcee':
-			mp_emcee(params, cost_function) ### outputs to a file
+			mp_emcee(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 
 

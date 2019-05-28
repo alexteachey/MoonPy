@@ -8,6 +8,8 @@ import pymultinest
 import json
 import matplotlib.pyplot as plt 
 import os
+import corner 
+import emcee
 
 
 """
@@ -77,11 +79,11 @@ def pymn_prior(cube, ndim, nparams):
 			cube[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
 
 
-"""
-def emcee_lnprior(param_dict, param_limit_tuple):
+
+def emcee_lnprior(params):
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
 	in_bounds = 'y'
-	for param, parlim in zip(param_dict, param_limit_tuple):
+	for param, parlim in zip(params, mn_limit_tuple):
 		### test that they are in bounds
 		if (param < parlim[0]) or (param > parlim[0]):
 			in_bounds = 'n'
@@ -92,9 +94,44 @@ def emcee_lnprior(param_dict, param_limit_tuple):
 		return 0.0 
 
 
-def emcee_lnlike(params, xvals, yvals, yerrs):
-	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(xvals, **param_dict, add_noise='n', show_plots='n')
-"""
+def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
+	param_dict = {} ### initialize it
+
+	for pidx, parlab in enumerate(mn_param_labels):
+		param_dict[parlab] = params[pidx]
+
+	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
+
+	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	return loglikelihood 
+
+
+def emcee_lnlike_batman(params, data_times, data_fluxes, data_errors):
+	param_dict = {} ### initialize it
+
+	for pidx, parlab in enumerate(mn_param_labels):
+		param_dict[parlab] = params[pidx]
+
+	batman_times, batman_fluxes = run_batman(data_times, **param_dict, add_noise='n', show_plots='n')
+
+	loglikelihood = np.nansum(-0.5 * ((batman_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	return loglikelihood 
+
+
+def emcee_lnprob_LUNA(params, data_times, data_fluxes, data_errors):
+	lp = emcee_lnprior(params)
+	if not np.isfinite(lp):
+		return -np.inf 
+	return lp + emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors)
+
+
+def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
+	lp = emcee_lnprior(params)
+	if not np.isfinite(lp):
+		return -np.inf 
+	return lp + emcee_lnlike_batman(params, data_times, data_fluxes, data_errors)
+
+
 
 
 def pymn_loglike_LUNA(cube, ndim, nparams):
@@ -211,6 +248,93 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 			print("could not plot the solution.")
 	"""
 
-def mp_emcee():
-	print('nothing happening right now.')
+def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, targetID, modelcode="LUNA", show_plot='y'):
+	global mn_param_labels
+	global mn_prior_forms
+	global mn_limit_tuple
+	global data_times
+	global data_fluxes
+	global data_errors
+
+	mn_param_labels = []
+	mn_prior_forms = []
+	mn_limit_tuple = []
+	data_times = []
+	data_fluxes = []
+	data_errors = []
+
+	for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
+		mn_param_labels.append(parlab)
+		mn_prior_forms.append(parprior)
+		mn_limit_tuple.append(partup)
+
+	for t,f,e in zip(times, fluxes, errors):
+		data_times.append(t)
+		data_fluxes.append(f)
+		data_errors.append(e)
+
+	if os.path.exists('emcee_fits'):
+		pass
+	else:
+		os.system('mkdir emcee_fits')
+
+	if os.path.exists('emcee_fits/LUNA'):
+		pass
+	else:
+		os.system('mkdir emcee_fits/LUNA')
+
+	if os.path.exists('emcee_fits/batman'):
+		pass
+	else:
+		os.system('mkdir emcee_fits/batman')
+
+	if modelcode=='LUNA':
+		outputdir = 'emcee_fits/LUNA/'+str(targetID)
+	elif modelcode=='batman':
+		outputdir = 'emcee_fits/batman/'+str(targetID)
+
+	if os.path.exists(outputdir):
+		pass
+	else:
+		os.system('mkdir '+outputdir)
+		os.system('mkdir '+outputdir+'/chains')
+	outputdir = outputdir+'/chains'
+
+
+	### INITIALIZE EMCEE PARAMETERS
+	ndim = len(mn_param_labels)
+	#pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	### pos is a list of arrays!
+	pos =[]
+	for walker in np.arange(0,nwalkers,1):
+		walker_pos = []
+		for partup in mn_limit_tuple:
+			#print("partup[0], partup[1] = ", partup[0], partup[1])
+			if (partup[0] != 0) and (partup[1] != 1) and (partup[1] - partup[0] > 1):
+				if partup[1] - partup[0] > 1e3: ### implies a large range of values!
+					parspot = np.random.choice(np.logspace(start=np.log10(partup[0]), stop=np.log10(partup[1]), num=1e4))
+				else:
+					parspot = np.random.randint(low=partup[0], high=partup[1]) + np.random.random()
+			else:
+				parspot = np.random.random()
+			walker_pos.append(parspot)
+		walker_pos = np.array(walker_pos)
+		pos.append(walker_pos)
+
+	if modelcode == 'LUNA':
+		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_LUNA, args=(data_times, data_fluxes, data_errors))
+
+	elif modelcode == "batman":
+		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_batman, args=(data_times, data_fluxes, data_errors))
+
+	### run the sampler 
+	sampler.run_mcmc(pos, 10000)
+
+	samples = sampler.chain[:,100:,:].reshape((-1, ndim))
+
+	if show_plot == 'y':
+		fig = corner.corner(samples, labels=mn_param_labels)
+		plt.savefig(outputdir+'/'+str(targetID)+"_corner.png")
+
+
 

@@ -75,10 +75,10 @@ def inc_from_impact(impact, rstar, sma, unit='radians'):
 	return inclination 
 
 
-def impact_from_inc(inclination, rstar, sma, unit='radians'):
+def impact_from_inc(inclination, rstar, sma, unit='degrees'):
 	### units must be consistent!
 	if unit == 'degrees':
-		inclination = inclination *(np.pi / 180)
+		inclination = inclination * (np.pi / 180)
 	impact = (sma * np.cos(inclination)) / rstar
 	return impact 
 
