@@ -52,6 +52,27 @@ def Kep3_afromp(period, m1, m2):
 	denominator = 4*np.pi**2
 	return (numerator/denominator)**(1/3)
 
+def mass_from_density(density, radius):
+	### density and radius should have matching units!
+	object_volume = (4/3) * np.pi ** radius**3
+	object_mass = density * object_volume
+	return object_mass 
+
+def inc_from_impact(impact, rstar, sma, unit='radians'):
+	### units must be consistent!
+	inclination = np.arccos((impact * rstar)/sma)
+	if unit == 'degrees':
+		inclination = inclination * (180 / np.pi)
+	return inclination 
+
+
+def impact_from_inc(inclination, rstar, sma, unit='radians'):
+	### units must be consistent!
+	if unit == 'degrees':
+		inclination = inclination *(np.pi / 180)
+	impact = (sma * np.cos(inclination)) / rstar
+	return impact 
+
 def Tdur(period, Rstar, Rplan, impact, sma):
 	### CALCULATE THE DURATION OF A PLANETARY TRANSIT.
 	first_term = period/np.pi
