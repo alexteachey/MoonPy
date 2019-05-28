@@ -5,9 +5,10 @@ from mp_tools import mass_from_density, q1q2_to_u1u2, inc_from_impact, Kep3_afro
 import matplotlib.pyplot as plt 
 
 
-def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
 	#### initial calculations
 	### you may supply planet masses OR densities!
+	all_times = np.hstack(all_times)
 	if Mstar == None:
 		### you must have rhostar!
 		Mstar = mass_from_density(rhostar, Rstar)
@@ -15,9 +16,9 @@ def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=
 		Mplan = mass_from_density(rhoplan, RpRstar*Rstar)
 	planet_sma = Kep3_afromp(Pplan, Mstar, Mplan)
 	planet_sma_Rstar = planet_sma/Rstar 
-	print('planet_sma = ', planet_sma)
-	print('impact parameter = ', bplan)
-	print('inclination = ', inc_from_impact(bplan, Rstar, planet_sma, unit='degrees'))
+	#print('planet_sma = ', planet_sma)
+	#print('impact parameter = ', bplan)
+	#print('inclination = ', inc_from_impact(bplan, Rstar, planet_sma, unit='degrees'))
 
 	batman_params = batman.TransitParams()
 
@@ -38,3 +39,5 @@ def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=
 	if show_plots=='y':
 		plt.plot(all_times, batman_fluxes)
 		plt.show()
+
+	return all_times, batman_fluxes 

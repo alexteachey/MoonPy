@@ -63,7 +63,14 @@ param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively
 param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
 param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
 param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
+### additional parameters that are used for batman but not LUNA!
+param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
+param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
+param_uber_dict['ecc'] = ['uniform', (0,1)]
 
+
+#run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+#run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
 
 class MoonpyLC(object):
 	### this is the light curve object. You can detrend this light curve, or fit it.
@@ -478,6 +485,19 @@ class MoonpyLC(object):
 			for cpdkey in custom_param_dict.keys():
 				param_uber_dict[cpdkey] = custom_param_dict[cpdkey]
 
+
+		if modelcode == 'batman':
+			param_uber_dict.pop('sat_sma') ### only for BATMAN, not for LUNA!
+			param_uber_dict.pop('sat_phase') ### ""
+			param_uber_dict.pop('sat_inc')  ### ""
+			param_uber_dict.pop('sat_omega')
+			param_uber_dict.pop('MsatMp')
+			param_uber_dict.pop('RsatRp')
+		elif modelcode == 'LUNA':
+			param_uber_dict.pop('Rstar') ### only for BATMAN, not for LUNA!
+			param_uber_dict.pop('long_peri') ### ""
+			param_uber_dict.pop('ecc')  ### ""
+
 		global param_labels
 		global param_prior_forms
 		global param_limit_tuple
@@ -499,7 +519,7 @@ class MoonpyLC(object):
 
 
 		if fitter == 'multinest':
-			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target) ### outputs to a file
+			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 		elif fitter == 'emcee':
 			mp_emcee(params, cost_function) ### outputs to a file

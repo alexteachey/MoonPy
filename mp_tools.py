@@ -61,7 +61,7 @@ def Kep3_afromp(period, m1, m2, val_only='y', unit='days'):
 
 def mass_from_density(density, radius):
 	### density and radius should have matching units!
-	object_volume = (4/3) * np.pi ** radius**3
+	object_volume = (4/3) * np.pi * radius**3
 	object_mass = density * object_volume
 	return object_mass 
 

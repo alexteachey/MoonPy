@@ -56,7 +56,7 @@ def prepare_files(all_times):
 
 
 #def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
-def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
+def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
