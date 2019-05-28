@@ -192,8 +192,11 @@ You may fit a LUNA model to your detrended data using the following command:
 
 >>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=500)
 
-At present there is only on fitting algorithm available (pymultinest), two modelcodes ("LUNA" and "batman"), and one model type (M).
-Future functionality will include support for Dan Foreman-Mackey's emcee code as an alternative to pymultinest, and four models: P, T, Z, and M.
+At present the only fitter that is working as intended is "multinest", however "emcee" is also under development. 
+
+Two modelcodes ("LUNA" and "batman") may be used. Right now only one model type "M" is supported for LUNA. 
+
+Future functionality will include evidence testing for four models: P, T, Z, and M.
 
 As used in Teachey & Kipping (2018), the four models are as follows (once they're supported):
 (P): a planet-only model that assumes strict linear ephemeris;
