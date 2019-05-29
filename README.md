@@ -11,11 +11,13 @@ a few things.
 This code requires a number of packages, including: 
 
 * [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - standard parameter estimator and Bayesian evidence calculator, developed by Johannes Buchner as a wrapper to the standard MultiNest code (Feroz and Hobson)
-* [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey et al
+* [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey (DFM) et al
 * [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - Standard transit-modeling code by L. Kreidberg
-* [kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by Dan Foreman-Mackey
+* [kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by DFM
 * [k2plr](https://github.com/rodluger/k2plr) -- a modification of the kplr code for downloading K2 data, by Rodrigo Luger
-* [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by Dan Foreman-Mackey
+* [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by DFM
+* [george](https://george.readthedocs.io/en/latest/) -- a Gaussian process regression tool developed by (you guessed it) DFM
+* [untrendy](https://github.com/dfm/untrendy) -- another DFM package for fast and easy detrending (currently having difficulties here)
 
 As well as standard packages (numpy, scipy, astropy, matplotlib, pandas) that likely came with your python distribution.
 
