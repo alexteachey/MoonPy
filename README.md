@@ -42,7 +42,7 @@ and that ought to get you going.
 
 ### KEYWORDS
 ```
-targetID: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope.
+targetID: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope. Example: "Kepler-1625b", KOI-5084.01, or KIC 4760478. Variations on these (with and without prefix) are (hopefully!) handled to your satisfaction.
 
 lc_times: array of times (not yet supported).
 
