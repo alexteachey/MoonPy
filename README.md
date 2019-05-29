@@ -37,7 +37,9 @@ from moonpy import *
 and that ought to get you going.
 
 
-## INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
+## INITIALIZE A LIGHT CURVE OBJECT.
+
+Proper usage is:
 ```
 >>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')
 ```
