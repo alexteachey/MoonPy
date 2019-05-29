@@ -238,7 +238,28 @@ If you wish to keep the default parameters there is no need to supply these.
 
 
 
+## PLOT YOUR BEST MODEL..
 
+Once you've run a model fit (either with PyMultiNest or emcee, and with either LUNA or batman) you may wish to overplot your best fit onto the data. This is still under development, but you can use
+
+```
+lc_object.plot_bestmodel(self, fitter, modelcode, burnin_pct=0.1)
+```
+to generate a plot of the resulting model. Note that the "best fit" for each parameter is simply the median value from the chains.
+If you want to do something more sophistcated you'll probably want to go in and manually alter the code. 
+
+As of May 29, 2019 this is only working for runs made with emcee. Pymultinest support is coming soon.
+
+
+## MAKE A CORNER PLOT.
+
+You can also generate a corner plot based on your emcee chains (multinest support coming soon.) Usage here is:
+
+```
+lc_object.plot_fit(self, fitter='multinest', modelcode='batman', burnin_pct=0.1)
+```
+
+This will save a corner plot in the chains directory where your planet chains were saved.
 
 
 

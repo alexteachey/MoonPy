@@ -536,7 +536,7 @@ class MoonpyLC(object):
 
 
 
-	def plot_fit(self, fitter='multinest', modelcode='batman', burnin_pct=0.1):
+	def plot_fit(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
 		if fitter == 'multinest':
 			### use this to generate a corner plot from the fit results.
 			fit_resultsdir = moonpydir+'/MultiNest_fits/'+str(self.target)+'/chains'
@@ -641,7 +641,7 @@ class MoonpyLC(object):
 
 
 
-	def plot_bestfit(self, fitter, modelcode, burnin_pct=0.1):
+	def plot_bestmodel(self, fitter, modelcode, burnin_pct=0.1):
 		### need to grab the parameters from the chains!
 		self.initialize_priors(modelcode=modelcode)
 
