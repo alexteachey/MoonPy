@@ -1,3 +1,7 @@
+![MoonPy_logo](https://github.com/alexteachey/MoonPy/blob/master/moonpy_logo_fixed.jpg)
+
+
+
 # Welcome to MoonPy!
 last updated: May 29, 2019.
 
