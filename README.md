@@ -13,8 +13,9 @@ This code requires a number of packages:
 
 
 ## INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
-
+```
 >>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')
+```
 
 ### KEYWORDS
 ```
@@ -97,9 +98,9 @@ Other functionality listed above is forthcoming, including support for TESS ligh
 Plotting the data is simple, and I expect the keywords are all self-explanatory. 
 
 Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
-
+```
 >>> lc_objectname.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))
-
+```
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
 
