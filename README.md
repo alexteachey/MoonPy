@@ -27,7 +27,12 @@ the imports, and proceed without using these particular packages.
 
 Eventually this package will come with a pip install, or something along those lines. For now however, you'll just want to clone this repository and run everything locally. If you keep all these scripts together they ought to talk to each other. 
 
-Within the MoonPy directory, simply "from moonpy import \*", and that ought to get you going.
+Within the MoonPy directory, simply use 
+
+```
+from moonpy import *
+```
+and that ought to get you going.
 
 
 ## INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
