@@ -415,7 +415,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -425,15 +425,11 @@ class MoonpyLC(object):
 
 		self.get_properties()
 
-		try:
-			print(self.fluxes_detrend)
-		except:
-			if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
-				warnings.warn("light curve has not been detrended. It will be performed now.")
-				### alternatively, just detrend!
-				self.detrend()
-			else:
-				self.detrend()
+
+		if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
+			warnings.warn("light curve has not been detrended. It will be performed now.")
+			### alternatively, just detrend!
+			self.detrend()
 
 
 		if skip_ntqs == 'y':
@@ -511,18 +507,20 @@ class MoonpyLC(object):
 			param_prior_forms.append(param_uber_dict[pkey][0])
 			param_limit_tuple.append(param_uber_dict[pkey][1])
 
-		print('moonpy param_labels = ', param_labels)
-		print(' ')
-		print('moonpy param_prior_forms = ', param_prior_forms)
-		print(' ')
-		print('moonpy param_limit_tuple = ', param_limit_tuple)
+		#print('moonpy param_labels = ', param_labels)
+		#print(' ')
+		#print('moonpy param_prior_forms = ', param_prior_forms)
+		#print(' ')
+		#print('moonpy param_limit_tuple = ', param_limit_tuple)
+		for parlab, parprior, parlim in zip(param_labels, param_prior_forms, param_limit_tuple):
+			print(parlab, parprior, parlim)
 
 
 		if fitter == 'multinest':
 			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 		elif fitter == 'emcee':
-			mp_emcee(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, targetID=self.target, modelcode=modelcode) ### outputs to a file
+			mp_emcee(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 
 

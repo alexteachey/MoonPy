@@ -81,11 +81,21 @@ def pymn_prior(cube, ndim, nparams):
 
 
 def emcee_lnprior(params):
+	#print('NEW CALL.')
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
 	in_bounds = 'y'
-	for param, parlim in zip(params, mn_limit_tuple):
+	#print("parameters = ", params)
+	#print(' ')
+	#print('mn_limit_tuple = ', mn_limit_tuple)
+	#print(' ')
+	for param, parlab, parlim in zip(params, mn_param_labels, mn_limit_tuple):
+		#print("param name = ", parlab)
+		#print('param = ', param)
+		#print ('parlim ', parlim)
+		#print(" ")
 		### test that they are in bounds
-		if (param < parlim[0]) or (param > parlim[0]):
+		if (param < parlim[0]) or (param > parlim[1]):
+			#print("out of bounds!")
 			in_bounds = 'n'
 			break
 	if in_bounds == 'n':
@@ -103,6 +113,9 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
+		raise Exception('emcee_lnlike_LUNA loglikelihood value is invalid."')
+
 	return loglikelihood 
 
 
@@ -115,11 +128,16 @@ def emcee_lnlike_batman(params, data_times, data_fluxes, data_errors):
 	batman_times, batman_fluxes = run_batman(data_times, **param_dict, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((batman_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
+	#	print("loglikelihood = ", loglikelihood)
+	#	raise Exception('emcee_lnlike_batman loglikelihood value is invalid."')
 	return loglikelihood 
 
 
 def emcee_lnprob_LUNA(params, data_times, data_fluxes, data_errors):
 	lp = emcee_lnprior(params)
+	if type(lp) != float:
+		raise Exception('emcee_lnprior is not a float.')
 	if not np.isfinite(lp):
 		return -np.inf 
 	return lp + emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors)
@@ -127,6 +145,8 @@ def emcee_lnprob_LUNA(params, data_times, data_fluxes, data_errors):
 
 def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
 	lp = emcee_lnprior(params)
+	if type(lp) != float:
+		raise Exception('emcee_lnprior is not a float.')
 	if not np.isfinite(lp):
 		return -np.inf 
 	return lp + emcee_lnlike_batman(params, data_times, data_fluxes, data_errors)
@@ -248,7 +268,7 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 			print("could not plot the solution.")
 	"""
 
-def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, targetID, modelcode="LUNA", show_plot='y'):
+def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", show_plot='y'):
 	global mn_param_labels
 	global mn_prior_forms
 	global mn_limit_tuple
@@ -299,27 +319,54 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 		os.system('mkdir '+outputdir)
 		os.system('mkdir '+outputdir+'/chains')
 	outputdir = outputdir+'/chains'
+	chainfile = outputdir+'/'+str(targetID)+'_mcmc_chain.txt'
+	lnpostfile = outputdir+'/'+str(targetID)+"_mcmc_lnpost.txt"
 
+
+	### if chainfile doesn't exist, resume == False!
+	if os.path.exists(chainfile) == False:
+		resume = False 
 
 	### INITIALIZE EMCEE PARAMETERS
 	ndim = len(mn_param_labels)
 	#pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 	### pos is a list of arrays!
-	pos =[]
-	for walker in np.arange(0,nwalkers,1):
-		walker_pos = []
-		for partup in mn_limit_tuple:
-			#print("partup[0], partup[1] = ", partup[0], partup[1])
-			if (partup[0] != 0) and (partup[1] != 1) and (partup[1] - partup[0] > 1):
-				if partup[1] - partup[0] > 1e3: ### implies a large range of values!
+	if resume == False:
+		chainf = open(chainfile, mode='w')
+		chainf.close()
+
+		lnpostf = open(lnpostfile, mode='w')
+		lnpostf.close()
+
+		mcmc_iter = nsteps 
+
+		### initialize the positions!
+		pos =[]
+		for walker in np.arange(0,nwalkers,1):
+			walker_pos = []
+			for partup in mn_limit_tuple:
+				if np.abs(partup[1] - partup[0]) > 1e3: ### implies huge jumps:
 					parspot = np.random.choice(np.logspace(start=np.log10(partup[0]), stop=np.log10(partup[1]), num=1e4))
 				else:
-					parspot = np.random.randint(low=partup[0], high=partup[1]) + np.random.random()
-			else:
-				parspot = np.random.random()
-			walker_pos.append(parspot)
-		walker_pos = np.array(walker_pos)
-		pos.append(walker_pos)
+					parspot = np.random.choice(np.linspace(partup[0], partup[1], 1e4))
+
+				walker_pos.append(parspot)
+			walker_pos = np.array(walker_pos)
+			pos.append(walker_pos)
+
+	elif resume == True:
+		### load the positions!
+		paused = np.genfromtxt(chainfile)
+		pos = paused[-nwalkers, -ndim:]
+
+		mcmc_iter = (nsteps - (np.shape(paused)[0]/nwalkers))
+
+
+	#print('pos = ', pos)
+	#print(' ')
+	#continue_query = input('Continue? y/n: ')
+	#if continue_query != 'y':
+	#	raise Exception('you opted not to continue.')
 
 	if modelcode == 'LUNA':
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_LUNA, args=(data_times, data_fluxes, data_errors))
@@ -328,7 +375,28 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_batman, args=(data_times, data_fluxes, data_errors))
 
 	### run the sampler 
-	sampler.run_mcmc(pos, 10000)
+	#sampler.run_mcmc(pos, 10000, lnprob0=np.linspace(0,0,nwalkers))
+
+	#sampler.run_mcmc(pos, 10000)
+	for result in sampler.sample(pos, iterations=mcmc_iter, storechain=False):
+		position, lnprob, rstate = result[0], result[1], result[2]
+
+		### write the walker position ot the chainfile
+		chainf = open(chainfile, mode='a')
+		for k in range(position.shape[0]):
+			chainf.write("{0:4d} {1:s}\n".format(k, " ".join(str(q) for q in position[k])))
+		chainf.close()
+
+		lnpostf = open(lnpostfile, mode='a')
+		for i in range(lnprob.shape[0]):
+			lnpostf.write("{0:4d} {1:s}\n".format(i, str(lnprob[i])))
+		lnpostf.close()
+
+
+
+	#for i, result in enumerate(sampler.sample(p0, iterations=10000)):
+	#    if (i+1) % 100 == 0:
+	#       print("{0:5.1%}".format(float(i) / nsteps))
 
 	samples = sampler.chain[:,100:,:].reshape((-1, ndim))
 
