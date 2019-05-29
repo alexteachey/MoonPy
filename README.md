@@ -23,6 +23,13 @@ If for some reason you have difficulties with one or more of these packages, my 
 the imports, and proceed without using these particular packages. 
 
 
+## USAGE:
+
+Eventually this package will come with a pip install, or something along those lines. For now however, you'll just want to clone this repository and run everything locally. If you keep all these scripts together they ought to talk to each other. 
+
+Within the MoonPy directory, simply "from moonpy import \*", and that ought to get you going.
+
+
 ## INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
 ```
 >>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')
