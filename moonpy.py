@@ -458,45 +458,6 @@ class MoonpyLC(object):
 			for cpdkey in custom_param_dict.keys():
 				param_uber_dict[cpdkey] = custom_param_dict[cpdkey]
 
-
-		"""
-		if modelcode == 'batman':
-			param_uber_dict.pop('sat_sma') ### only for BATMAN, not for LUNA!
-			param_uber_dict.pop('sat_phase') ### ""
-			param_uber_dict.pop('sat_inc')  ### ""
-			param_uber_dict.pop('sat_omega')
-			param_uber_dict.pop('MsatMp')
-			param_uber_dict.pop('RsatRp')
-		elif modelcode == 'LUNA':
-			param_uber_dict.pop('Rstar') ### only for BATMAN, not for LUNA!
-			param_uber_dict.pop('long_peri') ### ""
-			param_uber_dict.pop('ecc')  ### ""
-		"""
-
-		"""
-		global param_labels
-		global param_prior_forms
-		global param_limit_tuple
-
-		param_labels = []
-		param_prior_forms = []
-		param_limit_tuple = []
-
-		for pkey in param_uber_dict.keys():
-			param_labels.append(pkey)
-			param_prior_forms.append(param_uber_dict[pkey][0])
-			param_limit_tuple.append(param_uber_dict[pkey][1])
-
-		self.param_labels = param_labels
-		self.param_prior_forms = param_prior_forms 
-		self.param_limit_tuple = param_limit_tuple
-		"""
-
-		#print('moonpy param_labels = ', param_labels)
-		#print(' ')
-		#print('moonpy param_prior_forms = ', param_prior_forms)
-		#print(' ')
-		#print('moonpy param_limit_tuple = ', param_limit_tuple)
 		for parlab, parprior, parlim in zip(param_labels, param_prior_forms, param_limit_tuple):
 			print(parlab, parprior, parlim)
 
