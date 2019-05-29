@@ -8,8 +8,19 @@ a few things.
 
 ## Prerequisites
 
-This code requires a number of packages: 
+This code requires a number of packages, including: 
 
+* [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - standard parameter estimator and Bayesian evidence calculator, developed by Johannes Buchner as a wrapper to the standard MultiNest code (Feroz and Hobson)
+* [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey et al
+* [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - Standard transit-modeling code by L. Kreidberg
+* [kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by Dan Foreman-Mackey
+* [k2plr](https://github.com/rodluger/k2plr) -- a modification of the kplr code for downloading K2 data, by Rodrigo Luger
+* [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by Dan Foreman-Mackey
+
+As well as standard packages (numpy, scipy, astropy, matplotlib, pandas) that likely came with your python distribution.
+
+If for some reason you have difficulties with one or more of these packages, my best advice is to go into this source code, deactivate
+the imports, and proceed without using these particular packages. 
 
 
 ## INITIALIZE A LIGHT CURVE OBJECT. Proper usage is:
