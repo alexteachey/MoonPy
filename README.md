@@ -114,10 +114,6 @@ Other functionality listed above is forthcoming, including support for TESS ligh
 
 ## PLOT THE DATA.
 
-```
->>> lc_object.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n')
-```
-
 Plotting the data is simple, and I expect the keywords are all self-explanatory. 
 
 Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
