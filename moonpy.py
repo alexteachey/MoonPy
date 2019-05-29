@@ -21,6 +21,7 @@ import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from pyluna import run_LUNA, prepare_files
+import corner
 
 
 #from matplotlib import rc
@@ -47,26 +48,6 @@ NOTES to Alex:
 ### STANDARD LUNA FIT PRIOR DICTIONARY. YOU MAY CHANGE INDIVIDUAL ASPECTS WHEN CALLING THE FUNCTION!
 ### have default param_labels, prior forms, and limits set!
 ### tau0 is planet specific. This will also allow you to generate the moon outside pymultinest.
-param_uber_dict = {}
-
-#all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp
-param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
-param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.
-param_uber_dict['bplan'] = ['uniform', (0,2)]
-### skipping Pplan  and tau0, they're defined below and based on the individual target.
-param_uber_dict['q1'] = ['uniform', (0,1)]
-param_uber_dict['q2'] = ['uniform', (0,1)]
-param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
-#param_uber_dict['sat_sma'] = ['uniform', (1,5e2)]
-param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
-param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
-param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
-param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
-param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
-### additional parameters that are used for batman but not LUNA!
-param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
-param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
-param_uber_dict['ecc'] = ['uniform', (0,1)]
 
 
 #run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
@@ -415,7 +396,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -424,7 +405,8 @@ class MoonpyLC(object):
 		### a (Z) model, which gives the moon a mass but no radius, and an (M) model, which is a fully physical moon fit.
 
 		self.get_properties()
-
+		self.initialize_priors(modelcode=modelcode)
+		param_uber_dict = self.param_uber_dict
 
 		if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
 			warnings.warn("light curve has not been detrended. It will be performed now.")
@@ -451,12 +433,6 @@ class MoonpyLC(object):
 		prepare_files(np.hstack(fit_times))
 
 
-		### the param_uber_dict is initialized at the top of this script.
-		### the only standard, object-specific parameter that must be supplied is tau0.
-		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
-		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
-		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
-
 		if model == 'M':
 			pass
 		elif (model == 'P') or (model=='T'):
@@ -482,6 +458,7 @@ class MoonpyLC(object):
 				param_uber_dict[cpdkey] = custom_param_dict[cpdkey]
 
 
+		"""
 		if modelcode == 'batman':
 			param_uber_dict.pop('sat_sma') ### only for BATMAN, not for LUNA!
 			param_uber_dict.pop('sat_phase') ### ""
@@ -493,7 +470,9 @@ class MoonpyLC(object):
 			param_uber_dict.pop('Rstar') ### only for BATMAN, not for LUNA!
 			param_uber_dict.pop('long_peri') ### ""
 			param_uber_dict.pop('ecc')  ### ""
+		"""
 
+		"""
 		global param_labels
 		global param_prior_forms
 		global param_limit_tuple
@@ -506,6 +485,11 @@ class MoonpyLC(object):
 			param_labels.append(pkey)
 			param_prior_forms.append(param_uber_dict[pkey][0])
 			param_limit_tuple.append(param_uber_dict[pkey][1])
+
+		self.param_labels = param_labels
+		self.param_prior_forms = param_prior_forms 
+		self.param_limit_tuple = param_limit_tuple
+		"""
 
 		#print('moonpy param_labels = ', param_labels)
 		#print(' ')
@@ -520,7 +504,7 @@ class MoonpyLC(object):
 			mp_multinest(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
 
 		elif fitter == 'emcee':
-			mp_emcee(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode) ### outputs to a file
+			mp_emcee(np.hstack(fit_times), np.hstack(fit_fluxes), np.hstack(fit_errors), param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, resume=resume) ### outputs to a file
 
 
 
@@ -590,33 +574,108 @@ class MoonpyLC(object):
 
 
 
-	def plot_fit(self):
-		### use this to generate a corner plot from the fit results.
-		fit_resultsdir = moonpydir+'/MultiNest_fits/'+str(self.target)+'/chains'
-		PEWfile = np.genfromtxt(fit_resultsdir+'/'+str(self.target)+'post_equal_weights.dat')
+	def plot_fit(self, fitter='multinest', modelcode='batman', burnin_pct=0.1):
+		if fitter == 'multinest':
+			### use this to generate a corner plot from the fit results.
+			fit_resultsdir = moonpydir+'/MultiNest_fits/'+str(self.target)+'/chains'
+			PEWfile = np.genfromtxt(fit_resultsdir+'/'+str(self.target)+'post_equal_weights.dat')
 
-		json_file = open(fit_resultsdir+'/'+str(self.target)+'_params.json', mode='r')
-		json_params = json_file.readline()
-		json_params = json_params.split(',')
+			json_file = open(fit_resultsdir+'/'+str(self.target)+'_params.json', mode='r')
+			json_params = json_file.readline()
+			json_params = json_params.split(',')
 
-		PEWdict = {}
-		for njpar, jpar in enumerate(json_params):
-			while jpar.startswith(' '):
-				jpar = jpar[1:]
-			while jpar[-1] == ' ':
-				jpar = jpar[:-1]
-			while jpar.startswith('"'):
-				jpar = jpar[1:]
-			while jpar[-1] == '"':
-				jpar = jpar[:-1]
-			PEWdict[jpar] = PEWfile.T[njpar]
+			PEWdict = {}
+			for njpar, jpar in enumerate(json_params):
+				while jpar.startswith(' '):
+					jpar = jpar[1:]
+				while jpar[-1] == ' ':
+					jpar = jpar[:-1]
+				while jpar.startswith('"'):
+					jpar = jpar[1:]
+				while jpar[-1] == '"':
+					jpar = jpar[:-1]
+				PEWdict[jpar] = PEWfile.T[njpar]
 
-		### as a test, just generate a simple histogram
-		for param in PEWdict.keys():
-			n, bins, edges = plt.hist(PEWdict[param], bins=50, facecolor='green', edgecolor='k', alpha=0.7)
-			plt.title(param)
-			plt.show()
+			### as a test, just generate a simple histogram
+			for param in PEWdict.keys():
+				n, bins, edges = plt.hist(PEWdict[param], bins=50, facecolor='green', edgecolor='k', alpha=0.7)
+				plt.title(param)
+				plt.show()
 
+		elif fitter == 'emcee':
+			if modelcode=='batman':
+				chainsdir = moonpydir+'/emcee_fits/batman/'+str(self.target)+'/chains'
+			elif modelcode=='LUNA':
+				chainsdir=moonpydir+'/emcee_fits/LUNA/'+str(self.target)+'/chains'
+			samples = np.genfromtxt(chainsdir+'/'+str(self.target)+'_mcmc_chain.txt')
+			sample_shape = samples.shape
+			samples = samples[int(burnin_pct*sample_shape[0]):,1:]
+
+
+		self.initialize_priors(modelcode=modelcode)
+		fig = corner.corner(samples, labels=self.param_labels)
+		plt.savefig(chainsdir+'/'+str(self.target)+"_corner.png")
+		plt.close()
+
+
+
+	def initialize_priors(self, modelcode):
+		param_uber_dict = {}
+
+		param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
+		param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.
+		param_uber_dict['bplan'] = ['uniform', (0,2)]
+		param_uber_dict['q1'] = ['uniform', (0,1)]
+		param_uber_dict['q2'] = ['uniform', (0,1)]
+		param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
+		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+		param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
+		param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
+		param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
+		param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
+		### additional parameters that are used for batman but not LUNA!
+		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
+		param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
+		param_uber_dict['ecc'] = ['uniform', (0,1)]
+
+		### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
+		self.get_properties()
+		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
+		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
+		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
+
+
+		if modelcode == 'batman':
+			param_uber_dict.pop('sat_sma') ### only for BATMAN, not for LUNA!
+			param_uber_dict.pop('sat_phase') ### ""
+			param_uber_dict.pop('sat_inc')  ### ""
+			param_uber_dict.pop('sat_omega')
+			param_uber_dict.pop('MsatMp')
+			param_uber_dict.pop('RsatRp')
+		elif modelcode == 'LUNA':
+			param_uber_dict.pop('Rstar') ### only for BATMAN, not for LUNA!
+			param_uber_dict.pop('long_peri') ### ""
+			param_uber_dict.pop('ecc')  ### ""
+
+
+		self.param_uber_dict = param_uber_dict
+
+		global param_labels
+		global param_prior_forms
+		global param_limit_tuple
+
+		param_labels = []
+		param_prior_forms = []
+		param_limit_tuple = []
+
+		for pkey in param_uber_dict.keys():
+			param_labels.append(pkey)
+			param_prior_forms.append(param_uber_dict[pkey][0])
+			param_limit_tuple.append(param_uber_dict[pkey][1])
+
+		self.param_labels = param_labels
+		self.param_prior_forms = param_prior_forms 
+		self.param_limit_tuple = param_limit_tuple
 
 
 

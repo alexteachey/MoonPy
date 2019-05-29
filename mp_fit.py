@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import os
 import corner 
 import emcee
+import sys
 
 
 """
@@ -113,8 +114,8 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **param_dict, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
-	if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
-		raise Exception('emcee_lnlike_LUNA loglikelihood value is invalid."')
+	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
+		#raise Exception('emcee_lnlike_LUNA loglikelihood value is invalid."')
 
 	return loglikelihood 
 
@@ -268,7 +269,7 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 			print("could not plot the solution.")
 	"""
 
-def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", show_plot='y'):
+def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", storechain=False, burnin_pct=0.1, show_plot='y'):
 	global mn_param_labels
 	global mn_prior_forms
 	global mn_limit_tuple
@@ -341,7 +342,7 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 		mcmc_iter = nsteps 
 
 		### initialize the positions!
-		pos =[]
+		pos = []
 		for walker in np.arange(0,nwalkers,1):
 			walker_pos = []
 			for partup in mn_limit_tuple:
@@ -354,12 +355,25 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 			walker_pos = np.array(walker_pos)
 			pos.append(walker_pos)
 
+		#print('pos = ', pos)
+
+
 	elif resume == True:
 		### load the positions!
 		paused = np.genfromtxt(chainfile)
-		pos = paused[-nwalkers, -ndim:]
+		pos = []
+		### the last N=nwalker lines should be the positions of the walkers!
+		for walkerline in paused[-nwalkers:]:
+			pos.append(np.array(walkerline[1:]))
+		#pos = paused[-nwalkers, -ndim:]
 
-		mcmc_iter = (nsteps - (np.shape(paused)[0]/nwalkers))
+		#print('pos = ', pos)
+		### MAY 29 -- the problem with resume is that pos does not have the sahem shape as pos above!
+		### when resume == False, pos is a list of arrays... presumably 100 arrays (= nwalkers), each with len=ndim.
+		### but in the above sample, pos is only a single array with len=ndim.
+		### needs to be identical to the above (which works!) in order to work correctly.
+
+		mcmc_iter = int((nsteps - (np.shape(paused)[0]/nwalkers)))
 
 
 	#print('pos = ', pos)
@@ -378,7 +392,9 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 	#sampler.run_mcmc(pos, 10000, lnprob0=np.linspace(0,0,nwalkers))
 
 	#sampler.run_mcmc(pos, 10000)
-	for result in sampler.sample(pos, iterations=mcmc_iter, storechain=False):
+	for residx, result in enumerate(sampler.sample(pos, iterations=mcmc_iter, storechain=storechain)):
+
+		### WRITE OUT CHAIN TO A FILE.
 		position, lnprob, rstate = result[0], result[1], result[2]
 
 		### write the walker position ot the chainfile
@@ -392,17 +408,35 @@ def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit
 			lnpostf.write("{0:4d} {1:s}\n".format(i, str(lnprob[i])))
 		lnpostf.close()
 
+		### progress bar:
+		print('step '+str(residx)+' of '+str(mcmc_iter))
+		print(' ')
+		#width=30
+		#n = int((width+1) * float(residx) / mcmc_iter)
+		#sys.stdout.write("\r[{0}{1}]".format('#' * n, ' ' * (width - n)))
+
+
+
 
 
 	#for i, result in enumerate(sampler.sample(p0, iterations=10000)):
 	#    if (i+1) % 100 == 0:
 	#       print("{0:5.1%}".format(float(i) / nsteps))
-
-	samples = sampler.chain[:,100:,:].reshape((-1, ndim))
+	if storechain == True:
+		### note that 'samples' should have shape = ((nsteps - n_burnin) * nwalkers, ndim)
+		### example: if you have nwalkers=30, n_burning=10, nsteps=200, and ndim=11,
+		### your final shape should be (5700, 11), or (200 - 10) * nwalkers, ndim.
+		print('sampler.chain.shape = ', sampler.chain.shape)
+		#samples = sampler.chain[:,10:,:].reshape((-1, ndim))
+		samples = sampler.chain[:,burnin_pct*mcmc_iter,:].reshape((-1,ndim))
+		print('sampler.chain.reshaped.shape = ', sampler.chain[:,10:,:].reshape((-1,ndim)).shape)
+	else:
+		### load the chainsfile!
+		samples = np.genfromtxt(chainfile)[(nsteps - (int(burnin_pct*nsteps))):,1:]
 
 	if show_plot == 'y':
 		fig = corner.corner(samples, labels=mn_param_labels)
 		plt.savefig(outputdir+'/'+str(targetID)+"_corner.png")
-
+		plt.close()
 
 
