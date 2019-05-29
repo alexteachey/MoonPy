@@ -14,6 +14,7 @@ import traceback
 ### of what you want here... maybe change this usage below!
 from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_download, eleanor_coord_download
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
+from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
 import mp_tools
@@ -624,7 +625,7 @@ class MoonpyLC(object):
 
 		param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
 		param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.
-		param_uber_dict['bplan'] = ['uniform', (0,2)]
+		param_uber_dict['bplan'] = ['uniform', (0,1)]
 		param_uber_dict['q1'] = ['uniform', (0,1)]
 		param_uber_dict['q2'] = ['uniform', (0,1)]
 		param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
@@ -678,6 +679,34 @@ class MoonpyLC(object):
 		self.param_limit_tuple = param_limit_tuple
 
 
+
+	def plot_bestfit(self, fitter, modelcode, burnin_pct=0.1):
+		### need to grab the parameters from the chains!
+		self.initialize_priors(modelcode=modelcode)
+
+		if fitter == 'emcee':
+			if modelcode=='batman':
+				chainsdir = moonpydir+'/emcee_fits/batman/'+str(self.target)+'/chains'
+			elif modelcode=='LUNA':
+				chainsdir=moonpydir+'/emcee_fits/LUNA/'+str(self.target)+'/chains'
+			samples = np.genfromtxt(chainsdir+'/'+str(self.target)+'_mcmc_chain.txt')
+			sample_shape = samples.shape
+			samples = samples[int(burnin_pct*sample_shape[0]):,1:]
+
+			### 
+			best_fit_dict = {}
+			for npar, parlab in enumerate(self.param_labels):
+				best_fit_dict[parlab] = np.nanmedian(samples.T[npar])
+			print("best fit values: ")
+			for parkey in best_fit_dict.keys():
+				print(parkey, ' = ', best_fit_dict[parkey])
+
+			if modelcode == 'batman':
+				### use batman to generate a model!!!
+				batman_times, batman_fluxes = run_batman(self.times, **best_fit_dict, add_noise='n', show_plots='n')
+				plt.scatter(np.hstack(self.times), np.hstack(self.fluxes_detrend), facecolor='LightCoral', edgecolor='k')
+				plt.plot(batman_times, batman_fluxes, c='g', linewidth=2)
+				plt.show()
 
 
 
