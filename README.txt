@@ -1,5 +1,5 @@
 ### Welcome to MoonPy!
-README last updated: May 24, 2019.
+README last updated: May 29, 2019.
 
 This document will walk you through the basics of using the MoonPy code. 
 In time this code will become more sophisticated, but right now we can just do
@@ -184,15 +184,15 @@ from NASA Exoplanet Archive, but should not download the table again until 24 ho
 ##########
 
 
-5.) FIT A LUNA MODEL TO THE LIGHT CURVE.
+5.) FIT A TRANSIT MODEL TO THE LIGHT CURVE.
 (NOTE: the LUNA code developed by D. Kipping is not currently available on GitHub. The pyluna.py script is simply
 a wrapper for this code).
 
-You may fit a LUNA model to your detrended data using the following command:
+You may fit a LUNA or BATMAN model to your detrended data using the following command:
 
 >>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=500)
 
-At present the only fitter that is working as intended is "multinest", however "emcee" is also under development. 
+The fitter may be either "multinest" or "emcee" (the latter is still a bit buggy!)
 
 Two modelcodes ("LUNA" and "batman") may be used. Right now only one model type "M" is supported for LUNA. 
 
