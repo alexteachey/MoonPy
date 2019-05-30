@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last updated: May 29, 2019.
+last updated: May 30, 2019.
 
 This document will walk you through the basics of using the MoonPy code. 
 In time this code will become more sophisticated, but right now we can just do
@@ -44,9 +44,9 @@ and that ought to get you going.
 ## INITIALIZE A LIGHT CURVE OBJECT.
 
 Proper usage is:
-```
->>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')
-```
+
+*>>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')*
+
 
 ### KEYWORDS
 
@@ -125,9 +125,9 @@ Other functionality listed above is forthcoming, including support for TESS ligh
 Plotting the data is simple, and I expect the keywords are all self-explanatory. 
 
 Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
-```
->>> lc_objectname.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))
-```
+
+*>>> lc_objectname.plot(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))*
+
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
 
@@ -144,9 +144,9 @@ a median filter "medfilt". Dan Foreman-Mackey's "untrendy" package is also suppo
 an error saying that the x-values must be strictly increasing. Not sure what that's about. 
 
 Anyway the usage is simple:
-```
->>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', skip_ntqs='n', kernel=None, max_degree=30)
-```
+
+*>>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', skip_ntqs='n', kernel=None, max_degree=30)*
+
 
 ### KEYWORDS
 
@@ -212,9 +212,9 @@ a wrapper for this code).
 
 You may fit a LUNA or BATMAN model to your detrended data using the following command:
 
-```
->>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=500)
-```
+
+*>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=True)*
+
 
 The *fitter* may be either "multinest" or "emcee" (the latter is still a bit buggy!)
 
@@ -246,9 +246,9 @@ If you wish to keep the default parameters there is no need to supply these.
 
 Once you've run a model fit (either with PyMultiNest or emcee, and with either LUNA or batman) you may wish to overplot your best fit onto the data. This is still under development, but you can use
 
-```
-lc_object.plot_bestmodel(self, fitter, modelcode, burnin_pct=0.1)
-```
+
+*lc_object.plot_bestmodel(self, fitter, modelcode, burnin_pct=0.1)*
+
 to generate a plot of the resulting model. Note that the "best fit" for each parameter is simply the median value from the chains.
 If you want to do something more sophistcated you'll probably want to go in and manually alter the code. 
 
@@ -259,9 +259,9 @@ As of May 29, 2019 this is only working for runs made with emcee. Pymultinest su
 
 You can also generate a corner plot based on your emcee chains (multinest support coming soon.) Usage here is:
 
-```
-lc_object.plot_fit(self, fitter='multinest', modelcode='batman', burnin_pct=0.1)
-```
+
+*lc_object.plot_corner(self, fitter='multinest', modelcode='batman', burnin_pct=0.1)*
+
 
 This will save a corner plot in the chains directory where your planet chains were saved.
 
