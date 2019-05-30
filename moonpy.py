@@ -11,6 +11,7 @@ import pandas
 import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
+from astropy.stats import LombScargle
 import os
 
 #### BELOW ARE MOONPY PACKAGES
@@ -64,7 +65,15 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n'):
+	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber='n'):
+
+		if (load_lc == 'n') and (clobber == 'n'):
+			### check to see if a file already exists!
+			if os.path.exists(savepath+'/'+str(targetID)+'_lightcurve.csv'):
+				clobber = input('light curve already exists. Clobber? y/n: ')
+				if clobber == 'n':
+					load_lc = 'y'
+
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
 				telescope='kepler'
@@ -519,6 +528,44 @@ class MoonpyLC(object):
 
 		### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
 		self.initialize_priors(modelcode=modelcode)		
+
+
+
+	def genLS(self, show_plot = 'y'):
+		### this function generates a Lomb-Scargle Periodogram!
+		LSperiods = []
+		LSpowers = []
+		LSfaps = []
+		for qidx in np.arange(0,self.times.shape[0],1):
+			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			maxperiod = 0.5 * (np.nanmax(qtimes) - np.nanmin(qtimes))
+			minperiod = 0.5
+			minfreq, maxfreq = 1/maxperiod, 1/minperiod
+			qls = LombScargle(qtimes, qfluxes, qerrors)
+			qfreq, qpower = qls.autopower(minimum_frequency=minfreq, maximum_frequency=maxfreq)
+			qperiods = 1/qfreq
+			qfap = qls.false_alarm_probability(qpower.max())
+
+			if show_plot == 'y':
+				plt.plot(qperiods[::-1], qpower[::-1])
+
+			LSperiods.append(qperiods)
+			LSpowers.append(qpower)
+			LSfaps.append(qfap)
+
+		if show_plot == 'y':
+			plt.xscale('log')
+			#plt.xlim(np.nanmin(qperiods), np.nanmax(qperiods))
+			plt.xlabel('Period [days]')
+			plt.ylabel('Power')
+			plt.title(self.target)
+			plt.show()
+
+		LSperiods, LSpowers, LSfaps = np.array(LSperiods), np.array(LSpowers), np.array(LSfaps)
+
+		self.LSperiods = LSperiods
+		self.LSpowers = LSpowers 
+		self.LSfaps = LSfaps
 
 
 	def find_transit_quarters(self):

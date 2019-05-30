@@ -45,6 +45,7 @@ Below you will find the details of some of these tools. At present the user will
 
 * **Initialize a light curve object** using *MoonypyLC()*
 * **plot the light curve** using *plot_lc()*.
+* **generate a Lomb-Scargle** periodogram using *genLS()*.
 * **Detrend the light curve** using *detrend()*
 * **fit a transit model** to the light curve using *fit()*.
 * **plot the best fitting model** over the light curve using *plot_bestmodel()*.
@@ -133,6 +134,13 @@ warning that the light curve has not yet been detrended and you will see instead
 You may also set folded='y' to see a phase fold of the light curve.
 
 
+## GENERATE A LOMB-SCARGLE PERIODOGRAM.
+
+Using Astropy's Lomb-Scargle function you can easily generate a Lomb-Scargle periodogram for every quarter simply by calling
+
+*>>>lc_object.genLS(show_plot='y')*
+
+This method will also generate three new attributes for lc_object: LSperiods, LSpowers, and LSfaps.
 
 
 
