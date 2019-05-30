@@ -400,7 +400,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=True):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -580,42 +580,27 @@ class MoonpyLC(object):
 		param_uber_dict['q1'] = ['uniform', (0,1)]
 		param_uber_dict['q2'] = ['uniform', (0,1)]
 		param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
-		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
-		param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
-		param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
-		param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
-		param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
-		### additional parameters that are used for batman but not LUNA!
-		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
-		param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
-		param_uber_dict['ecc'] = ['uniform', (0,1)]
+		if modelcode == "LUNA":
+			### these parameters are only relevant for LUNA!
+			param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
+			param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
+			param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
+			param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
+			param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
+		if modelcode == 'batman':
+			### these parameters are only relevant for batman!
+			param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
+			param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
+			param_uber_dict['ecc'] = ['uniform', (0,1)]
 
 		### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
 		self.get_properties()
 		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
-		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
-
-
-		if modelcode == 'batman':
-			param_uber_dict.pop('sat_sma') ### only for BATMAN, not for LUNA!
-			param_uber_dict.pop('sat_phase') ### ""
-			param_uber_dict.pop('sat_inc')  ### ""
-			param_uber_dict.pop('sat_omega')
-			param_uber_dict.pop('MsatMp')
-			param_uber_dict.pop('RsatRp')
-		elif modelcode == 'LUNA':
-			param_uber_dict.pop('Rstar') ### only for BATMAN, not for LUNA!
-			param_uber_dict.pop('long_peri') ### ""
-			param_uber_dict.pop('ecc')  ### ""
-
+		if modelcode == "LUNA":
+			param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
 
 		self.param_uber_dict = param_uber_dict
-
-		### I THINK MAKING THESE GLOBAL IS UNECESSARY....
-		#global param_labels
-		#global param_prior_forms
-		#global param_limit_tuple
 
 		### OK TO LEAVE HERE, SO LONG AS IT ALSO STAYS WITHIN THE FIT() FUNCTION.
 		param_labels = []
@@ -630,6 +615,8 @@ class MoonpyLC(object):
 		self.param_labels = param_labels
 		self.param_prior_forms = param_prior_forms 
 		self.param_limit_tuple = param_limit_tuple
+
+
 
 
 
@@ -854,7 +841,7 @@ class MoonpyLC(object):
 
 
 
-	def plot_bestmodel(self, fitter, modelcode, folded=True, burnin_pct=0.1):
+	def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
 		### THIS FUNCTION PLOTS YOUR BEST FIT LIGHT CURVE MODEL OVER THE DATA.
 		if folded == True:
 			self.fold()
