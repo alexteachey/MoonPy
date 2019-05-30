@@ -65,14 +65,18 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber='n'):
+	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber=None):
 
-		if (load_lc == 'n') and (clobber == 'n'):
+		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
 			if os.path.exists(savepath+'/'+str(targetID)+'_lightcurve.csv'):
 				clobber = input('light curve already exists. Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
+		elif (load_lc == 'n') and (clobber == 'n'):
+			load_lc = 'y'
+		elif (load_lc == 'n') and (clobber == 'y'):
+			pass 
 
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
@@ -596,11 +600,14 @@ class MoonpyLC(object):
 		while first_tau < np.nanmin(np.hstack(self.times)):
 			ftidx += 1
 			first_tau = self.taus[ftidx]
+
+
 		fold_times = np.hstack(self.times) - np.nanmin(np.hstack(self.times)) - (0.5*self.period)
 		#fold_times = np.hstack(self.times) - first_tau - (0.5*self.period)
 		fold_times = fold_times % self.period
 		fold_first_tau = (first_tau - np.nanmin(np.hstack(self.times)) - (0.5*self.period)) % self.period
 		print ('fold_first_tau = ', fold_first_tau)
+		
 
 		if detrended == 'y':
 			fold_fluxes = np.hstack(self.fluxes_detrend)
@@ -798,6 +805,7 @@ class MoonpyLC(object):
 
 		except:
 			print("WARNING: light curve has not been detrended yet!")
+			detrended = 'n'
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes, self.errors, self.flags, self.quarters		
 
 
@@ -830,7 +838,7 @@ class MoonpyLC(object):
 				plt.errorbar(stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 		elif folded == 'y':
 			try:
-				self.fold()
+				self.fold(detrended=detrended)
 			except:
 				self.get_properties()
 				self.fold()
