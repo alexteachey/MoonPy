@@ -23,10 +23,9 @@ This code requires a number of packages, including:
 * [george](https://george.readthedocs.io/en/latest/) -- a Gaussian process regression tool developed by (you guessed it) DFM
 * [untrendy](https://github.com/dfm/untrendy) -- another DFM package for fast and easy detrending (currently having difficulties here)
 
-As well as standard packages (numpy, scipy, astropy, matplotlib, pandas) that likely came with your python distribution.
+As well as standard packages (numpy, scipy, astropy, matplotlib, pandas, etc) that likely came with your python distribution.
 
-If for some reason you have difficulties with one or more of these packages, my best advice is to go into this source code, deactivate
-the imports, and proceed without using these particular packages. 
+Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
 
 
 ## USAGE:
