@@ -277,6 +277,9 @@ class MoonpyLC(object):
 		self.flags = lc_flags
 		self.quarters = lc_quarters
 
+		### calculate which quarters have transits!
+		self.find_transit_quarters()
+
 		if save_lc == 'y':
 			### write to a file!
 			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.csv', mode='w')
@@ -513,6 +516,23 @@ class MoonpyLC(object):
 		self.initialize_priors(modelcode=modelcode)		
 
 
+	def find_transit_quarters(self):
+		self.get_properties()
+		quarter_transit_dict = {}
+		for qidx,quarter in enumerate(self.quarters):
+			quarter_times = self.times[qidx]
+			quarter_transit = 'n'
+			for tau in self.taus:
+				if (tau >= np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
+					### there's a transit in this quarter!
+					quarter_transit = 'y'
+					break
+			if quarter_transit == 'n':
+				quarter_transit_dict[quarter] = 'n'
+			else:
+				quarter_transit_dict[quarter] = 'y'
+				
+		self.quarter_transit_dict = quarter_transit_dict 
 
 
 	def fold(self, detrended='y'):
