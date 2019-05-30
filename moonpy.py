@@ -11,6 +11,7 @@ import pandas
 import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
+import os
 
 #### BELOW ARE MOONPY PACKAGES
 import mp_tools
@@ -27,8 +28,15 @@ from pyluna import run_LUNA, prepare_files
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
 #rc('text', usetex=True)
 
-moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
-savepath = '/Users/hal9000/Documents/Software/MoonPy/saved_lcs'
+#moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
+moonpydir = os.getcwd()
+savepath = moonpydir+'/saved_lcs'
+print("light curve savepath = ", savepath)
+if os.path.exists(savepath):
+	pass
+else:
+	print("did not exist. generating...")
+	os.system('mkdir '+savepath)
 
 """
 This is the MoonPy master script! To open, you should only have to type 'import moonpy'
@@ -56,7 +64,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n'):
+	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n'):
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
 				telescope='kepler'

@@ -37,7 +37,7 @@ Within the MoonPy directory, simply use
 ```
 from moonpy import *
 ```
-and that ought to get you going.
+and that ought to get you going. The first time you start up the code a savepath will be generated, which is a subdirectory of the current working directory. That is: MoonPy/saved_lcs. If you wish to change this you'll want to go in and alter the code manually.
 
 
 ## OVERVIEW
@@ -113,9 +113,6 @@ should be OK.
 You may also download only select quarters if you wish by supplying an array of quarter numbers in the 'quarters' keyword.
 Currently supported formats for the light curve download is "sap" and "pdc". If you wish to download both
 (possibly included in a future release) you should just initialize two different light curve objects.
-
-The first time you use the code you will want to specify your SAVEPATH at the very top of the code.
-Unless you specify otherwise your light curve will be saved in the savepath ('save_lc' keyword).
 
 Other functionality listed above is forthcoming, including support for TESS light curves! 
 
