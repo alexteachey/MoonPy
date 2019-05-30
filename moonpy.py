@@ -9,20 +9,17 @@ import time
 import datetime
 import pandas
 import traceback
+from astroquery.simbad import Simbad 
+from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 
-### The packages below interface with standard packages, but within the context
-### of what you want here... maybe change this usage below!
+#### BELOW ARE MOONPY PACKAGES
+import mp_tools
 from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_download, eleanor_coord_download
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
-import mp_tools
-import traceback
-from astroquery.simbad import Simbad 
-from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from pyluna import run_LUNA, prepare_files
-import corner
 
 
 #from matplotlib import rc
@@ -796,6 +793,8 @@ class MoonpyLC(object):
 
 
 	def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
+		import corner
+
 		### THIS FUNCTION GENERATES A CORNER PLOT BASED ON YOUR MODEL FITS.
 		if fitter == 'multinest':
 			### use this to generate a corner plot from the fit results.

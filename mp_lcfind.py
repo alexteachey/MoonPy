@@ -1,7 +1,4 @@
 from __future__ import division
-import kplr
-import k2plr
-import eleanor
 import numpy as np
 import astropy
 from astroquery.simbad import Simbad 
@@ -11,6 +8,8 @@ from astropy import units as u
 
 
 def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
+	import kplr
+	import k2plr
 	#print("nothing happening right now.")
 	if (telescope == 'kepler') or (telescope=="Kepler"):
 		client = kplr.API()
@@ -159,6 +158,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 def eleanor_target_download(targID, sectors='all', sc=False, lc_format='pdc'):
+	import eleanor
 	if sectors=='all':
 		sector_array = np.array([1,2])
 

@@ -2,44 +2,12 @@ from __future__ import division
 import numpy as np
 import astropy
 from scipy.stats import norm,beta,truncnorm
-from mp_batman import run_batman
-import pyluna
-import pymultinest
 import json
 import matplotlib.pyplot as plt 
 import os
-import corner 
-import emcee
 import sys
-
-
-"""
-RpRstar = used for LUNA and batman
-rhostar = used for LUNA and batman
-bplan = used fomr LUNA and batman
-q1 = used for LUNA and batman
-q2 = used for LUNA and batman
-rhoplan - used for LUNA and batman
-sat_sma = used for LUNA ONLY -- REMOVE FROM BATMAN DICTIONARY!
-sat_phase = used for LUNA only -- ""
-sat_inc = used for LUNA only -- ""
-sat_omega = used for LUNA only -- ""
-MsatMP = used for LUNA only -- ""
-RsatRp = used for LUNA only -- ""
-
-### additional parameters that are used for batman but not LUNA!
-Rstar = used for batman ONLY -- REMOVE FROM LUNA DICTIONARY!
-long_peri = used for batman ONLY -- ""
-ecc = used for batman ONLY -- ""
-
-tau0 = used for LUNA and batman
-Pplan = used for LUNA and batman
-
-NPARAMS FOR LUNA = 14 
-NPARAMS FOR BATMAN = 11
-
-"""
-
+from mp_batman import run_batman
+import pyluna
 
 
 ### MULTINEST CUBE TRANSFORMATIONS
@@ -194,6 +162,7 @@ def pymn_loglike_batman(cube, ndim, nparams):
 
 
 def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, modelcode="LUNA", show_plot='y'):
+	import pymultinest
 	### this function will start PyMultiNest!
 	"""
 	- param_labels is just an array of labels of the parameters you're fitting. MUST MATCH pyluna keywords! 
@@ -270,6 +239,9 @@ def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_l
 	"""
 
 def mp_emcee(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", storechain=False, burnin_pct=0.1, show_plot='y'):
+	import emcee
+	import corner
+
 	global mn_param_labels
 	global mn_prior_forms
 	global mn_limit_tuple

@@ -1,12 +1,9 @@
 from __future__ import division
-import untrendy
-import george
-#import cofiam
 import astropy
 import numpy as np
-from cofiam import cofiam_iterative, max_order
 from scipy.ndimage import median_filter
 from scipy.interpolate import interp1d
+from cofiam import cofiam_iterative, max_order
 
 
 
@@ -24,6 +21,8 @@ def cofiam_detrend(times, fluxes, errors, mask_idxs=None, max_degree=30):
 	return flux_detrend, errors_detrend 
 
 def untrendy_detrend(times, fluxes, errors, mask_idxs=None):
+	import untrendy
+
 	if type(mask_idxs) != type(None):
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		f_detrend = untrendy.detrend(unmasked_times, unmasked_fluxes, unmasked_errors)[0]
@@ -35,6 +34,8 @@ def untrendy_detrend(times, fluxes, errors, mask_idxs=None):
 	return f_detrend, sigma_detrend
 
 def george_detrend(times, fluxes, errors, mask_idxs=None):
+	import george
+
 	print('Nothing happening right now.')
 
 def medfilt_detrend(times, fluxes, errors, size, mask_idxs=None):
