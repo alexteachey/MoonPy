@@ -216,6 +216,24 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 *>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=True)*
 
 
+*custom_param_dict*: you may use this to modify the default parameter dictionary. The form must be param_dict['parameter'] = ['prior_type', (lower_bound, upper_bound)]. 
+
+*fitter*: may be "multinest" or "emcee".
+
+*modelcode*: May be "LUNA" (internal use only right now) or "batman".
+
+*skip_ntqs*: If 'y', your fit will not utilize quarters for which the planet does not transit.
+
+*model*: Currently only "M" is supported. See notes below.
+
+*nlive*: number of live points utilized by multinest.
+
+*nwalkers*: Number of walkers utilized by emcee.
+
+*nsteps*: maximum number of steps used in the emcee fit.
+
+*resume*: If True, emcee will attempt to read in the last positions of the walkers and continue from there. If False, the old mcmc walker record is clobbered!
+
 The *fitter* may be either "multinest" or "emcee" (the latter is still a bit buggy!)
 
 Two *modelcode* options ("LUNA" and "batman") may be used. Right now only one model type "M" is supported for LUNA. 
