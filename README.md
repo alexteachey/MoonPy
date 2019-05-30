@@ -41,6 +41,20 @@ from moonpy import *
 and that ought to get you going.
 
 
+## OVERVIEW
+Below you will find the details of some of these tools. At present the user will want to utilize the following functionality:
+
+* **Initialize a light curve object** using *MoonypyLC()*
+* **plot the light curve** using *plot_lc()*.
+* **Detrend the light curve** using *detrend()*
+* **fit a transit model** to the light curve using *fit()*.
+* **plot the best fitting model** over the light curve using *plot_bestmodel()*.
+* **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
+
+Most of the above take keyword arguments that are described below.
+
+
+
 ## INITIALIZE A LIGHT CURVE OBJECT.
 
 Proper usage is:
@@ -169,10 +183,14 @@ because too computationally expensive.
 
 ## GET PROPERTIES.
 
-New feature as of May 14, 2019 is the "get_properties()" method. This function queries the NASA Exoplanet Archive
+New feature as of May 14, 2019 is the *get_properties()* method. This function queries the NASA Exoplanet Archive
 to retrieve your target's impact parameter, transit duration, orbital period, all transit midtimes within the 
 dataset baseline, the ratio of radii, and the isolated radii for the planet and the star. Uncertainties
 for many of these parameters are also available as a tuple, quoting lower and upper sigmas.
+
+Note that this function should be called automatically when you initialize a light curve object (whether you're
+downloading it fresh or retrieving a light curve you already loaded and saved), so these attributes ought to be 
+available to you automatically without needing to call the *get_properties()* function.
 
 The following attributes are supported;
 ```
@@ -204,8 +222,6 @@ from NASA Exoplanet Archive, but should not download the table again until 24 ho
 
 
 
-
-
 ## FIT A TRANSIT MODEL TO THE LIGHT CURVE.
 (NOTE: the LUNA code developed by D. Kipping is not currently available on GitHub. The pyluna.py script is simply
 a wrapper for this code).
@@ -213,7 +229,7 @@ a wrapper for this code).
 You may fit a LUNA or BATMAN model to your detrended data using the following command:
 
 
-*>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=True)*
+*>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False)*
 
 
 *custom_param_dict*: you may use this to modify the default parameter dictionary. The form must be param_dict['parameter'] = ['prior_type', (lower_bound, upper_bound)]. 
@@ -232,12 +248,11 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 
 *nsteps*: maximum number of steps used in the emcee fit.
 
-*resume*: If True, emcee will attempt to read in the last positions of the walkers and continue from there. If False, the old mcmc walker record is clobbered!
+*resume*: If True, emcee will attempt to read in the last positions of the walkers and continue from there. If False, *the old mcmc walker record is clobbered!*
 
-The *fitter* may be either "multinest" or "emcee" (the latter is still a bit buggy!)
+*folded*: allows you to fit to a phase-folded light curve. Generally not a good idea as it assumes a period and tau0.
 
-Two *modelcode* options ("LUNA" and "batman") may be used. Right now only one model type "M" is supported for LUNA. 
-
+**Notes**
 Future functionality will include evidence testing for four models: P, T, Z, and M.
 
 As used in Teachey & Kipping (2018), the four models are as follows (once they're supported):
@@ -246,13 +261,8 @@ As used in Teachey & Kipping (2018), the four models are as follows (once they'r
 (Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and
 (M): a fully physical moon model.
 
-custom_param_dict allows the user to supply their own parameter dictionary to override the default parameter 
-values that are supplied in the fitting. The dictionary is as follows:
-
-param_dict['keyword'] = ['prior_type', (prior_lower_bound, prior_upper_bound)]
-
-they keyword must be one of the keywords accepted by pyluna: 
-[RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp]
+they keyword must be one of the keywords accepted by pyluna or batman: 
+[RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, Rstar, long_peri, ecc]
 
 the 'prior_type' may be 'uniform', 'loguniform', 'normal', 'lognormal', or 'beta'.
 
@@ -265,7 +275,7 @@ If you wish to keep the default parameters there is no need to supply these.
 Once you've run a model fit (either with PyMultiNest or emcee, and with either LUNA or batman) you may wish to overplot your best fit onto the data. This is still under development, but you can use
 
 
-*lc_object.plot_bestmodel(self, fitter, modelcode, burnin_pct=0.1)*
+*lc_object.plot_bestmodel(fitter, modelcode, folded=False, burnin_pct=0.1)*
 
 to generate a plot of the resulting model. Note that the "best fit" for each parameter is simply the median value from the chains.
 If you want to do something more sophistcated you'll probably want to go in and manually alter the code. 
