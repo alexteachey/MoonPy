@@ -58,7 +58,7 @@ Most of the above take keyword arguments that are described below.
 
 Proper usage is:
 
-*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')*
+*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', save_lc='y', load_lc='n')*
 
 
 ### KEYWORDS
@@ -77,15 +77,11 @@ Proper usage is:
 
 *coord_format*: format of your supplied coordinates. An attempt is made to intuit this.
 
-*search_radius*: in arcseconds, the size of the search cone when supploying coordinates.
+*search_radius*: in arcseconds, the size of the search cone when supplying coordinates.
 
 *lc_format*: May be "sap" (simple aperture photometry) or "pdc" (pre-search data conditioning). Default is "pdc".
 
 *remove_flagged*: automatically removes data points that have quality flags != 0.
-
-*sc*: Boolean, stands for "short cadence". Not doing anything right now.
-
-*ffi*: stands for "Full-Frame Images." Not doing anything right now.
 
 *save_lc*: option to save your light curve once you've generated it as a .csv file.
 
