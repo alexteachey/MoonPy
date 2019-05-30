@@ -58,18 +58,12 @@ Most of the above take keyword arguments that are described below.
 
 Proper usage is:
 
-*>>> lc_object = MoonpyLC(targetID=None, lc_times=None, lc_fluxes=None, lc_errors=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')*
+*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n')*
 
 
 ### KEYWORDS
 
 *targetID*: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope. Example: "Kepler-1625b", KOI-5084.01, or KIC 4760478. Variations on these (with and without prefix) are (hopefully!) handled to your satisfaction.
-
-*lc_times*: array of times (not yet supported).
-
-*lc_fluxes*: array of fluxes. (not yet supported).
-
-*lc_errors*: array of errors. (not yet supported).
 
 *target_type*: May be "kic", "koi", or "planet" (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
 
@@ -100,11 +94,10 @@ Proper usage is:
 
 **NOTES:**
 This object is designed to be versatile. You can either
-a) supply times, fluxes, and errors as arrays (EVENTUALLY)!;
-b) supply a targetID (either a KOI, Kepler planet, KIC, or K2 planet) and the name of the telescope; or 
-c) supply coordinates for an object search
+a) supply a targetID (either a KOI, Kepler planet, KIC, or K2 planet) and the name of the telescope; or 
+b) supply coordinates for an object search
 
-If you choose option (b), you may need to make it explicit somehow which telescope you want to use.
+If you choose option (a), you may need to make it explicit somehow which telescope you want to use.
 For example, you can either enter a targetID like "Kepler-1625b", "KOI-5084.01", or "KIC4760478", OR
 you may enter "1625b", "5084.01", or "4760478" for the targetID and specify the telescope as "kepler".
 The code will do its best to determine the telescope. It should also accept "Kepler" as well as "kepler",
@@ -112,7 +105,7 @@ and "K2" as well as "k2". TESS support is in the works. If you have already down
 you may set load_lc='y' to attempt to load a file you have already generated (handy if you've already 
 detrended the light curve and don't want to do it again.)
 
-The coordinate search (c) performs a cone search with a (default) 5 arcsecond radius through Simbad. You may change the 
+The coordinate search (b) performs a cone search with a (default) 5 arcsecond radius through Simbad. You may change the 
 cone size by adjusting the "search_radius" keyword. Some targets have multiple aliases, and if the first hit
 is not either a KOI, kepler planet or KIC star, an attempt will be made to find this name amongst the aliases.
 Also note that your options for coord_format are 'degrees' and "sexagesimal", but if you input sexagesimal
