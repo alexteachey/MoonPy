@@ -128,12 +128,10 @@ Plotting the data is simple, and I expect the keywords are all self-explanatory.
 
 Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
 
-*>>> lc_object.plot_lc(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', include_flagged='n', detrended='y'))*
+*>>> lc_object.plot_lc(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n')*
 
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
-
-You may also set folded='y' to see a phase fold of the light curve.
 
 
 ## GENERATE A LOMB-SCARGLE PERIODOGRAM.
