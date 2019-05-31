@@ -141,7 +141,7 @@ class MoonpyLC(object):
 		if load_lc == 'y':
 			if self.target.startswith('K2') or self.target.startswith('k2'):
 				self.telescope = "k2"
-			elif self.target.startswith('Kepler') or self.target.startswith("kepler") or self.target.startswith('KIC') or self.target.startswith('KOI'):
+			elif self.target.startswith('Kepler') or self.target.startswith("kepler") or self.target.startswith('KIC') or self.target.startswith('kic') or self.target.startswith('KOI') or self.target.startswith('koi'):
 				self.telescope = "kepler"
 			else:
 				telescope = input('Please specify the telescope: ')
