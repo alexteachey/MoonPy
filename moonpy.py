@@ -481,20 +481,22 @@ class MoonpyLC(object):
 		if model == 'M':
 			pass
 		elif (model == 'P') or (model=='T'):
-			self.param_uber_dict['RsatRp'] = ['uniform', (1e-6,1e-6)]
-			self.param_uber_dict['MsatMp'] = ['uniform', (1e-6,1e-6)]
-			self.param_uber_dict['sat_sma'] = ['uniform', (1e-6, 1e-6)]
-			self.param_uber_dict['sat_phase'] = ['uniform', (0,0)]
-			self.param_uber_dict['sat_omega'] = ['uniform', (0,0)]
+			### THESE ARE INPUTS TO THE MODEL BUT SHOULD NOT BE FREE PARAMETERS!
+			self.param_uber_dict['RsatRp'] = ['fixed', 1e-6]
+			self.param_uber_dict['MsatMp'] = ['fixed', 1e-6]
+			self.param_uber_dict['sat_sma'] = ['fixed', 1000]
+			self.param_uber_dict['sat_phase'] = ['fixed', 0]
+			self.param_uber_dict['sat_omega'] = ['fixed', 0]
 
 		if model == 'T':
 			ntransits = len(self.taus)
-			for i in np.arange(1,ntransits+1,1):
+			for i in np.arange(1,ntransits,1):
 				taukeyname = 'tau'+str(i)
-				param_uber_dict[taukeyname] = ['uniform', (self.tau0 + i*self.period -0.1, self.tau0 + i*self.period + 0.1)]
+				#param_uber_dict[taukeyname] = ['uniform', (self.tau0 + i*self.period -0.1, self.tau0 + i*self.period + 0.1)]
+				param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
 
 		if model == 'Z':
-			param_uber_dict['RsatRp'] = ['uniform', (1e-6, 1e-6)]
+			param_uber_dict['RsatRp'] = ['fixed', (1e-6, 1e-6)]
 
 
 		if custom_param_dict != None:
@@ -523,10 +525,11 @@ class MoonpyLC(object):
 
 
 		if fitter == 'multinest':
-			mp_multinest(fit_times, fit_fluxes, fit_errors, param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
+			#mp_multinest(fit_times, fit_fluxes, fit_errors, param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
+			mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode)
 
 		elif fitter == 'emcee':
-			mp_emcee(fit_times, fit_fluxes, fit_errors, param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, resume=resume) ### outputs to a file
+			mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, resume=resume) ### outputs to a file
 
 		### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
 		self.initialize_priors(modelcode=modelcode)		
