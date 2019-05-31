@@ -210,7 +210,7 @@ lc_object.rp_rjup # units of Jupiter radii (converted without uncertainties)
 lc_object.rstar_rsol # units of Solar radii (converted from Rp/Rstar, without propagating uncertainties)
 lc_object.depth 
 lc_object.taus # all BKJD transit midtimes in the baseline, assuming linear ephemeris
-lc_object.neighbors ### identifies 
+lc_object.neighbors ### identifies other transiting planets in the system, if any. More functionality to come!
 ```
 If an attribute doesn't come with an uncertainty tuple, it's probably because this is a non-native value
 and I haven't bothered to propagate the uncertainties. Will try to implement this in the future.
