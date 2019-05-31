@@ -93,7 +93,6 @@ class MoonpyLC(object):
 		if load_lc == 'y':
 			save_lc = 'n'
 
-
 		target_name = targetID 
 		self.target = target_name
 
@@ -137,13 +136,12 @@ class MoonpyLC(object):
 		print("targetID = ", targetID)
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
-		self.telescope = telescope
 
 
 		if load_lc == 'y':
 			if self.target.startswith('K2') or self.target.startswith('k2'):
 				self.telescope = "k2"
-			elif self.target.startswith('Kepler') or self.target.startswith("kepler"):
+			elif self.target.startswith('Kepler') or self.target.startswith("kepler") or self.target.startswith('KIC') or self.target.startswith('KOI'):
 				self.telescope = "kepler"
 			else:
 				telescope = input('Please specify the telescope: ')
