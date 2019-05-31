@@ -263,7 +263,7 @@ As used in Teachey & Kipping (2018), the four models are as follows (once they'r
 they keyword must be one of the keywords accepted by pyluna or batman: 
 [RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, Rstar, long_peri, ecc]
 
-the 'prior_type' may be 'uniform', 'loguniform', 'normal', 'lognormal', or 'beta'.
+the 'prior_type' may be 'uniform', 'loguniform', 'normal', 'lognormal', 'beta', or 'fixed'. If 'fixed', you must supply a single number (not a tuple) that will be the fixed value for this parameter in all of your runs.
 
 If you wish to keep the default parameters there is no need to supply these.
 
