@@ -6,7 +6,7 @@
 last updated: May 31, 2019. Developed by [Alex Teachey](mailto:ateachey@astro.columbia.edu).
 
 This document will walk you through the basics of using the MoonPy code. 
-MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and would probably not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers!
+MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers!
 
 MoonPy is kind of like a streamlined astro package aggregator, but in time it will hopefully also contain brand new functionality. 
 In particular, support for modeling exomoon transits is coming! (Hence the name, MoonPy). It's not quite ready for prime time, so stay tuned!
