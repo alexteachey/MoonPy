@@ -496,7 +496,7 @@ class MoonpyLC(object):
 				param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
 
 		if model == 'Z':
-			param_uber_dict['RsatRp'] = ['fixed', (1e-6, 1e-6)]
+			param_uber_dict['RsatRp'] = ['fixed', 1e-6]
 
 
 		if custom_param_dict != None:
@@ -695,13 +695,13 @@ class MoonpyLC(object):
 				if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
 				elif (self.telescope == 'k2') or (self.telescope == "K2"):
-					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 		except:
 			if (self.telescope == 'kepler') or (self.telescope=='Kepler'):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
 			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
-
+				#os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 
 		### find by KICID, KOI number of planet!
 		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
@@ -740,11 +740,162 @@ class MoonpyLC(object):
 				target_letter = str(self.target[-1])
 				if ' ' in self.target:
 					NEA_targetname = self.target
+				else:
+					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
 				rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
 
 				print("number of rows matching this description = ", len(rowidx))
 
 
+		### now with the rowidx we can access the other properties we want!
+		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
+			target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
+			target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
+			target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = cumkoi_data['koi_ror'][rowidx], cumkoi_data['koi_ror_err1'][rowidx], cumkoi_data['koi_ror_err2'][rowidx]
+			target_rp, target_rp_uperr, target_rp_lowerr = cumkoi_data['koi_prad'][rowidx], cumkoi_data['koi_prad_err1'][rowidx], cumkoi_data['koi_prad_err2'][rowidx]
+
+		elif (self.telescope == 'k2') or (self.telescope == "K2"):
+			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(cumkoi_data['pl_orbper'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr1'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr2'][rowidx])
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(cumkoi_data['pl_tranmid'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr1'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr2'][rowidx])
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(cumkoi_data['pl_imppar'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr2'][rowidx])
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(cumkoi_data['pl_trandur'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr2'][rowidx])
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(cumkoi_data['pl_ratror'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr2'][rowidx])
+			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(cumkoi_data['pl_rade'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr2'][rowidx])
+
+
+
+		### update properties!
+		self.period = float(target_period)
+		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
+		self.tau0 = float(target_tau0)
+		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
+		self.impact = float(target_impact)
+		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
+		self.duration_hours = float(target_duration)
+		self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
+		self.duration_days = float(target_duration)/24
+		self.duration_days_err = (float(target_duration_lowerr)/24, float(target_duration_uperr)/24)
+		self.rprstar = float(target_rprstar)
+		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
+		self.rp_rearth = float(target_rp) ### earth radii
+		self.rp_rjup = float(target_rp) * (R_earth.value / R_jup.value)
+		self.rp_meters = self.rp_rjup * mp_tools.eq_RJup
+		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
+		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
+		self.rstar_meters = self.rstar_rsol * mp_tools.eq_RSun
+		self.depth = self.rprstar**2
+		self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
+
+
+		###	identify in-transit times
+		transit_midtimes = [self.tau0]
+		next_transit = transit_midtimes[-1]+self.period
+		while next_transit < np.nanmax(np.concatenate((self.times))):
+			transit_midtimes.append(next_transit)
+			next_transit = transit_midtimes[-1]+self.period
+		self.taus = np.array(transit_midtimes)
+
+
+
+
+	def find_neighbors(self):
+		### this function will identify whether your target has other planets in the system!
+		### this is useful, for example, if you want to make sure a possible moon dip isn't
+		### another transiting planet that just happens to transit around the same time.
+
+		### find by KICID, KOI number of planet!
+		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+			cumkoi_data = ascii.read('cumkois.txt')
+		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+			cumkoi_data = ascii.read('cumk2ois.txt')
+		cumkoi_columns = cumkoi_data.columns
+
+		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
+			if str(self.target).startswith('Kepler-'):
+				target_letter = str(self.target)[-1]
+				if ' ' in self.target: ### already in the correct format, with a space between the letter.
+					NEA_targetname = self.target
+				else: #### there isn't a space, so add it!
+					NEA_targetname = self.target[:-1]+' '+target_letter
+				rowidx = np.where(cumkoi_data['kepler_name'] == NEA_targetname)[0]
+
+			elif str(self.target).startswith('KIC'):
+				NEA_targetname = int(self.target[4:])
+				rowidx = np.where(cumkoi_data['kepid'] == NEA_targetname)[0]
+
+			elif str(self.target).startswith('KOI') or str(self.target).startswith('koi'):
+				NEA_targetname = str(self.target[4:])
+				if len(NEA_targetname) == 7: ### of the form 5084.01
+					NEA_targetname = 'K0'+str(NEA_targetname)
+				elif len(NEA_targetname) == 6: ### of the form 163.01
+					NEA_targetname = 'K00'+str(NEA_targetname)
+				elif len(NEA_targetname) == 5: ### of the form 23.01
+					NEA_targetname = 'K000'+str(NEA_targetname)
+				elif len(NEA_targetname) == 4: ### of the form 1.01
+					NEA_targetname = 'K0000'+str(NEA_targetname)
+				rowidx = np.where(cumkoi_data['kepoi_name'] == NEA_targetname)[0]
+
+
+		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+			if str(self.target).startswith('K2-'):
+				target_letter = str(self.target[-1])
+				if ' ' in self.target:
+					NEA_targetname = self.target
+				else:
+					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
+				rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
+
+				print("number of rows matching this description = ", len(rowidx))
+
+		if (type(rowidx) == list) or (type(rowidx) == np.ndarray):
+			rowidx = int(rowidx[0])
+
+
+		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
+		check_rows = np.arange(rowidx-10,rowidx+11,1)
+		neighbor_rows = []
+		neighbor_targets = []
+
+		if (self.target).startswith('KOI') or (self.target).startswith('koi'):
+			for cr in check_rows:
+				if (np.array(cumkoi_data['kepoi_name'])[cr][:-1] == NEA_targetname[:-1]) and (cr != rowidx):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(cumkoi_data['kepoi_name'][cr]))
+					neighbor = str(cumkoi_data['kepoi_name'][cr])
+					while neighbor.startswith('K') or neighbor.startswith('0'):
+						neighbor = neighbor[1:]
+					neighbor = 'KOI-'+str(neighbor)
+					neighbor_rows.append(cr)
+					neighbor_targets.append(neighbor)
+
+		elif (self.target).startswith('Kepler') or (self.target).startswith('kepler') or (self.target).startswith("KEPLER"):
+			for cr in check_rows:
+				if (np.array(cumkoi_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != rowidx):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(cumkoi_data['kepler_name'][cr]))
+					neighbor = str(cumkoi_data['kepler_name'][cr])
+					if ' ' in neighbor:
+						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+					neighbor_rows.append(cr)
+					neighbor_targets.append(neighbor)
+
+		elif (self.target).startswith('K2') or (self.target).startswith('k2'):
+			for cr in check_rows:
+				if (np.array(cumkoi_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(cumkoi_data['pl_name'])[cr] != NEA_targetname):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(cumkoi_data['pl_name'][cr]))
+					neighbor = str(cumkoi_data['pl_name'][cr])
+					if ' ' in neighbor:
+						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+					neighbor_rows.append(cr)
+					neighbor_targets.append(neighbor)			
+
+		self.neighbors = neighbor_targets
+
+
+
+
+
+		"""
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
 			target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
@@ -789,7 +940,7 @@ class MoonpyLC(object):
 			transit_midtimes.append(next_transit)
 			next_transit = transit_midtimes[-1]+self.period
 		self.taus = np.array(transit_midtimes)
-
+		"""
 
 
 

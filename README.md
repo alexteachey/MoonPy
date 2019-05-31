@@ -176,8 +176,7 @@ because too computationally expensive.
 
 
 ## GET PROPERTIES.
-
-New feature as of May 14, 2019 is the *get_properties()* method. This function queries the NASA Exoplanet Archive
+This function queries the NASA Exoplanet Archive
 to retrieve your target's impact parameter, transit duration, orbital period, all transit midtimes within the 
 dataset baseline, the ratio of radii, and the isolated radii for the planet and the star. Uncertainties
 for many of these parameters are also available as a tuple, quoting lower and upper sigmas.
@@ -185,6 +184,11 @@ for many of these parameters are also available as a tuple, quoting lower and up
 Note that this function should be called automatically when you initialize a light curve object (whether you're
 downloading it fresh or retrieving a light curve you already loaded and saved), so these attributes ought to be 
 available to you automatically without needing to call the *get_properties()* function.
+
+*New as of May 31st 2019* - *get_properties()* calls the *find_neighbors()* function, which will tell you whether
+other transiting planets are known in the system. This is useful if you want to make sure that a potential 
+moon signal isn't simply another transiting planet. For now you can call lc_object.neighbors to pull up a list
+of other planets in the system. More functionality to come!
 
 The following attributes are supported;
 ```
@@ -206,6 +210,7 @@ lc_object.rp_rjup # units of Jupiter radii (converted without uncertainties)
 lc_object.rstar_rsol # units of Solar radii (converted from Rp/Rstar, without propagating uncertainties)
 lc_object.depth 
 lc_object.taus # all BKJD transit midtimes in the baseline, assuming linear ephemeris
+lc_object.neighbors ### identifies 
 ```
 If an attribute doesn't come with an uncertainty tuple, it's probably because this is a non-native value
 and I haven't bothered to propagate the uncertainties. Will try to implement this in the future.
