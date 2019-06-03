@@ -893,6 +893,35 @@ class MoonpyLC(object):
 
 
 
+	def get_neighbors(self, clobber_lc='y'):
+		### this function will download grab all the information about your target's neighbors.
+		neighbor_dict = {}
+		for neighbor in self.neighbors:
+			###
+			try:
+				if self.telescope == 'kepler':
+					if neighbor.startswith('Kepler') or neighbor.startswith('kepler'):
+						neighbor_key = 'k'+str(neighbor[7:])
+					else:
+						### for now this is just a KOI!
+						neighbor_key = neighbor
+						while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
+							neighbor_key = neighbor_key[1:]
+						neighbor_key = 'k'+str(neighbor_key)
+				elif self.telescope == 'k2':
+					neighbor_key = 'k2_'+str(neighbor_key[3:])
+
+				### now generate the LC object -- note that this will download duplicate light curves!
+				### for now, just delete them after downloading... should come up with a better solution.
+				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, clobber='n')
+			except:
+				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
+
+			if clobber_lc == 'y':
+				os.system('rm -f '+savepath+'/'+str(neighbor)+'_lightcurve.csv')
+
+		self.neighbor_dict = neighbor_dict 		
+
 
 
 		"""

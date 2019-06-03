@@ -294,6 +294,29 @@ This will save a corner plot in the chains directory where your planet chains we
 
 
 
+## IDENTIFY TARGET NEIGHBORS
+
+*New June 3, 2019:*: Using the *get_neighbors(clobber_lc='y')* method, you can automatically grab information supplied by the *get_properties()* method about every other known transiting planet in the target system. These will be contained within the newly created *neighbor_dict* attribute. For example, Suppose we're interested in Kepler-90g. After initializing this object
+
+*>>> k90g = MoonpyLC(targetID='Kepler-90g')*
+
+you may then call
+
+*>>> k90g.get_neighbors()*
+
+At which point you can see this planet has several neighbors:
+
+*>>> k90g.neighbor_dict.keys()*
+
+Which will return an array of keys: *dict_keys(['k90f', 'k90b', 'k90d', 'k90c', 'k90e'])*. 
+
+Each of these keys will then access a separate light curve object stored in the dictionary, which has the same attributes as suppled by *get_properties()*. For example, if you wish to know all the transit times of the neighbor Kepler-90c, you would call
+
+*>>> k90g.neighbor_dict['k90c'].taus*
+
+**Note:** As of June 3rd, *get_neighbors()* downloads the light curves as it would for any other MoonpyLC object (though if it already exists it will not redownload it). This will be fixed in time to speed up the process. By default, these light curves will be clobbered upon extraction of the relevant data (they are duplicates of your target light curve, so in general the user will not want to keep these). All that remains are the attributes, including the times, fluxes, and errors.
+
+
 
 
 
