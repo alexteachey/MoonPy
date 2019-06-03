@@ -924,6 +924,8 @@ class MoonpyLC(object):
 
 
 
+
+
 		"""
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
@@ -979,7 +981,7 @@ class MoonpyLC(object):
 	###############################
 
 
-	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n'):
+	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n'):
 		### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -1017,6 +1019,26 @@ class MoonpyLC(object):
 			plt.scatter(stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			if show_errors == 'y':
 				plt.errorbar(stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+			if show_neighbors == 'y':
+				### this will highlight all the other transits for the neighbors (if any)
+				try:
+					neighbors = self.neighbor_dict.keys()
+				except:
+					self.get_neighbors()
+					neighbors = self.neighbor_dict.keys()
+				for neighbor in neighbors:
+					neighbor_taus = self.neighbor_dict[neighbor].taus 
+					neighbor_dur = self.neighbor_dict[neighbor].duration_days 
+				
+					neighbor_transit_idxs = []
+					for nt in neighbor_taus:
+						ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
+						neighbor_transit_idxs.append(ntidxs)
+					neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+					plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
+
+
 		elif folded == 'y':
 			try:
 				self.fold(detrended=detrended)

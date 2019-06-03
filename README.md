@@ -129,10 +129,12 @@ Plotting the data is simple, and I expect the keywords are all self-explanatory.
 
 Once you have generated your light curve object (step 1 above), you can plot the light curve simply by calling 
 
-*>>> lc_object.plot_lc(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n')*
+*>>> lc_object.plot_lc(facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n')*
 
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
+
+*New June 3rd*: if *show_neighbors='y'*, additional transiting planets in the system will be identified, and their transits will be marked in the light curve with a green 'x'.
 
 
 ## GENERATE A LOMB-SCARGLE PERIODOGRAM.
@@ -270,7 +272,7 @@ If you wish to keep the default parameters there is no need to supply these.
 
 
 
-## PLOT YOUR BEST MODEL..
+## PLOT YOUR BEST MODEL.
 
 Once you've run a model fit (either with PyMultiNest or emcee, and with either LUNA or batman) you may wish to overplot your best fit onto the data. This is still under development, but you can use
 
