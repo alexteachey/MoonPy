@@ -52,7 +52,7 @@ Below you will find the details of some of these tools. At present the user will
 * **fit a transit model** to the light curve using *fit()*.
 * **plot the best fitting model** over the light curve using *plot_bestmodel()*.
 * **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
-* **get target neighbor attributes** using the *get_neighbors()*.
+* **get target neighbor attributes** using *get_neighbors()*.
 
 Most of the above take keyword arguments that are described below.
 
