@@ -401,9 +401,6 @@ class MoonpyLC(object):
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
 			
-			lcfile = open(savepath+'/'+str(self.target)+'_lightcurve.csv', mode='w')
-			lcfile.write('BKJD,fluxes,errors,fluxes_detrended,errors_detrended,flags,quarter\n')
-
 			for qidx in np.arange(0,len(self.quarters),1):
 				qtq = self.quarters[qidx]
 				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
@@ -922,6 +919,63 @@ class MoonpyLC(object):
 
 		self.neighbor_dict = neighbor_dict 		
 
+		#### create a new version of the light curve file, now with timestamps marked as neighbor_transit
+				### this will highlight all the other transits for the neighbors (if any)
+
+
+		neighbor_transit_idxs = []
+		neighbor_transit_IDs = []
+		final_neighbor_IDs = []		
+		
+		for neighbor in neighbor_dict.keys():
+			neighbor_taus = neighbor_dict[neighbor].taus 
+			neighbor_dur = neighbor_dict[neighbor].duration_days 
+
+			for nt in neighbor_taus:
+				ntidxs = np.where((np.hstack(self.times) >= (nt - 0.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 0.5*neighbor_dur)))[0]
+				neighbor_transit_idxs.append(ntidxs)
+				neighbor_transit_IDs.append(neighbor)
+
+		neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+		neighbor_transit_IDs = np.hstack(neighbor_transit_IDs)
+
+		for ntidx in np.unique(neighbor_transit_idxs):
+			### find all transiting planets that have this index
+			try:
+				all_neighbors = neighbor_transit_IDs[np.where(neighbor_transit_idxs == ntidx)[0]]
+				final_neighbor_IDs.append(list(all_neighbors))
+			except:
+				traceback.print_exc()
+				#print('neighbor_transit_idxs = ', neighbor_transit_idxs)
+				#print('np.where(neighbor_transit_idxs == ntidx) = ', np.where(neighbor_transit_idxs == ntidx)[0])
+				final_neighbor_IDs.append('???')
+
+		neighbor_transit_idxs = np.unique(neighbor_transit_idxs)
+		print('final_neighbor_IDs = ', final_neighbor_IDs)
+
+		print('len(final_neighbor_IDs) = ', len(final_neighbor_IDs))
+		print('len(neighbor_transit_idxs) = ', len(neighbor_transit_idxs))
+
+		print('neighbor_transit_idxs = ', neighbor_transit_idxs)
+
+		lcfile = open(savepath+'/'+self.target+"_lightcurve.csv", mode='r')
+		lcfile_new = open(savepath+"/"+self.target+"_lc_temp.csv", mode='w')
+		for nline, line in enumerate(lcfile):
+			if nline == 0:
+				newline = line[:-1]+',neighbor_transit,transiter\n'
+			else:
+				if (nline-1) in neighbor_transit_idxs:
+					ntidx = np.where(neighbor_transit_idxs == (nline-1))[0][0]
+					print('ntidx = ', ntidx)
+					every_neighbor = final_neighbor_IDs[ntidx]
+					newline = line[:-1]+',y,'+str(every_neighbor)+'\n'
+				else:
+					newline = line[:-1]+',n\n'
+			lcfile_new.write(newline)
+		lcfile.close()
+		lcfile_new.close()
+		### rename the file.
+		os.system('mv '+savepath+'/'+self.target+'_lc_temp.csv '+savepath+'/'+self.target+'_lightcurve.csv')
 
 
 
@@ -1030,7 +1084,7 @@ class MoonpyLC(object):
 				for neighbor in neighbors:
 					neighbor_taus = self.neighbor_dict[neighbor].taus 
 					neighbor_dur = self.neighbor_dict[neighbor].duration_days 
-				
+
 					neighbor_transit_idxs = []
 					for nt in neighbor_taus:
 						ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
