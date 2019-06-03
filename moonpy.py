@@ -915,117 +915,76 @@ class MoonpyLC(object):
 				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
 			if clobber_lc == 'y':
-				os.system('rm -f '+savepath+'/'+str(neighbor)+'_lightcurve.csv')
+				### make sure the light curve you're clobbering hasn't been detrended!
+				neighborfile = pandas.read_csv(savepath+'/'+str(neighbor)+'_lightcurve.csv')
+				try:
+					detrend = neighborfile['fluxes_detrended']
+				except:
+					os.system('rm -f '+savepath+'/'+str(neighbor)+'_lightcurve.csv')
 
 		self.neighbor_dict = neighbor_dict 		
 
 		#### create a new version of the light curve file, now with timestamps marked as neighbor_transit
 				### this will highlight all the other transits for the neighbors (if any)
 
+		### first check to make sure the target file hasn't already had this run.
+		tfile = pandas.read_csv(savepath+'/'+self.target+'_lightcurve.csv')
+		try:
+			tfile['neighbor_transit']
+			already_flagged = 'y'
+		except:
+			already_flagged = 'n'
 
-		neighbor_transit_idxs = []
-		neighbor_transit_IDs = []
-		final_neighbor_IDs = []		
-		
-		for neighbor in neighbor_dict.keys():
-			neighbor_taus = neighbor_dict[neighbor].taus 
-			neighbor_dur = neighbor_dict[neighbor].duration_days 
+		if already_flagged == 'n':
+			final_neighbor_IDs = []		
+			neighbor_transit_idxs = []
+			neighbor_transit_IDs = []
+			
+			for neighbor in neighbor_dict.keys():
+				neighbor_taus = neighbor_dict[neighbor].taus 
+				neighbor_dur = neighbor_dict[neighbor].duration_days 
 
-			for nt in neighbor_taus:
-				ntidxs = np.where((np.hstack(self.times) >= (nt - 0.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 0.5*neighbor_dur)))[0]
-				neighbor_transit_idxs.append(ntidxs)
-				neighbor_transit_IDs.append(neighbor)
+				for nt in neighbor_taus:
+					ntidxs = np.where((np.hstack(self.times) >= (nt - 0.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 0.5*neighbor_dur)))[0]
+					for ntidx in ntidxs:
+						neighbor_transit_idxs.append(ntidx)
+						neighbor_transit_IDs.append(neighbor)
 
-		neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-		neighbor_transit_IDs = np.hstack(neighbor_transit_IDs)
+			#neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+			#neighbor_transit_IDs = np.hstack(neighbor_transit_IDs)
 
-		for ntidx in np.unique(neighbor_transit_idxs):
-			### find all transiting planets that have this index
-			try:
+			neighbor_transit_idxs = np.array(neighbor_transit_idxs)
+			neighbor_transit_IDs = np.array(neighbor_transit_IDs)
+
+			for ntidx in np.unique(neighbor_transit_idxs):
+				### find all transiting planets that have this index
 				all_neighbors = neighbor_transit_IDs[np.where(neighbor_transit_idxs == ntidx)[0]]
 				final_neighbor_IDs.append(list(all_neighbors))
-			except:
-				traceback.print_exc()
-				#print('neighbor_transit_idxs = ', neighbor_transit_idxs)
-				#print('np.where(neighbor_transit_idxs == ntidx) = ', np.where(neighbor_transit_idxs == ntidx)[0])
-				final_neighbor_IDs.append('???')
 
-		neighbor_transit_idxs = np.unique(neighbor_transit_idxs)
-		print('final_neighbor_IDs = ', final_neighbor_IDs)
 
-		print('len(final_neighbor_IDs) = ', len(final_neighbor_IDs))
-		print('len(neighbor_transit_idxs) = ', len(neighbor_transit_idxs))
+			neighbor_transit_idxs = np.unique(neighbor_transit_idxs)
 
-		print('neighbor_transit_idxs = ', neighbor_transit_idxs)
-
-		lcfile = open(savepath+'/'+self.target+"_lightcurve.csv", mode='r')
-		lcfile_new = open(savepath+"/"+self.target+"_lc_temp.csv", mode='w')
-		for nline, line in enumerate(lcfile):
-			if nline == 0:
-				newline = line[:-1]+',neighbor_transit,transiter\n'
-			else:
-				if (nline-1) in neighbor_transit_idxs:
-					ntidx = np.where(neighbor_transit_idxs == (nline-1))[0][0]
-					print('ntidx = ', ntidx)
-					every_neighbor = final_neighbor_IDs[ntidx]
-					newline = line[:-1]+',y,'+str(every_neighbor)+'\n'
+			lcfile = open(savepath+'/'+self.target+"_lightcurve.csv", mode='r')
+			lcfile_new = open(savepath+"/"+self.target+"_lc_temp.csv", mode='w')
+			for nline, line in enumerate(lcfile):
+				if nline == 0:
+					newline = line[:-1]+',neighbor_transit,transiter\n'
 				else:
-					newline = line[:-1]+',n\n'
-			lcfile_new.write(newline)
-		lcfile.close()
-		lcfile_new.close()
-		### rename the file.
-		os.system('mv '+savepath+'/'+self.target+'_lc_temp.csv '+savepath+'/'+self.target+'_lightcurve.csv')
+					if (nline-1) in neighbor_transit_idxs:
+						ntidx = np.where(neighbor_transit_idxs == (nline-1))[0][0]
+						every_neighbor = final_neighbor_IDs[ntidx]
+						newline = line[:-1]+',y,'+str(every_neighbor)+'\n'
+					else:
+						newline = line[:-1]+',n\n'
+				lcfile_new.write(newline)
+			lcfile.close()
+			lcfile_new.close()
+			### rename the file.
+			os.system('mv '+savepath+'/'+self.target+'_lc_temp.csv '+savepath+'/'+self.target+'_lightcurve.csv')
 
 
 
 
-		"""
-		### now with the rowidx we can access the other properties we want!
-		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
-			target_period, target_period_uperr, target_period_lowerr = cumkoi_data['koi_period'][rowidx], cumkoi_data['koi_period_err1'][rowidx], cumkoi_data['koi_period_err2'][rowidx]
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = cumkoi_data['koi_time0bk'][rowidx], cumkoi_data['koi_time0bk_err1'][rowidx], cumkoi_data['koi_time0bk_err2'][rowidx]
-			target_impact, target_impact_uperr, target_impact_lowerr = cumkoi_data['koi_impact'][rowidx], cumkoi_data['koi_impact_err1'][rowidx], cumkoi_data['koi_impact_err2'][rowidx]
-			target_duration, target_duration_uperr, target_duration_lowerr = cumkoi_data['koi_duration'][rowidx], cumkoi_data['koi_duration_err1'][rowidx], cumkoi_data['koi_duration_err2'][rowidx]
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = cumkoi_data['koi_ror'][rowidx], cumkoi_data['koi_ror_err1'][rowidx], cumkoi_data['koi_ror_err2'][rowidx]
-			target_rp, target_rp_uperr, target_rp_lowerr = cumkoi_data['koi_prad'][rowidx], cumkoi_data['koi_prad_err1'][rowidx], cumkoi_data['koi_prad_err2'][rowidx]
-
-		elif (self.telescope == 'k2') or (self.telescope == "K2"):
-			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(cumkoi_data['pl_orbper'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr1'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr2'][rowidx])
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(cumkoi_data['pl_tranmid'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr1'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr2'][rowidx])
-			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(cumkoi_data['pl_imppar'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr2'][rowidx])
-			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(cumkoi_data['pl_trandur'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr2'][rowidx])
-
-
-		### update properties!
-		self.period = float(target_period)
-		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
-		self.tau0 = float(target_tau0)
-		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
-		self.impact = float(target_impact)
-		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
-		self.duration_hours = float(target_duration)
-		self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
-		self.duration_days = float(target_duration)/24
-		self.duration_days_err = (float(target_duration_lowerr)/24, float(target_duration_uperr)/24)
-		self.rprstar = float(target_rprstar)
-		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
-		self.rp_rearth = float(target_rp) ### earth radii
-		self.rp_rjup = float(target_rp) * (R_earth.value / R_jup.value)
-		self.rp_meters = self.rp_rjup * mp_tools.eq_RJup
-		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
-		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
-		self.rstar_meters = self.rstar_rsol * mp_tools.eq_RSun
-		self.depth = self.rprstar**2
-
-		###	identify in-transit times
-		transit_midtimes = [self.tau0]
-		next_transit = transit_midtimes[-1]+self.period
-		while next_transit < np.nanmax(np.concatenate((self.times))):
-			transit_midtimes.append(next_transit)
-			next_transit = transit_midtimes[-1]+self.period
-		self.taus = np.array(transit_midtimes)
-		"""
 
 
 
