@@ -155,7 +155,7 @@ an error saying that the x-values must be strictly increasing. Not sure what tha
 
 Anyway the usage is simple:
 
-*>>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', skip_ntqs='n', kernel=None, max_degree=30)*
+*>>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30)*
 
 
 ### KEYWORDS
@@ -166,6 +166,8 @@ Anyway the usage is simple:
 
 *mask_transits*: by default, transits are masked by calculating the transit times (assuming linear ephemeris), and one full transit duration
 is masked on either side of the transit midtime. That is, the total mask is twice the width of the transit. 
+
+*mask_neighbors*: by default, transits of other planets in the system will also be masked for the detrending.
 
 *skip_ntqs*: this option allows you to only detrend the quarters that actually contain a transit of the planet you're interested in.
 This can be useful with cofiam, for example, since each quarter can take ~1 minute to detrend. Off by default.
