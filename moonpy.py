@@ -408,7 +408,8 @@ class MoonpyLC(object):
 					lcfile.write(str(qt)+','+str(qf)+','+str(qe)+','+str(qfd)+','+str(qed)+','+str(qfl)+','+str(qtq)+'\n')
 			lcfile.close()
 
-
+		### finally, run get_neighbors() so that the neighbors will be appended to the end of the file.
+		self.get_neighbors()
 
 
 	### FITTING!
@@ -914,15 +915,7 @@ class MoonpyLC(object):
 			except:
 				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
-			if clobber_lc == 'y':
-				### make sure the light curve you're clobbering hasn't been detrended!
-				neighborfile = pandas.read_csv(savepath+'/'+str(neighbor)+'_lightcurve.csv')
-				try:
-					detrend = neighborfile['fluxes_detrended']
-				except:
-					os.system('rm -f '+savepath+'/'+str(neighbor)+'_lightcurve.csv')
-
-		self.neighbor_dict = neighbor_dict 		
+			self.neighbor_dict = neighbor_dict 
 
 		#### create a new version of the light curve file, now with timestamps marked as neighbor_transit
 				### this will highlight all the other transits for the neighbors (if any)
