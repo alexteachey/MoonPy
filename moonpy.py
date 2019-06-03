@@ -356,7 +356,7 @@ class MoonpyLC(object):
 				### add neighbor transit times to mask_transit_idxs.
 				if mask_neighbors == 'y':
 					neighbor_transit_idxs = []
-					for ntt in self.neighbor_transit_times:
+					for ntt in self.all_transit_times:
 						if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
 							neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
 					mask_transit_idxs.append(neighbor_transit_idxs)
@@ -952,6 +952,15 @@ class MoonpyLC(object):
 					neighbor_transit_idxs.append(ntidx)
 					neighbor_transit_IDs.append(neighbor)
 
+		### include the target here!
+		target_taus = self.taus
+		target_dur = self.duration_days
+		for tt in target_taus:
+			ttidxs = np.where((np.hstack(self.times) >= (tt - 0.5*target_dur)) & (np.hstack(self.times) <= (tt + 0.5*target_dur)))[0]
+			for ttidx in ttidxs:
+				neighbor_transit_idxs.append(ttidx)
+				neighbor_transit_IDs.append(self.target)
+
 		#neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 		#neighbor_transit_IDs = np.hstack(neighbor_transit_IDs)
 
@@ -976,7 +985,7 @@ class MoonpyLC(object):
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
-					newline = line[:-1]+',neighbor_transit,transiter\n'
+					newline = line[:-1]+',in_transit,transiter\n'
 
 				else:
 					if (nline-1) in neighbor_transit_idxs:
@@ -997,9 +1006,9 @@ class MoonpyLC(object):
 			### rename the file.
 			os.system('mv '+savepath+'/'+self.target+'_lc_temp.csv '+savepath+'/'+self.target+'_lightcurve.csv')
 
-		self.neighbor_transit_times = np.array(neighbor_transit_times)
-		self.neighbor_transit_list = neighbor_transit_list
-		self.neighbor_transit_ID = neighbor_transit_ID 
+		self.all_transit_times = np.array(neighbor_transit_times)
+		self.all_transit_list = neighbor_transit_list
+		self.all_transit_IDs = neighbor_transit_ID 
 
 
 

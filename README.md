@@ -319,7 +319,7 @@ Each of these keys will then access a separate light curve object stored in the 
 
 *>>> k90g.neighbor_dict['k90c'].taus*
 
-Two additional columns will be added to your target light curve file: "neighbor_transit" and "transiter". "neighbor_transit" will be either 'y' or 'n', indicating whether a neighbor is transiting at this time step. the 'transiter' will be the name of the transiting planet. If there is more than one planet transiting at a time, all planets in transit should be indicated.
+Two additional columns will be added to your target light curve file: "in_transit" and "transiter". "in_transit" will be either 'y' or 'n', indicating whether any planet (the target OR a neighbor) is expected to be transiting at this time step (based on linear ephemerides). the 'transiter' will be the name of the transiting planet. If there is more than one planet transiting at a time, all planets in transit should be indicated.
 
 **Note:** As of June 3rd, *get_neighbors()* downloads the light curves as it would for any other MoonpyLC object (though if it already exists it will not redownload it). This will be fixed in time to speed up the process. By default, these light curves will be clobbered upon extraction of the relevant data (they are duplicates of your target light curve, so in general the user will not want to keep these). All that remains are the attributes, including the times, fluxes, and errors. 
 
