@@ -301,7 +301,7 @@ This will save a corner plot in the chains directory where your planet chains we
 
 ## IDENTIFY TARGET NEIGHBORS
 
-*New June 3, 2019:*: Using the *get_neighbors(clobber_lc='y')* method, you can automatically grab information supplied by the *get_properties()* method about every other known transiting planet in the target system. These will be contained within the newly created *neighbor_dict* attribute. For example, Suppose we're interested in Kepler-90g. After initializing this object
+*New June 3, 2019:*: Using the *get_neighbors(clobber_lc='y', save_to_file='y')* method, you can automatically grab information supplied by the *get_properties()* method about every other known transiting planet in the target system. These will be contained within the newly created *neighbor_dict* attribute. For example, Suppose we're interested in Kepler-90g. After initializing this object
 
 *>>> k90g = MoonpyLC(targetID='Kepler-90g')*
 
@@ -322,6 +322,8 @@ Each of these keys will then access a separate light curve object stored in the 
 Two additional columns will be added to your target light curve file: "neighbor_transit" and "transiter". "neighbor_transit" will be either 'y' or 'n', indicating whether a neighbor is transiting at this time step. the 'transiter' will be the name of the transiting planet. If there is more than one planet transiting at a time, all planets in transit should be indicated.
 
 **Note:** As of June 3rd, *get_neighbors()* downloads the light curves as it would for any other MoonpyLC object (though if it already exists it will not redownload it). This will be fixed in time to speed up the process. By default, these light curves will be clobbered upon extraction of the relevant data (they are duplicates of your target light curve, so in general the user will not want to keep these). All that remains are the attributes, including the times, fluxes, and errors. 
+
+Also note that *get_neighbors()* is automatically called by the *detrend()* method, and by default the neighbor transits are masked prior to detrending. You may turn this off, but if *mask_neighbors* is on, *mask_transits* will also be set to on, overriding a command to turn it off.
 
 
 
