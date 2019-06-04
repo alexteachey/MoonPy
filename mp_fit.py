@@ -260,7 +260,7 @@ def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
 
 
 
-def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", model='M', storechain=False, burnin_pct=0.1, show_plot='y'):
+def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, nparams=14, resume=True, modelcode="LUNA", model='M', storechain=False, burnin_pct=0.1, show_plot='y'):
 	import emcee
 	import corner
 
@@ -342,7 +342,8 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resu
 		resume = False 
 
 	### INITIALIZE EMCEE PARAMETERS
-	ndim = len(mc_param_labels)
+	ndim = len(mc_variable_labels)
+	assert ndim == nparams
 	#pos = [result["x"] + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 	### pos is a list of arrays!
 	if resume == False:
