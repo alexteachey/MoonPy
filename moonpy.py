@@ -69,7 +69,7 @@ class MoonpyLC(object):
 
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
-			if os.path.exists(savepath+'/'+str(targetID)+'_lightcurve.csv'):
+			if os.path.exists(savepath+'/'+str(targetID)+'_lightcurve.tsv'):
 				clobber = input('light curve already exists. Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
@@ -148,7 +148,7 @@ class MoonpyLC(object):
 				self.telescope = telescope 
 
 			try:
-				pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.csv')
+				pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t')
 				ptimes = np.array(pandafile['BKJD'])
 				pfluxes = np.array(pandafile['fluxes'])
 				perrors = np.array(pandafile['errors'])
@@ -158,7 +158,7 @@ class MoonpyLC(object):
 					pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
 					perrors_detrend = np.array(pandafile['errors_detrended'])
 				except:
-					pass
+					print("could not load detrended fluxes.")
 
 				unique_quarters = np.unique(pquarters)
 				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], []
@@ -185,6 +185,7 @@ class MoonpyLC(object):
 					pass
 
 			except:
+				traceback.print_exc()
 				print("could not load the light curve from file. Will download.")
 				load_lc = 'n'
 
@@ -298,13 +299,13 @@ class MoonpyLC(object):
 
 		if save_lc == 'y':
 			### write to a file!
-			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.csv', mode='w')
-			lcfile.write('BKJD,fluxes,errors,flags,quarter\n')
+			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.tsv', mode='w')
+			lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
 			for qidx in np.arange(0,len(self.quarters),1):
 				qtq = lc_quarters[qidx]
 				qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
 				for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
-					lcfile.write(str(qt)+','+str(qf)+','+str(qe)+','+str(qfl)+','+str(qtq)+'\n')
+					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
 			lcfile.close()
 
 	### DETRENDING!
@@ -415,8 +416,8 @@ class MoonpyLC(object):
 		self.errors_detrend = master_error_detrend
 
 		if save_lc == 'y':
-			lcfile = open(savepath+'/'+self.target+'_lightcurve.csv', mode='w')
-			lcfile.write('BKJD,fluxes,errors,fluxes_detrended,errors_detrended,flags,quarter\n')
+			lcfile = open(savepath+'/'+self.target+'_lightcurve.tsv', mode='w')
+			lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
 			
@@ -424,7 +425,7 @@ class MoonpyLC(object):
 				qtq = self.quarters[qidx]
 				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
 				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
-					lcfile.write(str(qt)+','+str(qf)+','+str(qe)+','+str(qfd)+','+str(qed)+','+str(qfl)+','+str(qtq)+'\n')
+					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
 			lcfile.close()
 
 		self.get_neighbors(save_to_file='y')
@@ -980,23 +981,23 @@ class MoonpyLC(object):
 		neighbor_transit_ID = []
 
 		if save_to_file == 'y':
-			lcfile = open(savepath+'/'+self.target+"_lightcurve.csv", mode='r')
-			lcfile_new = open(savepath+"/"+self.target+"_lc_temp.csv", mode='w')
+			lcfile = open(savepath+'/'+self.target+"_lightcurve.tsv", mode='r')
+			lcfile_new = open(savepath+"/"+self.target+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
-					newline = line[:-1]+',in_transit,transiter\n'
+					newline = line[:-1]+'\tin_transit\ttransiter\n'
 
 				else:
 					if (nline-1) in neighbor_transit_idxs:
 						ntidx = np.where(neighbor_transit_idxs == (nline-1))[0][0]
 						every_neighbor = final_neighbor_IDs[ntidx]
-						newline = line[:-1]+',y,'+str(every_neighbor)+'\n'
+						newline = line[:-1]+'\ty\t'+str(every_neighbor)+'\n'
 						neighbor_transit_times.append(np.hstack(self.times)[nline-1])
 						neighbor_transit_list.append('y')
 						neighbor_transit_ID.append(str(every_neighbor))
 					else:
-						newline = line[:-1]+',n\n'
+						newline = line[:-1]+'\tn\n'
 						neighbor_transit_list.append('n')
 						neighbor_transit_ID.append('')
 
@@ -1004,7 +1005,7 @@ class MoonpyLC(object):
 			lcfile.close()
 			lcfile_new.close()
 			### rename the file.
-			os.system('mv '+savepath+'/'+self.target+'_lc_temp.csv '+savepath+'/'+self.target+'_lightcurve.csv')
+			os.system('mv '+savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
 
 		self.all_transit_times = np.array(neighbor_transit_times)
 		self.all_transit_list = neighbor_transit_list
@@ -1074,7 +1075,8 @@ class MoonpyLC(object):
 						ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
 						neighbor_transit_idxs.append(ntidxs)
 					neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-					plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
+					#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
+					plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x')					
 
 
 		elif folded == 'y':

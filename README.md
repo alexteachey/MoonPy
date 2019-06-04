@@ -134,7 +134,7 @@ Once you have generated your light curve object (step 1 above), you can plot the
 If the light curve has already been detrended, you will see the detrended light curve. IF NOT, you will get a 
 warning that the light curve has not yet been detrended and you will see instead the raw light curve. 
 
-*New June 3rd*: if *show_neighbors='y'*, additional transiting planets in the system will be identified, and their transits will be marked in the light curve with a green 'x'.
+*New June 3rd*: if *show_neighbors='y'*, additional transiting planets in the system will be identified, each with their own color and marked with an 'x'.
 
 
 ## GENERATE A LOMB-SCARGLE PERIODOGRAM.
