@@ -87,7 +87,7 @@ Proper usage is:
 
 *remove_flagged*: automatically removes data points that have quality flags != 0.
 
-*save_lc*: option to save your light curve once you've generated it as a .csv file.
+*save_lc*: option to save your light curve once you've generated it as a .tsv file.
 
 *load_lc*: if 'y', an attempt is made to load a light curve file you have already generated through this code.
 
