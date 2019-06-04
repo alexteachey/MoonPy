@@ -24,7 +24,7 @@ HERE IS THE MASTER FUNCTION! THIS IS WHAT YOU WILL CALL TO GENERATE THE MOONS YO
 #	assert len(plan_params) == 4
 #	assert len(sat_params) == 6
 
-def prepare_files(all_times):
+def prepare_files(all_times, ntaus, nparam, nparamorig):
 	seriesP_file = open('seriesP.jam', mode='w')
 
 	for at in all_times:
@@ -40,6 +40,15 @@ def prepare_files(all_times):
 		try:
 			if line.split()[0] == 'nplen':
 				newline = ' nplen = '+str(len(all_times))+'\n'
+
+			elif line.split()[0] == 'nparam':
+				newline = ' nparam = '+str(nparam)+'\n'
+			elif line.split()[0] == 'OOTlen':
+				newline = ' OOTlen = '+str(ntaus)+'\n'
+			elif line.split()[0] == 'nparamorig':
+				newline = ' nparamorig = '+str(nparamorig)+'\n'
+			elif line.split()[0] == 'taulen':
+				newline = ' taulen = '+str(ntaus)+'\n'
 			else:
 				newline = line 
 		except:
@@ -56,7 +65,7 @@ def prepare_files(all_times):
 
 
 #def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
-def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
@@ -171,6 +180,49 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 		input_file.write(str('%.7f' % RsatRp)+'D0\n') # Rp(14)
 	else:
 		input_file.write(str(round(RsatRp,7))+'D0\n') # Rp(14)	
+
+
+	#### FITTING INDIVIDUAL TAUS!
+	if tau1 != None:
+		if 'e' in str(tau1):
+			input_file.write(str('%.7f' % tau1)+'D0\n') # Rp(15)
+		else:
+			input_file.write(str(round(tau1,7))+'D0\n') # Rp(15)	
+	#### FITTING INDIVIDUAL TAUS!
+	if tau2 != None:
+		if 'e' in str(tau2):
+			input_file.write(str('%.7f' % tau2)+'D0\n') # Rp(16)
+		else:
+			input_file.write(str(round(tau2,7))+'D0\n') # Rp(16)	
+
+	#### FITTING INDIVIDUAL TAUS!
+	if tau3 != None:
+		if 'e' in str(tau3):
+			input_file.write(str('%.7f' % tau3)+'D0\n') # Rp(17)
+		else:
+			input_file.write(str(round(tau3,7))+'D0\n') # Rp(17)	
+
+	#### FITTING INDIVIDUAL TAUS!
+	if tau4 != None:
+		if 'e' in str(tau4):
+			input_file.write(str('%.7f' % tau4)+'D0\n') # Rp(18)
+		else:
+			input_file.write(str(round(tau4,7))+'D0\n') # Rp(18)
+
+	#### FITTING INDIVIDUAL TAUS!
+	if tau5 != None:
+		if 'e' in str(tau5):
+			input_file.write(str('%.7f' % tau5)+'D0\n') # Rp(19)
+		else:
+			input_file.write(str(round(tau5,7))+'D0\n') # Rp(19)
+
+	#### FITTING INDIVIDUAL TAUS!
+	if tau6 != None:
+		if 'e' in str(tau1):
+			input_file.write(str('%.7f' % tau6)+'D0\n') # Rp(20)
+		else:
+			input_file.write(str(round(tau6,7))+'D0\n') # Rp(20)			
+
 
 	input_file.close()
 

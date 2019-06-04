@@ -63,7 +63,7 @@ def pymn_loglike_LUNA(cube, ndim, nparams):
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
-	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_var_dict, **pymn_fixed_dict, add_noise='n', show_plots='n')
+	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_var_dict, **pymn_fixed_dict, model=mn_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	return loglikelihood 
@@ -83,14 +83,14 @@ def pymn_loglike_batman(cube, ndim, nparams):
 
 
 	### now you should be able to run_LUNA(param_dict)
-	batman_times, batman_fluxes = run_batman(data_times, **pymn_var_dict, **pymn_fixed_dict, add_noise='n', show_plots='n')
+	batman_times, batman_fluxes = run_batman(data_times, **pymn_var_dict, **pymn_fixed_dict, model=mn_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((batman_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	return loglikelihood 
 
 
 #def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, modelcode="LUNA", show_plot='y'):
-def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, modelcode='LUNA', show_plot='y'):
+def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='LUNA', show_plot='y'):
 	import pymultinest
 	### this function will start PyMultiNest!
 
@@ -107,6 +107,7 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, modelcode='
 	global data_fluxes
 	global data_errors
 	global mn_param_dict
+	global mn_model
 
 	mn_param_labels = []
 	mn_fixed_labels = []
@@ -121,6 +122,7 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, modelcode='
 	data_fluxes = []
 	data_errors = []
 	mn_param_dict = param_dict
+	mn_model = model
 
 	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
 	for parlab in param_dict.keys():
@@ -144,30 +146,27 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, modelcode='
 		data_fluxes.append(f)
 		data_errors.append(e)
 
-	if os.path.exists('MultiNest_fits'):
-		pass
-	else:
-		os.system('mkdir MultiNest_fits')
-
-
-	if modelcode=='LUNA':
-		outputdir = 'MultiNest_fits/LUNA/'+str(targetID)
-	elif modelcode=='batman':
-		outputdir = 'MultiNest_fits/batman/'+str(targetID)
-
-	if os.path.exists(outputdir):
-		pass
-	else:
-		os.system('mkdir '+outputdir)
-		os.system('mkdir '+outputdir+'/chains')
+	outputdir = 'MultiNest_fits'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### create MultiNest_fits directory
+	outputdir = outputdir+'/'+str(modelcode)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates modelcode directory
+	outputdir = outputdir+'/'+str(targetID)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates target directory
+	outputdir = outputdir+'/'+str(mn_model)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates model directory
 	outputdir = outputdir+'/chains'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates chains directory
 
 
-	n_params = len(mn_variable_labels)
 	if modelcode == 'LUNA':
-		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=n_params, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 	elif modelcode == "batman":
-		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=n_params, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 	
 	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
 
@@ -210,7 +209,7 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 	for pidx, parlab in enumerate(mc_fixed_labels):
 		emcee_fixed_param_dict[parlab] = mc_param_dict[parlab][1] ### fixed value!
 
-	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, add_noise='n', show_plots='n')
+	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, model=mc_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
@@ -233,7 +232,7 @@ def emcee_lnlike_batman(params, data_times, data_fluxes, data_errors):
 	for pidx, parlab in enumerate(mc_fixed_labels):
 		emcee_fixed_param_dict[parlab] = mc_param_dict[parlab][1] ### fixed value!
 
-	batman_times, batman_fluxes = run_batman(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, add_noise='n', show_plots='n')
+	batman_times, batman_fluxes = run_batman(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, model=mc_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((batman_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
@@ -261,7 +260,7 @@ def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
 
 
 
-def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", storechain=False, burnin_pct=0.1, show_plot='y'):
+def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resume=True, modelcode="LUNA", model='M', storechain=False, burnin_pct=0.1, show_plot='y'):
 	import emcee
 	import corner
 
@@ -278,6 +277,7 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resu
 	global data_fluxes
 	global data_errors
 	global mc_param_dict
+	global mc_model
 
 	mc_param_labels = []
 	mc_fixed_labels = []
@@ -292,6 +292,7 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resu
 	data_fluxes = []
 	data_errors = []
 	mc_param_dict = param_dict
+	mc_model = model
 
 	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
 	for parlab in param_dict.keys():
@@ -314,32 +315,24 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, resu
 		data_fluxes.append(f)
 		data_errors.append(e)
 
-	if os.path.exists('emcee_fits'):
-		pass
-	else:
-		os.system('mkdir emcee_fits')
 
-	if os.path.exists('emcee_fits/LUNA'):
-		pass
-	else:
-		os.system('mkdir emcee_fits/LUNA')
-
-	if os.path.exists('emcee_fits/batman'):
-		pass
-	else:
-		os.system('mkdir emcee_fits/batman')
-
-	if modelcode=='LUNA':
-		outputdir = 'emcee_fits/LUNA/'+str(targetID)
-	elif modelcode=='batman':
-		outputdir = 'emcee_fits/batman/'+str(targetID)
-
-	if os.path.exists(outputdir):
-		pass
-	else:
+	outputdir = 'MultiNest_fits'
+	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
-		os.system('mkdir '+outputdir+'/chains')
+	outputdir = outputdir+'/'+str(modelcode)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir)
+	outputdir = outputdir+'/'+str(targetID)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir)
+	outputdir = outputdir+'/'+str(mc_model)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir)
 	outputdir = outputdir+'/chains'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir)
+
+
 	chainfile = outputdir+'/'+str(targetID)+'_mcmc_chain.txt'
 	lnpostfile = outputdir+'/'+str(targetID)+"_mcmc_lnpost.txt"
 

@@ -185,7 +185,6 @@ class MoonpyLC(object):
 					pass
 
 			except:
-				traceback.print_exc()
 				print("could not load the light curve from file. Will download.")
 				load_lc = 'n'
 
@@ -491,13 +490,6 @@ class MoonpyLC(object):
 				fit_times, fit_fluxes, fit_errors = lc_times, lc_fluxes, lc_errors ### already flattened!
 
 
-		### prepare seriesP.jam and plotit.f90... only needs to be done once!
-		try:
-			prepare_files(np.hstack(fit_times))
-		except:
-			prepare_files(fit_times)
-
-
 		if model == 'M':
 			pass
 		elif (model == 'P') or (model=='T'):
@@ -505,18 +497,58 @@ class MoonpyLC(object):
 			self.param_uber_dict['RsatRp'] = ['fixed', 1e-6]
 			self.param_uber_dict['MsatMp'] = ['fixed', 1e-6]
 			self.param_uber_dict['sat_sma'] = ['fixed', 1000]
+			self.param_uber_dict['sat_inc'] = ['fixed', 0]
 			self.param_uber_dict['sat_phase'] = ['fixed', 0]
 			self.param_uber_dict['sat_omega'] = ['fixed', 0]
 
 		if model == 'T':
-			ntransits = len(self.taus)
-			for i in np.arange(1,ntransits,1):
-				taukeyname = 'tau'+str(i)
-				#param_uber_dict[taukeyname] = ['uniform', (self.tau0 + i*self.period -0.1, self.tau0 + i*self.period + 0.1)]
-				param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
+			transitnum = 0
+			for i in np.arange(0, len(self.taus),1):
+				#### verify that the tau is within your quarters!
+				for qidx,q in enumerate(self.quarters):
+					if self.taus[i] >= np.nanmin(self.times[qidx]) and self.taus[i] <= np.nanmax(self.times[qidx]):
+						### means the transit is in your data and can be fit.
+						taukeyname = 'tau'+str(transitnum)
+						transitnum += 1
+						param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
 
 		if model == 'Z':
 			param_uber_dict['RsatRp'] = ['fixed', 1e-6]
+
+
+		### prepare seriesP.jam and plotit.f90... only needs to be done once!
+		if model == "M" or model == "P" or model == "Z":
+			ntaus = 1
+		elif model == 'T':
+			ntaus = 0
+			for paramkey in param_uber_dict.keys():
+				if paramkey.startswith('tau'):
+					ntaus += 1
+
+		if model == "M":
+			nparamorig = 14
+			nparam = 14
+			nvars = 14 ### fitting all the parameters!
+		elif model == "P":
+			#nparamorig = 8  
+			#nparam = 8
+			nparamorig = 14 ### all these inputs must still be present, even if some of them are fixed at zero!
+			nparam = 14
+			nvars = 8  ### RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan
+		elif model == 'T':
+			#nparamorig = 8 ### RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan 
+			nparamorig = 14
+			nparam = nparamorig + (ntaus-1) ### tau0 is a STANDARD nparamorig input... every additional tau needs to be counted.
+			nvars = 8 + (ntaus-1) ### standard P model variables plus all additional taus.
+		elif model == 'Z':
+			nparam = 14
+			nparamorig = 14
+			nvars = 13 ### not fitting Rsat/Rp 
+
+		try:
+			prepare_files(np.hstack(fit_times), ntaus, nparam, nparamorig)
+		except:
+			prepare_files(fit_times, ntaus, nparam, nparamorig)
 
 
 		if custom_param_dict != None:
@@ -546,13 +578,17 @@ class MoonpyLC(object):
 
 		if fitter == 'multinest':
 			#mp_multinest(fit_times, fit_fluxes, fit_errors, param_labels=param_labels, param_prior_forms=param_prior_forms, param_limit_tuple=param_limit_tuple, nlive=nlive, targetID=self.target, modelcode=modelcode) ### outputs to a file
-			mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode)
+			mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode, model=model, nparams=nvars)
 
 		elif fitter == 'emcee':
-			mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, resume=resume) ### outputs to a file
+			mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, model=model, resume=resume, nparams=nvars) ### outputs to a file
 
 		### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
 		self.initialize_priors(modelcode=modelcode)		
+
+
+
+
 
 
 
@@ -937,7 +973,7 @@ class MoonpyLC(object):
 			except:
 				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
-			self.neighbor_dict = neighbor_dict 
+		self.neighbor_dict = neighbor_dict 
 
 		final_neighbor_IDs = []		
 		neighbor_transit_idxs = []

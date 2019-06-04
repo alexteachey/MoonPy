@@ -232,10 +232,10 @@ a wrapper for this code).
 
 You may fit a LUNA or BATMAN model to your detrended data using the following command:
 
-
 *>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False)*
 
 
+### KEYWORDS
 *custom_param_dict*: you may use this to modify the default parameter dictionary. The form must be param_dict['parameter'] = ['prior_type', (lower_bound, upper_bound)]. 
 
 *fitter*: may be "multinest" or "emcee".
@@ -244,7 +244,7 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 
 *skip_ntqs*: If 'y', your fit will not utilize quarters for which the planet does not transit.
 
-*model*: Currently only "M" is supported. See notes below.
+*model*: May be "P", "T", "Z", or "M". Default is "M". See notes below.
 
 *nlive*: number of live points utilized by multinest.
 
@@ -259,7 +259,7 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 **Notes**
 Future functionality will include evidence testing for four models: P, T, Z, and M.
 
-As used in Teachey & Kipping (2018), the four models are as follows (once they're supported):
+As used in Teachey & Kipping (2018), the four models are as follows:
 (P): a planet-only model that assumes strict linear ephemeris;
 (T): a planet-only model that allows the transit times to be fit individually (maximum 6 transits);
 (Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and
@@ -267,6 +267,8 @@ As used in Teachey & Kipping (2018), the four models are as follows (once they'r
 
 they keyword must be one of the keywords accepted by pyluna or batman: 
 [RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, Rstar, long_peri, ecc]
+
+Additional taus (up to 6 total) can be used, but this is only meaningful for fitting individual transit timings through the "T" model.
 
 the 'prior_type' may be 'uniform', 'loguniform', 'normal', 'lognormal', 'beta', or 'fixed'. If 'fixed', you must supply a single number (not a tuple) that will be the fixed value for this parameter in all of your runs.
 
