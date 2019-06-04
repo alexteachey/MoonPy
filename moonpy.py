@@ -1050,6 +1050,70 @@ class MoonpyLC(object):
 
 
 
+	def find_TTVs(self, show_plot='n', yvar='OCmins', window=2):
+		OC_mins = []
+		OC_days = []
+		OC_over_durs = []
+		epochs = []
+
+		for qidx,q in enumerate(self.quarters):
+			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes_detrend[qidx], self.errors_detrend[qidx]
+			for epoch, tau in enumerate(self.taus):
+				if tau >= np.nanmin(qtimes) and tau <= np.nanmax(qtimes):
+					### this tau is in the quarter
+					### grab times up to 3x the transit duration on either side of the the tau.
+					transit_idxs = np.where((qtimes >= tau - (window*self.duration_days)) & (qtimes <= tau + (window*self.duration_days)))[0]
+					transit_times = qtimes[transit_idxs]
+					transit_fluxes = qfluxes[transit_idxs]
+					numerator = np.nansum((1 - transit_fluxes) * transit_times)
+					denominator = np.nansum(1 - transit_fluxes)
+					tmid = numerator / denominator
+					OC_day = tmid - tau
+					OC_over_dur = OC_day / self.duration_days
+					OC_min = OC_day * (24 * 60)
+
+					OC_mins.append(OC_min)
+					OC_days.append(OC_day)
+					OC_over_durs.append(OC_over_dur)
+					epochs.append(epoch)
+		OC_mins = np.array(OC_mins)
+		OC_days = np.array(OC_days)
+		OC_over_durs = np.array(OC_over_durs)
+		epochs = np.array(epochs)
+		OC_sig_min = np.nanstd(OC_mins)
+		OC_sig_day = np.nanstd(OC_days)
+		OC_sig_over_dur = OC_sig_day / self.duration_days
+
+		self.OCs_min = OC_mins
+		self.OCs_day = OC_days
+		self.OCs_over_dur = OC_over_durs
+		self.OC_sig_min = OC_sig_min
+		self.OC_sig_day = OC_sig_day
+		self.OC_sig_over_dur = OC_sig_over_dur
+
+		if show_plot == 'y':
+			if yvar == "OCmins":
+				yvals = OC_mins
+				ylab = 'O - C [minutes]'
+			elif yvar == 'OCdays':
+				yvals = OC_days
+				ylab = 'O - C [days]'
+			elif yvar == 'OCdurs':
+				yvals = OC_over_durs
+				ylab = '(O - C) / duration'
+
+			plt.scatter(epochs, yvals, s=10, facecolor='LightCoral', edgecolor='k')
+			plt.xlabel('Epoch')
+			plt.ylabel(ylab)
+			plt.show()
+
+
+
+
+
+
+
+
 
 	###############################
 	### VISUALIZATION FUNCTIONS ###

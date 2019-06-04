@@ -53,6 +53,7 @@ Below you will find the details of some of these tools. At present the user will
 * **plot the best fitting model** over the light curve using *plot_bestmodel()*.
 * **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
 * **get target neighbor attributes** using *get_neighbors()*.
+* **identify possible TTVs** using *find_TTVs()*.
 
 Most of the above take keyword arguments that are described below.
 
@@ -303,7 +304,7 @@ This will save a corner plot in the chains directory where your planet chains we
 
 ## IDENTIFY TARGET NEIGHBORS
 
-*New June 3, 2019:*: Using the *get_neighbors(clobber_lc='y', save_to_file='y')* method, you can automatically grab information supplied by the *get_properties()* method about every other known transiting planet in the target system. These will be contained within the newly created *neighbor_dict* attribute. For example, Suppose we're interested in Kepler-90g. After initializing this object
+*New June 3, 2019*: Using the *get_neighbors(clobber_lc='y', save_to_file='y')* method, you can automatically grab information supplied by the *get_properties()* method about every other known transiting planet in the target system. These will be contained within the newly created *neighbor_dict* attribute. For example, Suppose we're interested in Kepler-90g. After initializing this object
 
 *>>> k90g = MoonpyLC(targetID='Kepler-90g')*
 
@@ -327,6 +328,18 @@ Two additional columns will be added to your target light curve file: "in_transi
 
 Also note that *get_neighbors()* is automatically called by the *detrend()* method, and by default the neighbor transits are masked prior to detrending. You may turn this off, but if *mask_neighbors* is on, *mask_transits* will also be set to on, overriding a command to turn it off.
 
+
+## IDENTIFY TRANSIT TIMING VARIATIONS
+
+*New June 4, 2019*: The method *find_TTVs(show_plot='n', yvar='OCmins', window=2)* may be called to identify **possible** Transit Timing Variations (TTVs) in the system. 
+
+This is a very fast and dirty operation intended to alert the user to the potential presence of TTVs. It works by calculating an approximate transit midtime as a weighted average, using times a few transit durations (defined by *window*) away from the midtime calculated from linear ephemeris. If this is worrying you already, you should probably do your own more rigorous TTV fitting! Or consult this work and catalogue: https://arxiv.org/abs/1606.01744 
+
+This function will generate several new attributes: *lc_object.OCs_min, lc_object.OCs_day, lc_object.OCs_over_dur, lc_object.OC_sig_min, lc_object.OC_sig_day*, and *lc_object.OC_sig_over_dur.*
+
+Perhaps the most useful metric is *OC_sig_over_dur*. This provides the standard deviation of O-C values divided by the transit duration. If this number is large, the transit timings are likely swinging with an amplitude much larger than the duration of the transit itself, and linear ephemeris is a poor approximation. It is up to the user to decide whether these TTVs are 'significant.'
+
+If *show_plots* is set to 'y', a plot of O-C values will be generated vs epoch number. Acceptable values for *yvar* are "OCmins", "OCdays", and "OCdurs".
 
 
 
