@@ -65,33 +65,8 @@ def cofiam_matrix_gen(times, degree):
 
 
 def cofiam_matrix_coeffs(times, fluxes, degree):
-	### generate the matrix to start with!
-
 	Xmat = cofiam_matrix_gen(times, degree)
-
-	### SOLVING (X^T X)^-1 X^T y = beta
-
-	"""
-	first_term = np.matmul(Xmat.T, Xmat)
-	inverse_first_term = np.linalg.inv(first_term)
-	inverse_times_XT = np.matmul(inverse_first_term, Xmat.T)
-	beta_coefs = np.matmul(inverse_times_XT, fluxes)
-	
-
-	print "beta_coefs (old way) = ", beta_coefs
-	"""
-
-	"""
-	print "first_term.shape = ", first_term.shape
-	print "inverse_first_term.shape = ", inverse_first_term.shape
-	print "inverse_times_XT.shape = ", inverse_times_XT.shape
-	print "beta_coefs.shape = ", beta_coefs.shape 
-	"""
-
-	### another approach!
 	beta_coefs = np.linalg.lstsq(Xmat, fluxes)[0]
-	#print "beta_coefs (new way) = ", beta_coefs
-
 	return beta_coefs
 
 
@@ -100,11 +75,8 @@ def cofiam_matrix_coeffs(times, fluxes, degree):
 def cofiam_function(times, fluxes, degree):
 	cofiam_matrix = cofiam_matrix_gen(times, degree)
 	cofiam_coefficients = cofiam_matrix_coeffs(times, fluxes, degree)
-
-	#output = np.matmul(cofiam_coefficients, cofiam_matrix)
 	output = np.matmul(cofiam_matrix, cofiam_coefficients)
-
-	return output ### should be an array of fluxes!
+	return output 
 
 
 def cofiam_iterative(times, fluxes, max_degree=30, min_degree=1):

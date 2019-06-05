@@ -2,15 +2,28 @@ from __future__ import division
 import astropy
 import numpy as np
 from scipy.ndimage import median_filter
+from scipy.signal import medfilt
 from scipy.interpolate import interp1d
 from cofiam import cofiam_iterative, max_order
 
 
 
-def cofiam_detrend(times, fluxes, errors, mask_idxs=None, max_degree=30):
+def cofiam_detrend(times, fluxes, errors, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
 	if type(mask_idxs) != type(None):
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+
+		if remove_outliers == 'y':
+			outlier_idxs = []
+			movmed = medfilt(unmasked_fluxes, kernel_size=window)
+			for flidx, fl in enumerate(unmasked_fluxes):
+				if np.abs(unmasked_fluxes[flidx] - movmed[flidx]) > outsig*unmasked_errors[flidx]:
+					outlier_idxs.append(flidx)
+			outlier_idxs = np.array(outlier_idxs)
+			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
+
 		best_model, best_degree, best_DW, max_degree = cofiam_iterative(unmasked_times, unmasked_fluxes, max_degree=max_degree)
+		### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values
+		### at those locations in the time series, and to keep flux_detrend and errors_detrend the same length as the original time series.
 		cofiam_interp = interp1d(unmasked_times, best_model, bounds_error=False, fill_value='extrapolate')
 		best_model = cofiam_interp(times)
 	else:
