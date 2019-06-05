@@ -161,7 +161,7 @@ Anyway the usage is simple:
 *>>> lc_object.detrend(dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30)*
 
 
-### KEYWORDS
+### Keywords
 
 *dmeth*: currently supported are "cofiam", "medfilt", and "untrendy" (though the last is breaking a lot).
 
@@ -238,7 +238,7 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 *>>> lc_object.fit(custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False)*
 
 
-### KEYWORDS
+### Keywords
 *custom_param_dict*: you may use this to modify the default parameter dictionary. The form must be param_dict['parameter'] = ['prior_type', (lower_bound, upper_bound)]. 
 
 *fitter*: may be "multinest" or "emcee".
@@ -342,6 +342,24 @@ Perhaps the most useful metric is *OC_sig_over_dur*. This provides the standard 
 If *show_plots* is set to 'y', a plot of O-C values will be generated vs epoch number. Acceptable values for *yvar* are "OCmins", "OCdays", and "OCdurs".
 
 
+## Prepare CNN-ready files
+
+*New June 5, 2019*: Teachey et al 2019b (in prep) is utilizing Convolutional Neural Networks (CNNs) to identify potential moon transits in the *Kepler* data. To that end, the new *prep_for_CNN(save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n')* function prepares your light curves to be fed into a CNN. 
+
+
+### Keywords
+
+* *save_lc*: saves a light curve segment as a numpy array. The array will have either 3 or 4 rows. The first row is the times, second row is detrended fluxes, third row is detrended errors, and 4th row (if applicable) is an array of flags indicating whether another planet in the system is expected to be transiting at this time step (based on linear ephemeris). if zero, there is not an expected planet transit at this index, if 1, a neighbor transit is expected.
+
+* *window*: in days, the window of time on either side of the target transit midtime that you want to grab for this segment.
+
+* *cnn_len*: Typically CNN inputs must be of uniform size. Therefore, after selecting a window size you will need to further pare down your light curve to some standard length of data points, dictated by the *cnn_len* keyword.
+
+* *exclude_neighbors*: If a neighbor is detected in your time window, this light curve will not be generated and saved.
+
+* *flag_neighbors*: This keyword indicates whether you want the fourth row of neighbor transit flags on your light curve file. Note that *exclude_neighbors* takes priority here, so if you opt to exclude neighbors you will not generate a light curve segment file and therefore not have an array of flags. The user will likely want to set *exclude_neighbors* to 'n' if the presence of neighboring transiting planets is not a deal breaker.
+
+* *show_plot*: If activated, every viable transit segment will be plotted.
 
 
 
