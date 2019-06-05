@@ -63,7 +63,7 @@ Most of the above take keyword arguments that are described below.
 
 Proper usage is:
 
-*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', save_lc='y', load_lc='n')*
+*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber=None)*
 
 
 ### KEYWORDS
@@ -91,6 +91,8 @@ Proper usage is:
 *save_lc*: option to save your light curve once you've generated it as a .tsv file.
 
 *load_lc*: if 'y', an attempt is made to load a light curve file you have already generated through this code.
+
+*clobber*: if 'y', any light curve file for the target will be overwritten. Sets *load_lc = 'n'*. If neither *load_lc* nor *clobber* are specified and a light curve for this target already exists, the user will be asked to decide whether the file should be clobbered.
 
 
 **NOTES:**
