@@ -494,8 +494,8 @@ class MoonpyLC(object):
 			pass
 		elif (model == 'P') or (model=='T'):
 			### THESE ARE INPUTS TO THE MODEL BUT SHOULD NOT BE FREE PARAMETERS!
-			self.param_uber_dict['RsatRp'] = ['fixed', 1e-6]
-			self.param_uber_dict['MsatMp'] = ['fixed', 1e-6]
+			self.param_uber_dict['RsatRp'] = ['fixed', 1e-8]
+			self.param_uber_dict['MsatMp'] = ['fixed', 1e-8]
 			self.param_uber_dict['sat_sma'] = ['fixed', 1000]
 			self.param_uber_dict['sat_inc'] = ['fixed', 0]
 			self.param_uber_dict['sat_phase'] = ['fixed', 0]
@@ -513,7 +513,7 @@ class MoonpyLC(object):
 						param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
 
 		if model == 'Z':
-			param_uber_dict['RsatRp'] = ['fixed', 1e-6]
+			param_uber_dict['RsatRp'] = ['fixed', 1e-8]
 
 
 		### prepare seriesP.jam and plotit.f90... only needs to be done once!
@@ -1046,6 +1046,78 @@ class MoonpyLC(object):
 		self.all_transit_times = np.array(neighbor_transit_times)
 		self.all_transit_list = neighbor_transit_list
 		self.all_transit_IDs = neighbor_transit_ID 
+
+
+
+	def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n'):
+		### this function will produce an arrayy that's ready to be fed to a CNN for moon finding. 
+		cnnlc_path = moonpydir+'/cnn_lcs'
+		if os.path.exists(cnnlc_path) == False:
+			os.system('mkdir '+cnnlc_path)
+
+		for taunum,tau in enumerate(self.taus):
+			cnn_min, cnn_max = tau-window, tau+window
+			cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
+			### grab the times, fluxes, and errors
+			cnn_times, cnn_fluxes, cnn_errors = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]
+			if len(cnn_times) < cnn_len: ### the size of the array you need to feed into the CNN.
+				### not enough times 
+				continue
+			while len(cnn_times) > cnn_len:
+				### shave off from the front end.
+				cnn_times, cnn_fluxes, cnn_errors = cnn_times[1:], cnn_fluxes[1:], cnn_errors[1:]
+				if len(cnn_times) > cnn_len:
+					### shave off at the back end.
+					cnn_times, cnn_fluxes, cnn_errors = cnn_times[:-1], cnn_fluxes[:-1], cnn_errors[:-1]
+			assert len(cnn_times) == cnn_len
+
+			if exclude_neighbors == 'y':
+				neighbor_contam = 'n'
+				### make sure there are no neighbors in the window!
+				try:
+					self.neighbor_dict.keys()
+				except:
+					self.get_neighbors()
+				for neighbor in self.neighbor_dict.keys():
+					neighbor_taus = self.neighbor_dict[neighbor].taus
+					if np.any((neighbor_taus >= np.nanmin(cnn_times)) & (neighbor_taus <= np.nanmax(cnn_times))):
+						### there's another transiting planet in your window!
+						neighbor_contam = 'y'
+				if neighbor_contam == 'y':
+					continue
+
+			if flag_neighbors=='y':
+				flag_idxs = []
+				try:
+					self.neighbor_dict.keys()
+				except:
+					self.get_neighbors()
+				for neighbor in self.neighbor_dict.keys():
+					neighbor_taus = self.neighbor_dict[neighbor].taus
+					for nt in neighbor_taus:
+						if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
+							ntidxs = np.where((cnn_times >= nt-(0.5*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+(0.5*self.neighbor_dict[neighbor].duration_days)))[0]
+							flag_idxs.append(ntidxs)
+				flag_idxs = np.unique(np.hstack(np.array(flag_idxs)))
+
+				flag_array = np.zeros(shape=len(cnn_times))
+				flag_array[flag_idxs] = 1
+			### at this point you've excluded neighbors (if selected; by default) and made the light curve the right size. Save it!
+			if flag_neighbors == 'y':
+				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, flag_array))
+			else:
+				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors))
+			np.save(cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy', cnn_stack)
+
+
+			if show_plot == 'y':
+				plt.scatter(cnn_stack[0], cnn_stack[1], facecolor='LightCoral', edgecolor='k', s=10)
+				if flag_neighbors == 'y':
+					neighbor_transit_idxs = np.where(flag_array == 1)[0]
+					plt.scatter(cnn_stack[0][neighbor_transit_idxs], cnn_stack[1][neighbor_transit_idxs], c='g', marker='x', s=15)
+				plt.xlabel("BKJD")
+				plt.ylabel('Flux')
+				plt.show()
 
 
 
