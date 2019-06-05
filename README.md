@@ -260,18 +260,16 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 *folded*: allows you to fit to a phase-folded light curve. Generally not a good idea as it assumes a period and tau0.
 
 **Notes**
-Future functionality will include evidence testing for four models: P, T, Z, and M.
-
 As used in Teachey & Kipping (2018), the four models are as follows:
-(P): a planet-only model that assumes strict linear ephemeris;
-(T): a planet-only model that allows the transit times to be fit individually (maximum 6 transits);
-(Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and
+(P): a planet-only model that assumes strict linear ephemeris; \n
+(T): a planet-only model that allows the transit times to be fit individually (maximum 6 transits); \n
+(Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and \n
 (M): a fully physical moon model.
 
 they keyword must be one of the keywords accepted by pyluna or batman: 
 [RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, Rstar, long_peri, ecc]
 
-Additional taus (up to 6 total) can be used, but this is only meaningful for fitting individual transit timings through the "T" model.
+Additional taus (up to 6 total) can be used, but this is only meaningful for fitting individual transit timings through the "T" model. These parameter keys should be labeled 'tau1', 'tau2', 'tau3', etc.
 
 the 'prior_type' may be 'uniform', 'loguniform', 'normal', 'lognormal', 'beta', or 'fixed'. If 'fixed', you must supply a single number (not a tuple) that will be the fixed value for this parameter in all of your runs.
 
