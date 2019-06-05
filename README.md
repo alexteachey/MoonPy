@@ -261,10 +261,10 @@ You may fit a LUNA or BATMAN model to your detrended data using the following co
 
 **Notes**
 As used in Teachey & Kipping (2018), the four models are as follows:
-(P): a planet-only model that assumes strict linear ephemeris; \n
-(T): a planet-only model that allows the transit times to be fit individually (maximum 6 transits); \n
-(Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and \n
-(M): a fully physical moon model.
+* (P): a planet-only model that assumes strict linear ephemeris;
+* (T): a planet-only model that allows the transit times to be fit individually (maximum 6 transits);
+* (Z): a moon model that sets the moon radius to zero (useful for testing the dynamical effects of the moon); and
+* (M): a fully physical moon model.
 
 they keyword must be one of the keywords accepted by pyluna or batman: 
 [RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, Rstar, long_peri, ecc]
