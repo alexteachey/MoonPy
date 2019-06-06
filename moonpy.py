@@ -1098,17 +1098,24 @@ class MoonpyLC(object):
 						if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
 							ntidxs = np.where((cnn_times >= nt-(0.5*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+(0.5*self.neighbor_dict[neighbor].duration_days)))[0]
 							flag_idxs.append(ntidxs)
-				flag_idxs = np.unique(np.hstack(np.array(flag_idxs)))
+				try:
+					flag_idxs = np.unique(np.hstack(np.array(flag_idxs)))
+				except:
+					flag_idxs = np.array([])
 
 				flag_array = np.zeros(shape=len(cnn_times))
-				flag_array[flag_idxs] = 1
+				try:
+					flag_array[flag_idxs] = 1
+				except:
+					pass
 			### at this point you've excluded neighbors (if selected; by default) and made the light curve the right size. Save it!
 			if flag_neighbors == 'y':
 				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend, flag_array))
 			else:
 				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend))
-			np.save(cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy', cnn_stack)
 
+			localpath = cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy'
+			np.save(localpath, cnn_stack)
 
 			if show_plot == 'y':
 				plt.scatter(cnn_stack[0], cnn_stack[3], facecolor='LightCoral', edgecolor='k', s=10)
@@ -1118,6 +1125,8 @@ class MoonpyLC(object):
 				plt.xlabel("BKJD")
 				plt.ylabel('Flux')
 				plt.show()
+
+			return localpath
 
 
 

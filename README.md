@@ -344,7 +344,7 @@ If *show_plots* is set to 'y', a plot of O-C values will be generated vs epoch n
 
 ## Prepare CNN-ready files
 
-*New June 5, 2019*: Teachey et al 2019b (in prep) is utilizing Convolutional Neural Networks (CNNs) to identify potential moon transits in the *Kepler* data. To that end, the new *prep_for_CNN(save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n')* function prepares your light curves to be fed into a CNN. 
+*New June 5, 2019*: Teachey et al 2019b (in prep) is utilizing Convolutional Neural Networks (CNNs) to identify potential moon transits in the *Kepler* data. To that end, the new *prep_for_CNN(save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n')* function prepares your light curves to be fed into a CNN. The function also returns the filepath of the generated light curve array.
 
 
 ### Keywords
