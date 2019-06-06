@@ -61,7 +61,8 @@ def medfilt_detrend(times, fluxes, errors, size, mask_idxs=None):
 	if size == None:
 		size = 9 ### standardize it
 	detrend_errors = errors / fluxes
-	flux_trend = median_filter(fluxes, size=size, mode='nearest')
+	#flux_trend = median_filter(fluxes, size=size, mode='nearest')
+	flux_trend = medfilt(fluxes, kernel=size)
 	detrend_fluxes = fluxes / flux_trend
 
 	return detrend_fluxes, detrend_errors

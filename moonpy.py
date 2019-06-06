@@ -393,12 +393,15 @@ class MoonpyLC(object):
 					fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
 				elif dmeth == 'untrendy':
+					print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
 					fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)		
 
 				elif dmeth == 'george':
+					print("GEORGE ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
 					fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
 
 				elif dmeth == 'medfilt':
+					print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
 					fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, size=kernel, mask_idxs=mask_transit_idxs)
 
 
