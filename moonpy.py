@@ -1059,16 +1059,16 @@ class MoonpyLC(object):
 			cnn_min, cnn_max = tau-window, tau+window
 			cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
 			### grab the times, fluxes, and errors
-			cnn_times, cnn_fluxes, cnn_errors = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]
+			cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes)[cnn_idxs], np.hstack(self.errors)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]
 			if len(cnn_times) < cnn_len: ### the size of the array you need to feed into the CNN.
 				### not enough times 
 				continue
 			while len(cnn_times) > cnn_len:
 				### shave off from the front end.
-				cnn_times, cnn_fluxes, cnn_errors = cnn_times[1:], cnn_fluxes[1:], cnn_errors[1:]
+				cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = cnn_times[1:], cnn_fluxes[1:], cnn_errors[1:], cnn_fluxes_detrend[1:], cnn_errors_detrend[1:]
 				if len(cnn_times) > cnn_len:
 					### shave off at the back end.
-					cnn_times, cnn_fluxes, cnn_errors = cnn_times[:-1], cnn_fluxes[:-1], cnn_errors[:-1]
+					cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = cnn_times[:-1], cnn_fluxes[:-1], cnn_errors[:-1], cnn_fluxes_detrend[:-1], cnn_errors_detrend[:-1]
 			assert len(cnn_times) == cnn_len
 
 			if exclude_neighbors == 'y':
@@ -1104,17 +1104,17 @@ class MoonpyLC(object):
 				flag_array[flag_idxs] = 1
 			### at this point you've excluded neighbors (if selected; by default) and made the light curve the right size. Save it!
 			if flag_neighbors == 'y':
-				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, flag_array))
+				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend, flag_array))
 			else:
-				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors))
+				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend))
 			np.save(cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy', cnn_stack)
 
 
 			if show_plot == 'y':
-				plt.scatter(cnn_stack[0], cnn_stack[1], facecolor='LightCoral', edgecolor='k', s=10)
+				plt.scatter(cnn_stack[0], cnn_stack[3], facecolor='LightCoral', edgecolor='k', s=10)
 				if flag_neighbors == 'y':
 					neighbor_transit_idxs = np.where(flag_array == 1)[0]
-					plt.scatter(cnn_stack[0][neighbor_transit_idxs], cnn_stack[1][neighbor_transit_idxs], c='g', marker='x', s=15)
+					plt.scatter(cnn_stack[0][neighbor_transit_idxs], cnn_stack[3][neighbor_transit_idxs], c='g', marker='x', s=15)
 				plt.xlabel("BKJD")
 				plt.ylabel('Flux')
 				plt.show()

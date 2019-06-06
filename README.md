@@ -349,7 +349,7 @@ If *show_plots* is set to 'y', a plot of O-C values will be generated vs epoch n
 
 ### Keywords
 
-* *save_lc*: saves a light curve segment as a numpy array. The array will have either 3 or 4 rows. The first row is the times, second row is detrended fluxes, third row is detrended errors, and 4th row (if applicable) is an array of flags indicating whether another planet in the system is expected to be transiting at this time step (based on linear ephemeris). if zero, there is not an expected planet transit at this index, if 1, a neighbor transit is expected.
+* *save_lc*: saves a light curve segment as a numpy array. The array will have either 5 or 6 rows. The first row is the times, second row is raw fluxes, third row is raw errors, fourth row is detrended fluxes, fifth row is detrend errors, and sixth row (if applicable) is an array of flags indicating whether another planet in the system is expected to be transiting at this time step (based on linear ephemeris). if zero, there is not an expected planet transit at this index, if 1, a neighbor transit is expected.
 
 * *window*: in days, the window of time on either side of the target transit midtime that you want to grab for this segment.
 
