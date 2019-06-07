@@ -65,7 +65,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
 
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
@@ -295,6 +295,14 @@ class MoonpyLC(object):
 
 		### calculate which quarters have transits!
 		self.find_transit_quarters()
+		if is_neighbor == 'y':
+			self.get_properties(locate_neighbor='n')
+		elif is_neighbor == 'n':
+			self.get_properties(locate_neighbor='y')
+		if is_neighbor=='n':
+			### you don't need to find neighbors of neighbors of neighbors!
+			self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
+
 
 		if save_lc == 'y':
 			### write to a file!
@@ -307,6 +315,12 @@ class MoonpyLC(object):
 					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
 			lcfile.close()
 
+
+
+
+
+
+
 	### DETRENDING!
 
 	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30):
@@ -318,11 +332,7 @@ class MoonpyLC(object):
 		try:
 			self.duration_hours ### tests whether you've called get_properties yet.
 		except:
-			self.get_properties()
-
-		### find neighbor transits! 
-		self.get_neighbors(save_to_file='n')
-
+			self.get_properties(locate_neighbor='n')
 
 		master_detrend, master_error_detrend = [], []
 
@@ -449,7 +459,7 @@ class MoonpyLC(object):
 		if modelcode == "LUNA":
 			folded = False ### you should not be fitting a moon model to a folded light curve!
 
-		self.get_properties()
+		self.get_properties(locate_neighbor='n')
 		self.initialize_priors(modelcode=modelcode)
 		param_uber_dict = self.param_uber_dict
 
@@ -633,7 +643,7 @@ class MoonpyLC(object):
 
 
 	def find_transit_quarters(self):
-		self.get_properties()
+		self.get_properties(locate_neighbor='n')
 		quarter_transit_dict = {}
 		for qidx,quarter in enumerate(self.quarters):
 			quarter_times = self.times[qidx]
@@ -654,7 +664,7 @@ class MoonpyLC(object):
 	def fold(self, detrended='y'):
 		### this method will phase fold your light curve. 
 		### first tau in the time series:
-		self.get_properties()
+		self.get_properties(locate_neighbor='n')
 		first_tau = self.tau0
 		ftidx = 0
 		while first_tau < np.nanmin(np.hstack(self.times)):
@@ -713,7 +723,7 @@ class MoonpyLC(object):
 			param_uber_dict['ecc'] = ['uniform', (0,1)]
 
 		### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
-		self.get_properties()
+		self.get_properties(locate_neighbor='n')
 		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
 		if modelcode == "LUNA":
@@ -740,7 +750,7 @@ class MoonpyLC(object):
 
 
 
-	def get_properties(self):
+	def get_properties(self, locate_neighbor='n'):
 		### first check to see if this file was already downloaded today. If not, download it!
 		try:
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
@@ -845,7 +855,8 @@ class MoonpyLC(object):
 		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
 		self.rstar_meters = self.rstar_rsol * mp_tools.eq_RSun
 		self.depth = self.rprstar**2
-		self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
+		if locate_neighbor=='y':
+			self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
 
 
 		###	identify in-transit times
@@ -859,7 +870,7 @@ class MoonpyLC(object):
 
 
 
-	def find_neighbors(self):
+	def find_neighbors(self, is_neighbor='n'):
 		### this function will identify whether your target has other planets in the system!
 		### this is useful, for example, if you want to make sure a possible moon dip isn't
 		### another transiting planet that just happens to transit around the same time.
@@ -954,29 +965,37 @@ class MoonpyLC(object):
 
 	def get_neighbors(self, clobber_lc='y', save_to_file='y'):
 		### this function will download grab all the information about your target's neighbors.
-		neighbor_dict = {}
-		for neighbor in self.neighbors:
-			###
-			try:
-				if self.telescope == 'kepler':
-					if neighbor.startswith('Kepler') or neighbor.startswith('kepler'):
-						neighbor_key = 'k'+str(neighbor[7:])
-					else:
-						### for now this is just a KOI!
-						neighbor_key = neighbor
-						while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
-							neighbor_key = neighbor_key[1:]
-						neighbor_key = 'k'+str(neighbor_key)
-				elif self.telescope == 'k2':
-					neighbor_key = 'k2_'+str(neighbor_key[3:])
+		try:
+			print(self.neighbor_dict.keys())
+			neighbor_dict = self.neighbor_dict
+			### indicates you're dealing with the target. Therefore:
+			is_neighbor='n'
+		except:
+			is_neighbor='y'
+			### you need to generate the neighbor_dict
+			neighbor_dict = {}
+			for neighbor in self.neighbors:
+				###
+				try:
+					if self.telescope == 'kepler':
+						if neighbor.startswith('Kepler') or neighbor.startswith('kepler'):
+							neighbor_key = 'k'+str(neighbor[7:])
+						else:
+							### for now this is just a KOI!
+							neighbor_key = neighbor
+							while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
+								neighbor_key = neighbor_key[1:]
+							neighbor_key = 'k'+str(neighbor_key)
+					elif self.telescope == 'k2':
+						neighbor_key = 'k2_'+str(neighbor_key[3:])
 
-				### now generate the LC object -- note that this will download duplicate light curves!
-				### for now, just delete them after downloading... should come up with a better solution.
-				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, clobber='n')
-			except:
-				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
+					### now generate the LC object -- note that this will download duplicate light curves!
+					### for now, just delete them after downloading... should come up with a better solution.
+					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, clobber='n')
+				except:
+					print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
-		self.neighbor_dict = neighbor_dict 
+			self.neighbor_dict = neighbor_dict 
 
 		final_neighbor_IDs = []		
 		neighbor_transit_idxs = []
@@ -1058,6 +1077,8 @@ class MoonpyLC(object):
 		if os.path.exists(cnnlc_path) == False:
 			os.system('mkdir '+cnnlc_path)
 
+		localpath_list = []	
+
 		for taunum,tau in enumerate(self.taus):
 			cnn_min, cnn_max = tau-window, tau+window
 			cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
@@ -1076,11 +1097,7 @@ class MoonpyLC(object):
 
 			if exclude_neighbors == 'y':
 				neighbor_contam = 'n'
-				### make sure there are no neighbors in the window!
-				try:
-					self.neighbor_dict.keys()
-				except:
-					self.get_neighbors()
+
 				for neighbor in self.neighbor_dict.keys():
 					neighbor_taus = self.neighbor_dict[neighbor].taus
 					if np.any((neighbor_taus >= np.nanmin(cnn_times)) & (neighbor_taus <= np.nanmax(cnn_times))):
@@ -1091,10 +1108,6 @@ class MoonpyLC(object):
 
 			if flag_neighbors=='y':
 				flag_idxs = []
-				try:
-					self.neighbor_dict.keys()
-				except:
-					self.get_neighbors()
 				for neighbor in self.neighbor_dict.keys():
 					neighbor_taus = self.neighbor_dict[neighbor].taus
 					for nt in neighbor_taus:
@@ -1118,6 +1131,8 @@ class MoonpyLC(object):
 				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend))
 
 			localpath = cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy'
+			localpath_list.append(localpath)
+
 			np.save(localpath, cnn_stack)
 
 			if show_plot == 'y':
@@ -1129,7 +1144,7 @@ class MoonpyLC(object):
 				plt.ylabel('Flux')
 				plt.show()
 
-			return localpath
+		return localpath_list 
 
 
 
@@ -1245,11 +1260,8 @@ class MoonpyLC(object):
 
 			if show_neighbors == 'y':
 				### this will highlight all the other transits for the neighbors (if any)
-				try:
-					neighbors = self.neighbor_dict.keys()
-				except:
-					self.get_neighbors(save_to_file='n')
-					neighbors = self.neighbor_dict.keys()
+				neighbors = self.neighbor_dict.keys()
+
 				for neighbor in neighbors:
 					neighbor_taus = self.neighbor_dict[neighbor].taus 
 					neighbor_dur = self.neighbor_dict[neighbor].duration_days 
@@ -1267,7 +1279,7 @@ class MoonpyLC(object):
 			try:
 				self.fold(detrended=detrended)
 			except:
-				self.get_properties()
+				self.get_properties(locate_neighbor='n')
 				self.fold()
 			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			if show_errors == 'y':
