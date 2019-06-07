@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+from numba import jit
 
 """
 we need to solve the problem
@@ -42,39 +43,34 @@ def DurbinWatson(residuals):
 
 
 
-
+### Special thanks to Michael Hippke for speeding this function up by orders of magnitude!
+@jit(fastmath=True, nopython=True, cache=True)
 def cofiam_matrix_gen(times, degree):
 	baseline = np.nanmax(times) - np.nanmin(times)
-
-	for ntval, tval in enumerate(times):
-		matrix_row = [1, tval]
-		for deg in np.arange(1,degree+1,1):
-			sinterm = np.sin((2*np.pi*tval*deg)/(2*baseline))
-			costerm = np.cos((2*np.pi*tval*deg)/(2*baseline))
-			matrix_row.append(sinterm)
-			matrix_row.append(costerm)
-		matrix_row = np.array(matrix_row)
-
-		if ntval == 0:
-			X_matrix = matrix_row
-		else:
-			X_matrix = np.vstack((X_matrix, matrix_row))
-
-	return X_matrix
-
+	rows = len(times)
+	cols = 2 * (degree+1)
+	X_matrix = np.ones(shape=(rows,cols))
+	for x in range(rows):
+		for y in range(1, int(cols/2)):
+			sinarg = (2*np.pi*times[x] * y) / baseline
+			X_matrix[x,y*2] = np.sin(sinarg)
+			X_matrix[x,y*2 + 1] = np.cos(sinarg)
+		X_matrix[x,1] = times[x]
+	return X_matrix 
 
 
 def cofiam_matrix_coeffs(times, fluxes, degree):
 	Xmat = cofiam_matrix_gen(times, degree)
-	beta_coefs = np.linalg.lstsq(Xmat, fluxes)[0]
-	return beta_coefs
+	beta_coefs = np.linalg.lstsq(Xmat, fluxes, rcond=None)[0]
+	return Xmat, beta_coefs
 
 
 
 ### this function spits out the best fit line!
 def cofiam_function(times, fluxes, degree):
-	cofiam_matrix = cofiam_matrix_gen(times, degree)
-	cofiam_coefficients = cofiam_matrix_coeffs(times, fluxes, degree)
+	input_times = times.astype('f8')
+	input_fluxes = fluxes.astype('f8')
+	cofiam_matrix, cofiam_coefficients = cofiam_matrix_coeffs(input_times, input_fluxes, degree)
 	output = np.matmul(cofiam_matrix, cofiam_coefficients)
 	return output 
 
