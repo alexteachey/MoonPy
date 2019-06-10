@@ -218,9 +218,11 @@ class MoonpyLC(object):
 				target_name = "TIC "+str(targetID)
 
 			self.target = target_name 
-			self.RA = Simbad.query_object(target_name)[0]['RA']
-			self.Dec = Simbad.query_object(target_name)[0]['DEC']
-
+			simbad_query = Simbad.query_object(target_name)[0]
+			self.RA = simbad_query['RA']
+			self.Dec = simbad_query['DEC']
+			#self.RA = Simbad.query_object(target_name)[0]['RA']
+			#self.Dec = Simbad.query_object(target_name)[0]['DEC']
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
 		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
