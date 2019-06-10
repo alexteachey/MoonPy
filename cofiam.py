@@ -25,6 +25,8 @@ def max_order(times, duration, baseline=0, kmaximum=30):
 	kmax = int((2*baseline) / (12*duration))
 	if kmax > kmaximum:
 		kmax = kmaximum
+	if kmax == 0:
+		kmax = 1
 	return kmax 
 
 
