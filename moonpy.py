@@ -15,8 +15,8 @@ from astropy.stats import LombScargle
 import os
 
 #### BELOW ARE MOONPY PACKAGES
-import mp_tools
-from mp_lcfind import kplr_target_download, kplr_coord_download, eleanor_target_download, eleanor_coord_download
+from mp_tools import *
+from mp_lcfind import *
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
@@ -65,7 +65,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
 
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
@@ -200,29 +200,58 @@ class MoonpyLC(object):
 				if ffi == 'y':
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 				elif ffi == 'n':
-					lc_times, lc_fluxes, lc_errors = tess_target_download(targetID)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID)
 
 			self.telescope = telescope
-			if target_type == 'koi':
-				target_name = "KOI-"+str(targetID)
-			elif target_type == 'toi':
-				target_name = 'TOI-'+str(targetID)
-			elif target_type == 'planet':
-				if (telescope == 'kepler') or (telescope=="Kepler"):
-					target_name = "Kepler-"+str(targetID)
-				elif (telescope == 'k2') or (telescope=='K2'):
-					target_name = 'K2-'+str(targetID)
-			elif target_type == 'kic':
-				target_name = "KIC "+str(targetID)
-			elif target_type == 'tic':
-				target_name = "TIC "+str(targetID)
+			if (telescope == 'kepler') or (telescope == 'Kepler') or (telescope == "KEPLER"):
+				if target_type == 'koi':
+					target_name = "KOI-"+str(targetID)
+				elif target_type == 'planet':
+					target_name = 'Kepler-'+str(targetID)
+				elif target_type == 'kic':
+					target_name = "KIC "+str(targetID)
+
+			elif (telescope == 'k2') or (telescope == "K2"):
+				target_name = "K2-"+str(targetID)
+
+			elif (telescope == 'TESS') or (telescope == 'tess') or (telescope == 'Tess'):
+				try:
+					Simbad.query_object(self.target)[0]
+					target_name = targetID
+				except:
+					if target_type == 'toi':
+						target_name = 'TOI-'+str(targetID)
+
+					elif target_type == 'tic':
+						target_name = "TIC "+str(targetID)
 
 			self.target = target_name 
-			simbad_query = Simbad.query_object(target_name)[0]
-			self.RA = simbad_query['RA']
-			self.Dec = simbad_query['DEC']
+			try:
+				float(self.target[-1]) ### implies this is. a number
+				simbad_target = target_name
+			except: ### implies this is a letter.
+				simbad_target = target_name[:-1]
+
+			try:
+				simbad_query = Simbad.query_object(simbad_target)[0]
+				self.RA = simbad_query['RA']
+				self.Dec = simbad_query['DEC']
+				target_in_simbad = 'y'
+			except:
+				target_in_simbad = 'n'
+				print('WARNING: Target not listed in SIMBAD under this name.')
+				print('RA/Dec not recovered. Aliases not available. get_properties() will fail.')
 			#self.RA = Simbad.query_object(target_name)[0]['RA']
 			#self.Dec = Simbad.query_object(target_name)[0]['DEC']
+
+			if target_in_simbad == 'y':
+				### get aliases!
+				target_aliases = []
+				alias_search_results = Simbad.query_objectids(simbad_target)
+				for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+					target_alias = alias_search_results[alidx][0]
+					target_aliases.append(target_alias)
+				self.aliases = np.array(target_aliases)
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
 		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
@@ -237,7 +266,11 @@ class MoonpyLC(object):
 				if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				elif telescope == 'tess':
-					lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+					try:
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_coord_download(RA, Dec)
+					except:
+						lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+					
 
 
 			self.target = target_name
@@ -260,34 +293,58 @@ class MoonpyLC(object):
 		else:
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
 		
-		for qidx in np.arange(0,lc_times.shape[0],1):
-
-			### remove nans
-			#if load_lc == 'n': ### if you loaded a light curve file, the NaNs will already be removed.
+		for qidx,quarters in enumerate(lc_quarters):
+			### remove NaNs
 			nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
-			if len(nan_idxs) > 0:
-				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], nan_idxs), np.delete(lc_fluxes[qidx], nan_idxs), np.delete(lc_errors[qidx], nan_idxs), np.delete(lc_fluxes_detrend[qidx], nan_idxs), np.delete(lc_errors_detrend[qidx], nan_idxs), np.delete(lc_flags[qidx], nan_idxs)
 
-			assert np.all(np.isfinite(lc_fluxes[qidx]))
-			assert np.all(np.isfinite(lc_errors[qidx]))
+			if len(nan_idxs) > 0:
+				if len(lc_quarters) > 1:
+					lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], nan_idxs), np.delete(lc_fluxes[qidx], nan_idxs), np.delete(lc_errors[qidx], nan_idxs), np.delete(lc_fluxes_detrend[qidx], nan_idxs), np.delete(lc_errors_detrend[qidx], nan_idxs), np.delete(lc_flags[qidx], nan_idxs)
+					assert np.all(np.isfinite(lc_fluxes[qidx]))
+					assert np.all(np.isfinite(lc_errors[qidx]))
+				elif len(lc_quarters) == 1:
+					lc_times = lc_times[qidx]
+					lc_fluxes = lc_fluxes[qidx]
+					lc_errors = lc_errors[qidx]
+					lc_fluxes_detrend = lc_fluxes_detrend[qidx]
+					lc_errors_detrend = lc_errors_detrend[qidx]
+					lc_flags = lc_flags[qidx]
+					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.delete(lc_times, nan_idxs), np.delete(lc_fluxes, nan_idxs), np.delete(lc_errors, nan_idxs), np.delete(lc_fluxes_detrend, nan_idxs), np.delete(lc_errors_detrend, nan_idxs), np.delete(lc_flags, nan_idxs)
+					assert np.all(np.isfinite(lc_fluxes))
+					assert np.all(np.isfinite(lc_errors))
+
+					print('len(times) (after nan removal) = ', len(lc_times))
 
 			#if load_lc == 'n':
 			if remove_flagged == 'y':
-				flag_idxs = np.where(lc_flags[qidx] != 0)[0]
+				if len(lc_quarters) > 1:
+					flag_idxs = np.where(lc_flags[qidx] != 0)[0]
+				elif len(lc_quarters) == 1:
+					flag_idxs = np.where(lc_flags != 0)[0]
+
 				if len(flag_idxs) > 0:
-					lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
+					if len(lc_quarters) > 1:
+						lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
+					elif len(lc_quarters) == 1:
+						lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.delete(lc_times, flag_idxs), np.delete(lc_fluxes, flag_idxs), np.delete(lc_errors, flag_idxs), np.delete(lc_fluxes_detrend, flag_idxs), np.delete(lc_errors_detrend, flag_idxs), np.delete(lc_flags, flag_idxs)					
+						print("len(lc_times)(after flag removal) = ", len(lc_times))
+
 
 			### sort the times here!
-			if load_lc == 'n': ### if you loaded a light curve, this has already been performed.
+			if len(lc_quarters) > 1:
 				timesort = np.argsort(lc_times[qidx])
 				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
+			elif len(lc_quarters) == 1:
+				timesort = np.argsort(lc_times)
+				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
 
-			for nlct,lct in enumerate(lc_times[qidx]):
-				try:
-					if lc_times[qidx][nlct+1] - lc_times[qidx][nlct] < 0: 
-						print("times are not strictly ascending!")
-				except:
-					pass 
+				len_times = len(lc_times)
+				print('len_times = ', len_times)
+				lc_times = lc_times.reshape(1, len_times)
+				lc_fluxes = lc_fluxes.reshape(1, len_times)
+				lc_errors = lc_errors.reshape(1, len_times)
+				lc_fluxes_detrend = lc_fluxes_detrend.reshape(1, len_times)
+				lc_errors_detrend = lc_errors_detrend.reshape(1, len_times)
 
 		self.times = lc_times
 		self.fluxes = lc_fluxes
@@ -301,8 +358,6 @@ class MoonpyLC(object):
 			self.get_properties(locate_neighbor='n')
 		elif is_neighbor == 'n':
 			self.get_properties(locate_neighbor='y')
-		if is_neighbor=='n':
-			### you don't need to find neighbors of neighbors of neighbors!
 			self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
 
 
@@ -310,11 +365,15 @@ class MoonpyLC(object):
 			### write to a file!
 			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.tsv', mode='w')
 			lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
-			for qidx in np.arange(0,len(self.quarters),1):
-				qtq = lc_quarters[qidx]
-				qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
-				for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
-					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+			try:
+				for qidx in np.arange(0,len(self.quarters),1):
+					qtq = lc_quarters[qidx]
+					qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
+					for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
+						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+			except:
+				for qt, qf, qe, qfl in zip(lc_times, lc_fluxes, lc_errors, lc_flags):
+					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
 			lcfile.close()
 
 
@@ -435,11 +494,17 @@ class MoonpyLC(object):
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
 			
-			for qidx in np.arange(0,len(self.quarters),1):
-				qtq = self.quarters[qidx]
-				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
+			if len(self.quarters) > 1:
+				for qidx in np.arange(0,len(self.quarters),1):
+					qtq = self.quarters[qidx]
+					qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
+					for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
+						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+			elif len(self.quarters) == 1:
+				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags
 				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
-					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
+
 			lcfile.close()
 
 		self.get_neighbors(save_to_file='y')
@@ -647,14 +712,24 @@ class MoonpyLC(object):
 	def find_transit_quarters(self):
 		self.get_properties(locate_neighbor='n')
 		quarter_transit_dict = {}
-		for qidx,quarter in enumerate(self.quarters):
-			quarter_times = self.times[qidx]
+		if len(self.quarters > 1):
+			for qidx,quarter in enumerate(self.quarters):
+				quarter_times = self.times[qidx]
+				quarter_transit = 'n'
+				for tau in self.taus:
+					if (tau >= np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
+						### there's a transit in this quarter!
+						quarter_transit = 'y'
+						break
+
+		elif len(self.quarters == 1):
+			quarter_times = self.times
 			quarter_transit = 'n'
 			for tau in self.taus:
-				if (tau >= np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
-					### there's a transit in this quarter!
+				if (tau >=- np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
 					quarter_transit = 'y'
-					break
+					break 
+
 			if quarter_transit == 'n':
 				quarter_transit_dict[quarter] = 'n'
 			else:
@@ -754,31 +829,39 @@ class MoonpyLC(object):
 
 	def get_properties(self, locate_neighbor='n'):
 		### first check to see if this file was already downloaded today. If not, download it!
+		#try:
+		download_new = 'n'
 		try:
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 				filecreated_time = os.path.getctime('cumkois.txt')
 			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
 				filecreated_time = os.path.getctime('cumk2ois.txt')
+			elif (self.telescope == 'tess') or (self.telescope == 'TESS') or (self.telescope == "Tess"):
+				filecreated_time = os.path.getctime('confirmed_planets.txt')
 
 			current_time = time.time()
 			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
-				### download a new version!
-				if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
-				elif (self.telescope == 'k2') or (self.telescope == "K2"):
-					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+				download_new = 'y'
 		except:
-			if (self.telescope == 'kepler') or (self.telescope=='Kepler'):
+			download_new = 'y'
+
+
+		if download_new == 'y':
+			### download a new version!
+			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
-			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-				#os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+			elif (self.telescope == 'k2') or (self.telescope == "K2"):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+			elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "confirmed_planets.txt"')
 
 		### find by KICID, KOI number of planet!
 		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 			cumkoi_data = ascii.read('cumkois.txt')
 		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
 			cumkoi_data = ascii.read('cumk2ois.txt')
+		elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
+			cumkoi_data = ascii.read('confirmed_planets.txt')
 		cumkoi_columns = cumkoi_data.columns
 
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
@@ -817,6 +900,26 @@ class MoonpyLC(object):
 
 				print("number of rows matching this description = ", len(rowidx))
 
+		elif (self.telescope == 'TESS') or (self.telescope == "Tess") or (self.telescope == 'tess'):
+			try:
+				float(self.target[-1])
+				### if the except statement isn't triggered, the last value is a number! Therefore
+				NEA_targetname = str(self.target)
+			except:
+				target_letter = str(self.target[-1])
+				### implies the last value is a letter.
+				if ' ' in self.target:
+					NEA_targetname = str(self.target)
+				else:
+					NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
+
+
+			print("NEA_targetname = ", NEA_targetname)
+			rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
+			if len(rowidx) == 0:
+				rowidx = np.where(cumkoi_data['pl_hostname'] == NEA_targetname)[0]
+
+		print('rowidx = ', rowidx)
 
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
@@ -835,28 +938,57 @@ class MoonpyLC(object):
 			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(cumkoi_data['pl_ratror'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr2'][rowidx])
 			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(cumkoi_data['pl_rade'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr2'][rowidx])
 
-
+		elif (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
+			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(cumkoi_data['pl_orbper'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr1'][rowidx]), np.nanmedian(cumkoi_data['pl_orbpererr2'][rowidx])
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(cumkoi_data['pl_tranmid'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr1'][rowidx]), np.nanmedian(cumkoi_data['pl_tranmiderr2'][rowidx])
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(cumkoi_data['pl_imppar'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_impparerr2'][rowidx])
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(cumkoi_data['pl_trandur'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_trandurerr2'][rowidx])
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(cumkoi_data['pl_ratror'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_ratrorerr2'][rowidx])
+			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(cumkoi_data['pl_rade'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr1'][rowidx]), np.nanmedian(cumkoi_data['pl_radeerr2'][rowidx])
 
 		### update properties!
+		print('target_period = ', target_period)
 		self.period = float(target_period)
 		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
 		self.tau0 = float(target_tau0)
 		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
-		self.impact = float(target_impact)
-		self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
-		self.duration_hours = float(target_duration)
-		self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
-		self.duration_days = float(target_duration)/24
-		self.duration_days_err = (float(target_duration_lowerr)/24, float(target_duration_uperr)/24)
+		if np.isfinite(target_impact):
+			self.impact = float(target_impact)
+			self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
+		else:
+			print('impact parameter is NaN. Setting = 0.')
+			self.impact = 0
+			self.impact_err = (0,0)
 		self.rprstar = float(target_rprstar)
 		self.rprstar_err = (float(target_rprstar_lowerr), float(target_rprstar_uperr))
 		self.rp_rearth = float(target_rp) ### earth radii
 		self.rp_rjup = float(target_rp) * (R_earth.value / R_jup.value)
-		self.rp_meters = self.rp_rjup * mp_tools.eq_RJup
+		self.rp_meters = self.rp_rjup * eq_RJup
 		self.rp_rearth_err = (float(target_rp_lowerr), float(target_rp_uperr))
 		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
-		self.rstar_meters = self.rstar_rsol * mp_tools.eq_RSun
+		self.rstar_meters = self.rstar_rsol * eq_RSun
 		self.depth = self.rprstar**2
+
+		if np.isfinite(target_duration):
+			self.duration_hours = float(target_duration)
+			self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
+			self.duration_days = float(target_duration)/24
+			self.duration_days_err = (float(target_duration_lowerr)/24, float(target_duration_uperr)/24)
+		else:
+			print('transit duration is NaN. Calculating an estimate.')
+			### calculate it!
+			### estimate the mass of the star from its radius.
+			target_mstar_msol_est = self.rstar_rsol ** 1.1364
+			target_mstar_kg_est = MSun*target_mstar_msol_est
+			target_est_sma = Kep3_afromp(self.period, target_mstar_kg_est, 1e-3*target_mstar_kg_est)
+			print('target_est_sma = ', target_est_sma)
+			target_est_Tdur = Tdur(self.period, self.rstar_meters, self.rp_meters, self.impact, target_est_sma)
+			print('target_est_Tdur = ', target_est_Tdur)
+			self.duration_days = target_est_Tdur
+			self.duration_days_err = (-0.01*self.duration_days, 0.01*self.duration_days)
+			self.duration_hours = self.duration_days * 24
+			self.duration_hours_err = self.duration_days_err * 24 
+
 		if locate_neighbor=='y':
 			self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
 
@@ -882,6 +1014,8 @@ class MoonpyLC(object):
 			cumkoi_data = ascii.read('cumkois.txt')
 		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
 			cumkoi_data = ascii.read('cumk2ois.txt')
+		elif (self.telescope == 'TESS') or (self.telescope == "Tess") or (self.telescope == 'tess'):
+			cumkoi_data = ascii.read('confirmed_planets.txt')
 		cumkoi_columns = cumkoi_data.columns
 
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
@@ -921,6 +1055,24 @@ class MoonpyLC(object):
 
 				print("number of rows matching this description = ", len(rowidx))
 
+		elif (self.telescope == "TESS") or (self.telescope == 'Tess') or (self.telescope == 'tess'):
+			try:
+				float(self.target[-1])
+				### if the except statement isn't triggered, the last value is a number! Therefore
+				NEA_targetname = str(self.target)
+			except:
+				target_letter = str(self.target[-1])
+				### implies the last value is a letter.
+				if ' ' in self.target:
+					NEA_targetname = str(self.target)
+				else:
+					NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
+
+			print("NEA_targetname = ", NEA_targetname)
+			rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
+			if len(rowidx) == 0:
+				rowidx = np.where(cumkoi_data['pl_hostname'] == NEA_targetname)[0]
+
 		if (type(rowidx) == list) or (type(rowidx) == np.ndarray):
 			rowidx = int(rowidx[0])
 
@@ -959,7 +1111,18 @@ class MoonpyLC(object):
 					if ' ' in neighbor:
 						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
 					neighbor_rows.append(cr)
-					neighbor_targets.append(neighbor)			
+					neighbor_targets.append(neighbor)		
+
+		else:
+			if (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
+				for cr in check_rows:
+					if (np.array(cumkoi_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(cumkoi_data['pl_name'])[cr] != NEA_targetname):
+						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(cumkoi_data['pl_name'][cr]))
+						neighbor = str(cumkoi_data['pl_name'][cr])
+						if ' ' in neighbor:
+							neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+						neighbor_rows.append(cr)
+						neighbor_targets.append(neighbor)									
 
 		self.neighbors = neighbor_targets
 

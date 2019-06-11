@@ -2,10 +2,13 @@ from __future__ import division
 import numpy as np
 import astropy
 from astroquery.simbad import Simbad 
+from astroquery.mast import Observations
 import astropy.coordinates as coord 
 from astropy import units as u
+import os
+from astropy.io import fits as pyfits 
 
-
+moonpydir = os.getcwd()
 
 def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
 	import kplr
@@ -153,6 +156,78 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters, object_name
 
 
+
+
+def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delete_fits='y'):
+	### this function interfaces with MASS to download light curves based on the TIC #.
+	if os.path.exists(moonpydir+'/TESS_lcs'):
+		pass
+	else:
+		os.system('mkdir '+moonpydir+'/TESS_lcs')
+
+	obsTable = Observations.query_object(targID, radius='0.001 deg')
+	TESS_idxs = np.where(np.array(obsTable['obs_collection']) == 'TESS')[0]
+	minTESSidx, maxTESSidx = np.nanmin(TESS_idxs), np.nanmax(TESS_idxs)+1
+	dataproducts = Observations.get_product_list(obsTable[minTESSidx:maxTESSidx])
+	timeseries_idxs = np.where(np.array(dataproducts['dataproduct_type']) == 'timeseries')[0]
+	obsids = np.array(dataproducts)['obsID'][timeseries_idxs]
+
+	all_times = []
+	all_fluxes = []
+	all_errors = []
+	all_flags = []
+	sectors = []
+	lcfiles = []
+
+	for obsid in np.unique(obsids):
+		print ("obsid = ", obsid)
+		dataproductsbyID = Observations.get_product_list(obsid)
+		manifest = Observations.download_products(dataproductsbyID, download_dir=moonpydir+'/TESS_lcs', dataproduct_type='timeseries', extension='lc.fits', mrp_only=True)
+		
+
+		for nmanfile,manfile in enumerate(manifest):
+			manfilepath = manfile[0]
+			if "_lc.fits" in manfilepath:
+				print('found the light curve!')
+				### this is the only one you want to save!
+				lcpath = manfilepath
+				print("lcpath = ", lcpath)
+
+				### open the file, grab the data!
+				lcfile = pyfits.open(lcpath)
+				lcfiles.append(lcfile)
+				lcdata = lcfile[1].data
+				lctimes = np.array(lcdata['TIME'])
+				if lc_format == 'pdc':
+					lcfluxes = np.array(lcdata['PDCSAP_FLUX'])
+					lcerrors = np.array(lcdata['PDCSAP_FLUX_ERR'])
+				elif lc_format == 'sap':
+					lcfluxes = np.array(lcdata['SAP_FLUX'])
+					lcerrors = np.array(lcdata['SAP_FLUX_ERR'])
+				lcflags = np.array(lcdata['QUALITY'])
+				sector = lcfile[0].header['SECTOR']
+
+				all_times.append(lctimes)
+				all_fluxes.append(lcfluxes)
+				all_errors.append(lcerrors)
+				all_flags.append(lcflags)
+				sectors.append(sector)
+
+				if delete_fits == 'y':
+					os.system('rm '+lcpath)
+				break
+				
+			else:
+				pass
+				#os.system('rm -rf '+manfilepath)
+
+
+		print(" ")
+		print(" ")
+
+	all_times, all_fluxes, all_errors, all_flags, sectors = np.array(all_times), np.array(all_fluxes), np.array(all_errors), np.array(all_flags), np.array(sectors)
+
+	return all_times, all_fluxes, all_errors, all_flags, sectors 
 
 
 

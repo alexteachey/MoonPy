@@ -68,9 +68,9 @@ Proper usage is:
 
 ### KEYWORDS
 
-*targetID*: may be a Kepler planet, a KIC star, a KOI, or a K2 target. If you leave off the prefix you must specify the telescope. Example: "Kepler-1625b", KOI-5084.01, or KIC 4760478. Variations on these (with and without prefix) are (hopefully!) handled to your satisfaction.
+*targetID*: may be a Kepler planet, a KIC star, a KOI, a K2 target, or a planet observed by TESS. If you leave off the prefix you must specify the telescope. Example: "Kepler-1625b", KOI-5084.01, or KIC 4760478. Variations on these (with and without prefix) are (hopefully!) handled to your satisfaction.
 
-*target_type*: May be "kic", "koi", or "planet" (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
+*target_type*: May be "kic", "koi", "planet", "toi" or "tic". (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
 
 *quarters*: acceptable values are "all" or an array of quarters.
 
@@ -97,7 +97,7 @@ Proper usage is:
 
 **NOTES:**
 This object is designed to be versatile. You can either
-a) supply a targetID (either a KOI, Kepler planet, KIC, or K2 planet) and the name of the telescope; or 
+a) supply a targetID (either a KOI, Kepler planet, KIC, K2 planet, or a planet observed by TESS) and the name of the telescope; or 
 b) supply coordinates for an object search
 
 If you choose option (a), you may need to make it explicit somehow which telescope you want to use.
@@ -121,8 +121,9 @@ You may also download only select quarters if you wish by supplying an array of 
 Currently supported formats for the light curve download is "sap" and "pdc". If you wish to download both
 (possibly included in a future release) you should just initialize two different light curve objects.
 
-Other functionality listed above is forthcoming, including support for TESS light curves! 
+*New June 11 2019* -- Support for downloading TESS light curves is here! At the moment users can only access light curves based on their established planet name listed in the NASA Exoplanet Archive. If the planet isn't a *confirmed* planet, we can't get it yet. Also worth noting that TIC numbers and TOIs are not yet supported, as they are not yet included in the SIMBAD catalog. To access a TESS lightcurve you MUST specify the name listed in the Exoplanet Archive. For example: CoRoT-1 or CoRoT-1 b, HATS-3 or HATS-3 b, etc. You will likely need to specify the telescope since it cannot be inferred from the target prefix.
 
+There is also a new method for your lc_object. *lc_object.aliases* will show you all the target aliases listed in SIMBAD.
 
 
 
