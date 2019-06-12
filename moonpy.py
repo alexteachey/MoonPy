@@ -203,6 +203,7 @@ class MoonpyLC(object):
 				elif ffi == 'n':
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID)
 
+
 			self.telescope = telescope
 			if (telescope == 'kepler') or (telescope == 'Kepler') or (telescope == "KEPLER"):
 				if target_type == 'koi':
@@ -216,43 +217,42 @@ class MoonpyLC(object):
 				target_name = "K2-"+str(targetID)
 
 			elif (telescope == 'TESS') or (telescope == 'tess') or (telescope == 'Tess'):
+				target_in_simbad = 'n'
 				try:
-					Simbad.query_object(self.target)[0]
-					target_name = targetID
+					simbad_query = Simbad.query_object(self.target)[0]
+					target_name = self.target
+					self.RA = simbad_query['RA']
+					self.Dec = simbad_query['DEC']
+					target_in_simbad = 'y'
 				except:
 					if target_type == 'toi':
-						target_name = 'TOI-'+str(targetID)
+						try:
+							simbad_query = Simbad.query_object('TOI-'+self.target)[0]
+							target_name = 'TOI-'+str(self.target) ### only update if this worked!
+							self.RA = simbad_query['RA']
+							self.Dec = simbad_query['DEC']
+							target_in_simbad = 'y'
+						except:
+							pass
 
 					elif target_type == 'tic':
-						target_name = "TIC "+str(targetID)
+						try:
+							simbad_query = Simbad.query_object('TIC '+self.target)[0] 
+							target_name = 'TIC '+str(self.target) ### only update if this worked!
+							self.RA = simbad_query['RA']
+							self.Dec = simbad_query['DEC']
+							target_in_simbad = 'y'
+						except:
+							pass
 
-			self.target = target_name 
-			try:
-				float(self.target[-1]) ### implies this is. a number
-				simbad_target = target_name
-			except: ### implies this is a letter.
-				simbad_target = target_name[:-1]
+				if target_in_simbad == 'n':
+					print('WARNING: Target not listed in SIMBAD under this name.')
+					print('RA/Dec not recovered. Aliases not available. get_properties() will fail.')
 
-			try:
-				simbad_query = Simbad.query_object(simbad_target)[0]
-				self.RA = simbad_query['RA']
-				self.Dec = simbad_query['DEC']
-				target_in_simbad = 'y'
-			except:
-				target_in_simbad = 'n'
-				print('WARNING: Target not listed in SIMBAD under this name.')
-				print('RA/Dec not recovered. Aliases not available. get_properties() will fail.')
-			#self.RA = Simbad.query_object(target_name)[0]['RA']
-			#self.Dec = Simbad.query_object(target_name)[0]['DEC']
+				elif target_in_simbad == 'y':
+					### get aliases!
+					self.find_aliases()
 
-			if target_in_simbad == 'y':
-				### get aliases!
-				target_aliases = []
-				alias_search_results = Simbad.query_objectids(simbad_target)
-				for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
-					target_alias = alias_search_results[alidx][0]
-					target_aliases.append(target_alias)
-				self.aliases = np.array(target_aliases)
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
 		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
@@ -354,13 +354,24 @@ class MoonpyLC(object):
 		self.quarters = lc_quarters
 
 		### calculate which quarters have transits!
-		self.find_transit_quarters()
-		if is_neighbor == 'y':
-			self.get_properties(locate_neighbor='n')
-		elif is_neighbor == 'n':
-			self.get_properties(locate_neighbor='y')
-			self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
-
+		try:
+			self.find_transit_quarters()
+			if is_neighbor == 'y':
+				self.get_properties(locate_neighbor='n')
+			elif is_neighbor == 'n':
+				self.get_properties(locate_neighbor='y')
+				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
+		except:
+			print(" ")
+			print(" ")
+			print('ONE OR MORE METHODS FAILED. Identifier is likely not in SIMBAD, and aliases are unknown.')
+			print(" ")
+			print("Try calling self.mystery_solver(tau0, period, duration_hours) to manually input critical variables.")
+			print("Altenatively, try the input again with a different target ID.")
+			#print("DETRENDING UNAVAILABLE.")
+			#print("TO RESOLVE: try inputing a target alias or defining self.aliases as an array of alternative target names.")
+			#print('then call self.find_transit_quarters, self.get_properties, and self.get_neighbors.')
+			#print("maybe that will help!")
 
 		if save_lc == 'y':
 			### write to a file!
@@ -771,6 +782,16 @@ class MoonpyLC(object):
 		self.quarter_transit_dict = quarter_transit_dict 
 
 
+	def find_aliases(self):
+		target_aliases = []
+		alias_search_results = Simbad.query_objectids(self.target)
+		for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+			target_alias = alias_search_results[alidx][0]
+			target_aliases.append(target_alias)
+		self.aliases = np.array(target_aliases)
+
+
+
 	def fold(self, detrended='y'):
 		### this method will phase fold your light curve. 
 		### first tau in the time series:
@@ -948,17 +969,20 @@ class MoonpyLC(object):
 				rowidx = np.where(cumkoi_data['pl_hostname'] == NEA_targetname)[0]
 				### try aliases!
 				if len(rowidx) == 0: ### if you STILL haven't found it.
-					for alias in self.aliases:
-						rowidx = np.where(cumkoi_data['pl_hostname'] == alias)[0]
-						if len(rowidx) != 0:
-							break
+					try:
+						for alias in self.aliases:
+							rowidx = np.where(cumkoi_data['pl_hostname'] == alias)[0]
+							if len(rowidx) != 0:
+								break
+					except:
+						pass
+
 			if len(rowidx) == 0:
 				print("COULD NOT IDENTIFY THIS TARGET IN THE CATALOG.")
 
 
 		print('rowidx = ', rowidx)
 		return rowidx, cumkoi_data, NEA_targetname
-
 
 
 
@@ -1038,8 +1062,11 @@ class MoonpyLC(object):
 		if locate_neighbor=='y':
 			self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
 
-
+		self.find_taus()
 		###	identify in-transit times
+
+
+	def find_taus(self):
 		transit_midtimes = [self.tau0]
 		next_transit = transit_midtimes[-1]+self.period
 		while next_transit < np.nanmax(np.concatenate((self.times))):
@@ -1048,7 +1075,24 @@ class MoonpyLC(object):
 		self.taus = np.array(transit_midtimes)
 
 
-
+	def mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neighbor_period=None, neighbor_duration_hours=None, neighbor_name='None'):
+		### this function will generate essential 
+		self.tau0 = tau0
+		self.period = period
+		self.duration_hours = duration_hours
+		self.duration_days = duration_hours / 24
+		self.find_taus()
+		### calculate transit times for this target... assuming linear ephemeris!
+		transit_times = []
+		for qidx in np.arange(0,len(self.quarters),1):
+			qtimes = self.times[qidx]
+			for qtime in qtimes:
+				for tau in self.taus:
+					if (qtime >= tau - 0.5*self.duration_days) and (qtime <= tau + 0.5*self.duration_days):
+						transit_times.append(qtime)
+		transit_times = np.unique(np.array(transit_times))
+		self.all_transit_times = transit_times 
+		self.neighbors = []
 
 	def find_neighbors(self, is_neighbor='n'):
 		print('calling find_neighbors. is_neighbor = ', is_neighbor)
