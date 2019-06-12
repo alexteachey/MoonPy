@@ -857,12 +857,7 @@ class MoonpyLC(object):
 
 
 
-
-
-
-	def get_properties(self, locate_neighbor='n'):
-		### first check to see if this file was already downloaded today. If not, download it!
-		#try:
+	def find_planet_row(self):
 		download_new = 'n'
 		try:
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
@@ -951,8 +946,26 @@ class MoonpyLC(object):
 			rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
 			if len(rowidx) == 0:
 				rowidx = np.where(cumkoi_data['pl_hostname'] == NEA_targetname)[0]
+				### try aliases!
+				if len(rowidx) == 0: ### if you STILL haven't found it.
+					for alias in self.aliases:
+						rowidx = np.where(cumkoi_data['pl_hostname'] == alias)[0]
+						if len(rowidx) != 0:
+							break
+			if len(rowidx) == 0:
+				print("COULD NOT IDENTIFY THIS TARGET IN THE CATALOG.")
+
 
 		print('rowidx = ', rowidx)
+		return rowidx, cumkoi_data, NEA_targetname
+
+
+
+
+
+
+	def get_properties(self, locate_neighbor='n'):
+		rowidx, cumkoi_data, NEA_targetname = self.find_planet_row()
 
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
@@ -1038,76 +1051,8 @@ class MoonpyLC(object):
 
 
 	def find_neighbors(self, is_neighbor='n'):
-		### this function will identify whether your target has other planets in the system!
-		### this is useful, for example, if you want to make sure a possible moon dip isn't
-		### another transiting planet that just happens to transit around the same time.
-
-		### find by KICID, KOI number of planet!
-		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-			cumkoi_data = ascii.read('cumkois.txt')
-		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-			cumkoi_data = ascii.read('cumk2ois.txt')
-		elif (self.telescope == 'TESS') or (self.telescope == "Tess") or (self.telescope == 'tess'):
-			cumkoi_data = ascii.read('confirmed_planets.txt')
-		cumkoi_columns = cumkoi_data.columns
-
-		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
-			if str(self.target).startswith('Kepler-'):
-				target_letter = str(self.target)[-1]
-				if ' ' in self.target: ### already in the correct format, with a space between the letter.
-					NEA_targetname = self.target
-				else: #### there isn't a space, so add it!
-					NEA_targetname = self.target[:-1]+' '+target_letter
-				rowidx = np.where(cumkoi_data['kepler_name'] == NEA_targetname)[0]
-
-			elif str(self.target).startswith('KIC'):
-				NEA_targetname = int(self.target[4:])
-				rowidx = np.where(cumkoi_data['kepid'] == NEA_targetname)[0]
-
-			elif str(self.target).startswith('KOI') or str(self.target).startswith('koi'):
-				NEA_targetname = str(self.target[4:])
-				if len(NEA_targetname) == 7: ### of the form 5084.01
-					NEA_targetname = 'K0'+str(NEA_targetname)
-				elif len(NEA_targetname) == 6: ### of the form 163.01
-					NEA_targetname = 'K00'+str(NEA_targetname)
-				elif len(NEA_targetname) == 5: ### of the form 23.01
-					NEA_targetname = 'K000'+str(NEA_targetname)
-				elif len(NEA_targetname) == 4: ### of the form 1.01
-					NEA_targetname = 'K0000'+str(NEA_targetname)
-				rowidx = np.where(cumkoi_data['kepoi_name'] == NEA_targetname)[0]
-
-
-		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-			if str(self.target).startswith('K2-'):
-				target_letter = str(self.target[-1])
-				if ' ' in self.target:
-					NEA_targetname = self.target
-				else:
-					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
-				rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
-
-				print("number of rows matching this description = ", len(rowidx))
-
-		elif (self.telescope == "TESS") or (self.telescope == 'Tess') or (self.telescope == 'tess'):
-			try:
-				float(self.target[-1])
-				### if the except statement isn't triggered, the last value is a number! Therefore
-				NEA_targetname = str(self.target)
-			except:
-				target_letter = str(self.target[-1])
-				### implies the last value is a letter.
-				if ' ' in self.target:
-					NEA_targetname = str(self.target)
-				else:
-					NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
-
-			print("NEA_targetname = ", NEA_targetname)
-			rowidx = np.where(cumkoi_data['pl_name'] == NEA_targetname)[0]
-			if len(rowidx) == 0:
-				rowidx = np.where(cumkoi_data['pl_hostname'] == NEA_targetname)[0]
-
-		if (type(rowidx) == list) or (type(rowidx) == np.ndarray):
-			rowidx = int(rowidx[0])
+		print('calling find_neighbors. is_neighbor = ', is_neighbor)
+		rowidx, cumkoi_data, NEA_targetname = self.find_planet_row()
 
 
 		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
