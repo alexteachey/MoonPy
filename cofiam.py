@@ -62,6 +62,7 @@ def cofiam_matrix_gen(times, degree):
 
 
 def cofiam_matrix_coeffs(times, fluxes, degree):
+	assert len(times) > 0
 	Xmat = cofiam_matrix_gen(times, degree)
 	beta_coefs = np.linalg.lstsq(Xmat, fluxes, rcond=None)[0]
 	return Xmat, beta_coefs

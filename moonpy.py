@@ -22,6 +22,7 @@ from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
 from pyluna import run_LUNA, prepare_files
+import time
 
 
 #from matplotlib import rc
@@ -385,6 +386,8 @@ class MoonpyLC(object):
 	### DETRENDING!
 
 	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30):
+		exceptions_raised = 'n'
+
 		if mask_neighbors == 'y':
 			mask_transits = 'y' 
 		### optional values for method are "cofiam", "untrendy", "medfilt"
@@ -395,7 +398,7 @@ class MoonpyLC(object):
 		except:
 			self.get_properties(locate_neighbor='n')
 
-		master_detrend, master_error_detrend = [], []
+		master_detrend, master_error_detrend, master_flags_detrend = [], [], []
 
 		for qidx in np.arange(0,self.times.shape[0],1):
 			skip_quarter = 'n'
@@ -405,6 +408,7 @@ class MoonpyLC(object):
 
 			dtimesort = np.argsort(dtimes)
 			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
+
 
 			for ndt,dt in enumerate(dtimes):
 				try:
@@ -432,6 +436,7 @@ class MoonpyLC(object):
 							neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
 					mask_transit_idxs.append(neighbor_transit_idxs)
 
+
 				try:
 					print("transit midtimes this quarter: ", quarter_transit_taus)
 					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
@@ -450,56 +455,84 @@ class MoonpyLC(object):
 				mask_transit_idxs = None 
 
 			if skip_quarter == 'n':
-				if dmeth == 'cofiam':
-					max_degree = max_order(dtimes, self.duration_days)
-					print("cofiam maximum k = "+str(max_degree))
-					"""
-					CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
-					specifying a maximum order, above which the algorithm will not fit.
-					This maximum degree should be calculated based on the transit duration, 
-					but in practice going above k=30 is computational impractical. 
-					You can specify "max_degree" below, or calculate it using the max_order function
-					within cofiam.py.
-					"""
-					fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+				try:
+					if dmeth == 'cofiam':
+						max_degree = max_order(dtimes, self.duration_days)
+						print("cofiam maximum k = "+str(max_degree))
+						"""
+						CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
+						specifying a maximum order, above which the algorithm will not fit.
+						This maximum degree should be calculated based on the transit duration, 
+						but in practice going above k=30 is computational impractical. 
+						You can specify "max_degree" below, or calculate it using the max_order function
+						within cofiam.py.
+						"""
+						fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
-				elif dmeth == 'untrendy':
-					print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
-					fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)		
+					elif dmeth == 'untrendy':
+						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
+						fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
-				elif dmeth == 'george':
-					print("GEORGE ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
-					fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+					elif dmeth == 'george':
+						print("GEORGE ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
+						fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
-				elif dmeth == 'medfilt':
-					print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
-					fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, size=kernel, mask_idxs=mask_transit_idxs)
+					elif dmeth == 'medfilt':
+						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
+						fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, size=kernel, mask_idxs=mask_transit_idxs)
+						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+
+				except:
+					print('Detrending failed for this quarter. All points have likely been screened.')
+					fluxes_detrend, errors_detrend = dfluxes, derrors 
+					flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
+					exceptions_raised = 'y'
 
 
 			### update self -- just this quarter!
-			if skip_ntqs == 'n':
+			if (skip_ntqs == 'n') and (exceptions_raised == 'n'):
 				assert np.all(dfluxes != fluxes_detrend)
 				assert np.all(derrors != errors_detrend)
 
 			master_detrend.append(np.array(fluxes_detrend))
 			master_error_detrend.append(np.array(errors_detrend))
+			master_flags_detrend.append(np.array(flags_detrend))
 
 		### this is the first initialization of the detrended fluxes.
 		self.fluxes_detrend = master_detrend
 		self.errors_detrend = master_error_detrend
+		self.flags_detrend = master_flags_detrend 
+
+		### before you overwrite the flags, compare them.
+		final_flags = []
+		for qidx in np.arange(0,len(self.quarters),1):
+			qfinal_flags = []
+			for sf,sfd in zip(self.flags[qidx], self.flags_detrend[qidx]):
+				qfinal_flags.append(int(np.nanmax((sf,sfd))))
+			final_flags.append(np.array(qfinal_flags))
+		self.flags_detrend = final_flags
 
 		if save_lc == 'y':
 			lcfile = open(savepath+'/'+self.target+'_lightcurve.tsv', mode='w')
 			lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
-			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags
-			
+			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
+
+			print('lc_flags = ', lc_flags)
+
 			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
+					print('qidx = ', qidx)
 					qtq = self.quarters[qidx]
 					qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
+
 					for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
 						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+
+					print('quarter written to file.')
 			elif len(self.quarters) == 1:
 				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags
 				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):

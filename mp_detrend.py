@@ -21,7 +21,10 @@ def cofiam_detrend(times, fluxes, errors, remove_outliers='y', outsig=3, window=
 			outlier_idxs = np.array(outlier_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
 
-		best_model, best_degree, best_DW, max_degree = cofiam_iterative(unmasked_times, unmasked_fluxes, max_degree=max_degree)
+		try:
+			best_model, best_degree, best_DW, max_degree = cofiam_iterative(unmasked_times, unmasked_fluxes, max_degree=max_degree)
+		except:
+			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
 		### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values
 		### at those locations in the time series, and to keep flux_detrend and errors_detrend the same length as the original time series.
 		cofiam_interp = interp1d(unmasked_times, best_model, bounds_error=False, fill_value='extrapolate')
