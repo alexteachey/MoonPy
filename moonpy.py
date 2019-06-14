@@ -495,13 +495,26 @@ class MoonpyLC(object):
 			if mask_transits == 'y':
 				### find out which transit midtimes, if any, are in this quarter
 				mask_transit_idxs = []
-				quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]
+				try:
+					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]
+				except:
+					self.find_transit_quarters()
+					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]		
+								
 				for qtt in quarter_transit_taus:
 					in_transit_idxs = np.where((dtimes >= qtt - self.duration_days) & (dtimes <= qtt + self.duration_days))[0]
 					mask_transit_idxs.append(in_transit_idxs)
 
 
 				### add neighbor transit times to mask_transit_idxs.
+				try:
+					print(self.all_transit_times)
+				except:
+					try:
+						self.mystery_solver(self.tau0, self.period, self.duration_hours)
+					except:
+						pass
+						
 				if mask_neighbors == 'y':
 					neighbor_transit_idxs = []
 					for ntt in self.all_transit_times:
