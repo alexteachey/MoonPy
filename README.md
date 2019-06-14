@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last updated: June 12, 2019. Developed by [Alex Teachey](http://www.alexteachey.com).
+last updated: June 14, 2019. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.*
 
@@ -123,9 +123,7 @@ You may also download only select quarters if you wish by supplying an array of 
 Currently supported formats for the light curve download is "sap" and "pdc". If you wish to download both
 (possibly included in a future release) you should just initialize two different light curve objects.
 
-*New June 11 2019* -- Support for downloading TESS light curves is here! At the moment users can only access light curves based on their established planet name listed in the NASA Exoplanet Archive. If the planet isn't a *confirmed* planet, we can't get it yet. Also worth noting that TIC numbers and TOIs are not yet supported, as they are not yet included in the SIMBAD catalog. To access a TESS lightcurve you MUST specify the name listed in the Exoplanet Archive. For example: CoRoT-1 or CoRoT-1 b, HATS-3 or HATS-3 b, etc. You will likely need to specify the telescope since it cannot be inferred from the target prefix.
-
-There is also a new method for your lc_object. *lc_object.aliases* will show you all the target aliases listed in SIMBAD.
+*New June 14 2019* -- Support for downloading TESS light curves is here! You can enter a TOI number, a TIC number, the standard name of a confirmed planet if it was observed by TESS (for example, WASP-46, HATS-3). An attempt is made to identify the candidate if you supply an established alias of the target (for example, a 2MASS ID).  There is also a new method for your lc_object. *lc_object.aliases* will show you all the target aliases listed in SIMBAD.
 
 
 
