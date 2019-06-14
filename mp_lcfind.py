@@ -7,6 +7,8 @@ import astropy.coordinates as coord
 from astropy import units as u
 import os
 from astropy.io import fits as pyfits 
+import time
+import traceback
 
 moonpydir = os.getcwd()
 
@@ -165,12 +167,7 @@ def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delet
 	else:
 		os.system('mkdir '+moonpydir+'/TESS_lcs')
 
-	obsTable = Observations.query_object(targID, radius='0.001 deg')
-	TESS_idxs = np.where(np.array(obsTable['obs_collection']) == 'TESS')[0]
-	minTESSidx, maxTESSidx = np.nanmin(TESS_idxs), np.nanmax(TESS_idxs)+1
-	dataproducts = Observations.get_product_list(obsTable[minTESSidx:maxTESSidx])
-	timeseries_idxs = np.where(np.array(dataproducts['dataproduct_type']) == 'timeseries')[0]
-	obsids = np.array(dataproducts)['obsID'][timeseries_idxs]
+	### first try a simple curl script!
 
 	all_times = []
 	all_fluxes = []
@@ -179,51 +176,124 @@ def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delet
 	sectors = []
 	lcfiles = []
 
-	for obsid in np.unique(obsids):
-		print ("obsid = ", obsid)
-		dataproductsbyID = Observations.get_product_list(obsid)
-		manifest = Observations.download_products(dataproductsbyID, download_dir=moonpydir+'/TESS_lcs', dataproduct_type='timeseries', extension='lc.fits', mrp_only=True)
-		
+	try:
+		if targID.startswith('TIC'):
+			ticnum = str(targID)[3:]
+			if ticnum.startswith(' '):
+				ticnum = str(ticnum)[1:]
+		else:
+			ticnum = str(targID)
+			if ticnum.startswith(' '):
+				ticnum = ticnum[1:]
+	
+		### prepare for the query
+		query_num = ticnum
+		while len(query_num) < 16:
+			query_num = '0'+query_num
+		assert len(query_num) == 16
 
-		for nmanfile,manfile in enumerate(manifest):
-			manfilepath = manfile[0]
-			if "_lc.fits" in manfilepath:
-				print('found the light curve!')
-				### this is the only one you want to save!
-				lcpath = manfilepath
-				print("lcpath = ", lcpath)
+		sector_prefixes, sector_suffixes = {}, {}
 
-				### open the file, grab the data!
-				lcfile = pyfits.open(lcpath)
-				lcfiles.append(lcfile)
-				lcdata = lcfile[1].data
-				lctimes = np.array(lcdata['TIME'])
-				if lc_format == 'pdc':
-					lcfluxes = np.array(lcdata['PDCSAP_FLUX'])
-					lcerrors = np.array(lcdata['PDCSAP_FLUX_ERR'])
-				elif lc_format == 'sap':
-					lcfluxes = np.array(lcdata['SAP_FLUX'])
-					lcerrors = np.array(lcdata['SAP_FLUX_ERR'])
-				lcflags = np.array(lcdata['QUALITY'])
-				sector = lcfile[0].header['SECTOR']
+		sector_prefixes[1], sector_suffixes[1] = 'tess2018206045859-s0001-', '-0120-s_lc.fits'
+		sector_prefixes[2], sector_suffixes[2] = 'tess2018234235059-s002-', '-0121-s_lc.fits'
+		sector_prefixes[3], sector_suffixes[3] = 'tess2018263035959-s0003-', '-0123-s_lc.fits'
+		sector_prefixes[4], sector_suffixes[4] = 'tess2018292075959-s0004-', '-0124-s_lc.fits'
+		sector_prefixes[5], sector_suffixes[5] = 'tess2018319095959-s0005-', '-0125-s_lc.fits'
+		sector_prefixes[6], sector_suffixes[6] = 'tess2018349182459-s0006-', '-0126-s_lc.fits'
+		sector_prefixes[7], sector_suffixes[7] = 'tess2019006130736-s0007-', '-0131-s_lc.fits'
+		sector_prefixes[8], sector_suffixes[8] = 'tess2019032160000-s0008-', '-0136-s_lc.fits'
+		sector_prefixes[9], sector_suffixes[9] = 'tess2019058134432-s0009-', '-0139-s_lc.fits'
+		sector_prefixes[10], sector_suffixes[10] = 'tess2019085135100-s0010-', '-0140-s_lc.fits'
 
-				all_times.append(lctimes)
-				all_fluxes.append(lcfluxes)
-				all_errors.append(lcerrors)
-				all_flags.append(lcflags)
-				sectors.append(sector)
+		for sector in np.arange(1,11,1):
+			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
+			os.system('curl -C - -L -o '+moonpydir+'/TESS_lcs/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
+			print('downloading the light curve for '+str(targID)+'in sector ', sector)
 
-				if delete_fits == 'y':
-					os.system('rm '+lcpath)
-				break
-				
-			else:
-				pass
-				#os.system('rm -rf '+manfilepath)
+			try:
+				lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)
+			except:
+				os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				continue
+
+			lcfiles.append(lcfile)
+			lcdata = lcfile[1].data
+			lctimes = np.array(lcdata['TIME'])
+			if lc_format == 'pdc':
+				lcfluxes = np.array(lcdata['PDCSAP_FLUX'])
+				lcerrors = np.array(lcdata['PDCSAP_FLUX_ERR'])
+			elif lc_format == 'sap':
+				lcfluxes = np.array(lcdata['SAP_FLUX'])
+				lcerrors = np.array(lcdata['SAP_FLUX_ERR'])
+			lcflags = np.array(lcdata['QUALITY'])
+			sector = lcfile[0].header['SECTOR']
+
+			all_times.append(lctimes)
+			all_fluxes.append(lcfluxes)
+			all_errors.append(lcerrors)
+			all_flags.append(lcflags)
+			sectors.append(sector)
+
+			if delete_fits == 'y':
+				os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
 
 
-		print(" ")
-		print(" ")
+	except:
+		traceback.print_exc()
+		time.sleep(60)
+
+		obsTable = Observations.query_object(targID, radius='0.001 deg')
+		TESS_idxs = np.where(np.array(obsTable['obs_collection']) == 'TESS')[0]
+		minTESSidx, maxTESSidx = np.nanmin(TESS_idxs), np.nanmax(TESS_idxs)+1
+		dataproducts = Observations.get_product_list(obsTable[minTESSidx:maxTESSidx])
+		timeseries_idxs = np.where(np.array(dataproducts['dataproduct_type']) == 'timeseries')[0]
+		obsids = np.array(dataproducts)['obsID'][timeseries_idxs]
+
+		for obsid in np.unique(obsids):
+			print ("obsid = ", obsid)
+			dataproductsbyID = Observations.get_product_list(obsid)
+			manifest = Observations.download_products(dataproductsbyID, download_dir=moonpydir+'/TESS_lcs', dataproduct_type='timeseries', extension='lc.fits', mrp_only=True)
+			
+
+			for nmanfile,manfile in enumerate(manifest):
+				manfilepath = manfile[0]
+				if "_lc.fits" in manfilepath:
+					print('found the light curve!')
+					### this is the only one you want to save!
+					lcpath = manfilepath
+					print("lcpath = ", lcpath)
+
+					### open the file, grab the data!
+					lcfile = pyfits.open(lcpath)
+					lcfiles.append(lcfile)
+					lcdata = lcfile[1].data
+					lctimes = np.array(lcdata['TIME'])
+					if lc_format == 'pdc':
+						lcfluxes = np.array(lcdata['PDCSAP_FLUX'])
+						lcerrors = np.array(lcdata['PDCSAP_FLUX_ERR'])
+					elif lc_format == 'sap':
+						lcfluxes = np.array(lcdata['SAP_FLUX'])
+						lcerrors = np.array(lcdata['SAP_FLUX_ERR'])
+					lcflags = np.array(lcdata['QUALITY'])
+					sector = lcfile[0].header['SECTOR']
+
+					all_times.append(lctimes)
+					all_fluxes.append(lcfluxes)
+					all_errors.append(lcerrors)
+					all_flags.append(lcflags)
+					sectors.append(sector)
+
+					if delete_fits == 'y':
+						os.system('rm '+lcpath)
+					break
+
+				else:
+					pass
+					#os.system('rm -rf '+manfilepath)
+
+
+			print(" ")
+			print(" ")
 
 	all_times, all_fluxes, all_errors, all_flags, sectors = np.array(all_times), np.array(all_fluxes), np.array(all_errors), np.array(all_flags), np.array(sectors)
 
