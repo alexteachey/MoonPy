@@ -47,7 +47,7 @@ and that ought to get you going. The first time you start up the code a savepath
 ## OVERVIEW
 Below you will find the details of some of these tools. At present the user will want to utilize the following functionality:
 
-* **Initialize a light curve object** using *MoonypyLC()*
+* **Initialize a light curve object** using *MoonpyLC()*
 * **plot the light curve** using *plot_lc()*.
 * **generate a Lomb-Scargle** periodogram using *genLS()*.
 * **Detrend the light curve** using *detrend()*
