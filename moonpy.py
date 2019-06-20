@@ -436,6 +436,7 @@ class MoonpyLC(object):
 				#self.get_properties(locate_neighbor='y')
 				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
 		except:
+			traceback.print_exc()
 			print(" ")
 			print(" ")
 			print('ONE OR MORE METHODS FAILED. Identifier is likely not in SIMBAD, and aliases are unknown.')
@@ -1037,11 +1038,11 @@ class MoonpyLC(object):
 		if download_new == 'y':
 			### download a new version!
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
 				os.system('wget -O cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
 
 			elif (self.telescope == 'k2') or (self.telescope == "K2"):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
 				os.system('wget -O exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
 
 			elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
@@ -1202,6 +1203,9 @@ class MoonpyLC(object):
 			target_duration, target_duration_uperr, target_duration_lowerr = mast_data['koi_duration'][rowidx], mast_data['koi_duration_err1'][rowidx], mast_data['koi_duration_err2'][rowidx]
 			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = mast_data['koi_ror'][rowidx], mast_data['koi_ror_err1'][rowidx], mast_data['koi_ror_err2'][rowidx]
 			target_rp, target_rp_uperr, target_rp_lowerr = mast_data['koi_prad'][rowidx], mast_data['koi_prad_err1'][rowidx], mast_data['koi_prad_err2'][rowidx]
+			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][rowidx], mast_data['koi_sma_err1'][rowidx], mast_data['koi_sma_err2'][rowidx]
+			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][rowidx], mast_data['koi_insol_err1'][rowidx], mast_data['koi_insol_err2'][rowidx]
+
 
 		elif (self.telescope == 'k2') or (self.telescope == "K2"):
 			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][rowidx])
@@ -1210,6 +1214,9 @@ class MoonpyLC(object):
 			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][rowidx])
 			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][rowidx])
 			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][rowidx]), np.nanmedian(mast_data['pl_radeerr1'][rowidx]), np.nanmedian(mast_data['pl_radeerr2'][rowidx])
+			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(mast_data['pl_ratdor'][rowidx]), np.nanmedian(mast_data['pl_ratdorerr1'][rowidx]), np.nanmedian(mast_data['pl_ratdorerr2'][rowidx])
+			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(mast_data['pl_eqt'][rowidx]), np.nanmedian(mast_data['pl_eqterr1'][rowidx]), np.nanmedian(mast_data['pl_eqterr2'][rowidx])
+
 
 		elif (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
 			if (self.target.startswith('TIC')) or (self.target.startswith("TOI")):
@@ -1264,6 +1271,40 @@ class MoonpyLC(object):
 		self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
 		self.rstar_meters = self.rstar_rsol * eq_RSun
 		self.depth = self.rprstar**2
+
+		try:
+			self.sma_AU = float(target_sma_AU) ### sma in AU
+			self.sma_AU_err = (float(target_sma_AU_lowerr), float(target_sma_AU_uperr)) ### sma in AU
+		except:
+			try:
+				target_sma_AU = (self.a_rstar * self.rstar_meters) / au.value 
+				self.sma_AU = target_sma_AU 
+			except:
+				pass
+
+		try:
+			self.a_rstar = float(target_a_rstar) ### sma/Rstar
+			self.a_rstar_err = (float(target_a_rstar_lowerr), float(target_a_rstar_uperr)) ### sma/Rstar 
+		except:
+			### try to convert sma_AU into A/Rstar
+			try:
+				target_a_rstar = (self.sma_AU * au.value) / self.rstar_meters
+				self.a_rstar = target_a_rstar 
+			except:
+				pass
+
+		try:
+			self.insol = float(target_insol) ### insolution in units of Earth insolation
+			self.insol_err = (float(target_insol_lowerr), float(target_insol_uperr))
+		except:
+			pass
+
+		try:
+			self.Teq = float(target_Teq) ### equilibrium temperature of the planet
+			self.Teq_err = (float(target_Teq_lowerr), float(target_Teq_uperr))
+		except:
+			pass
+
 
 		if np.isfinite(target_duration):
 			self.duration_hours = float(target_duration)
