@@ -160,7 +160,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delete_fits='y'):
+def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delete_fits='n'):
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
 		pass
@@ -204,8 +204,9 @@ def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delet
 		sector_prefixes[8], sector_suffixes[8] = 'tess2019032160000-s0008-', '-0136-s_lc.fits'
 		sector_prefixes[9], sector_suffixes[9] = 'tess2019058134432-s0009-', '-0139-s_lc.fits'
 		sector_prefixes[10], sector_suffixes[10] = 'tess2019085135100-s0010-', '-0140-s_lc.fits'
+		sector_prefixes[11], sector_suffixes[11] = 'tess2019112060037-s0011-', '-0143-s_lc.fits'
 
-		for sector in np.arange(1,11,1):
+		for sector in np.arange(1,12,1):
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			os.system('curl -C - -L -o '+moonpydir+'/TESS_lcs/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 			print('downloading the light curve for '+str(targID)+'in sector ', sector)

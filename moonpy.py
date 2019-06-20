@@ -217,8 +217,10 @@ class MoonpyLC(object):
 						ticnum = int(np.array(exofop_data['TIC ID'])[rowidx])
 						ticname = 'TIC '+str(ticnum)
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
+						print('lc_times.shape = ', lc_times.shape)
 					else:
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID)
+						print('lc_times.shape = ', lc_times.shape)
 
 			self.telescope = telescope
 
@@ -514,7 +516,7 @@ class MoonpyLC(object):
 						self.mystery_solver(self.tau0, self.period, self.duration_hours)
 					except:
 						pass
-						
+
 				if mask_neighbors == 'y':
 					neighbor_transit_idxs = []
 					for ntt in self.all_transit_times:
@@ -553,25 +555,26 @@ class MoonpyLC(object):
 						You can specify "max_degree" below, or calculate it using the max_order function
 						within cofiam.py.
 						"""
-						fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
 					elif dmeth == 'untrendy':
 						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
-						fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+						fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
 					elif dmeth == 'george':
 						print("GEORGE ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
-						fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, mask_idxs=mask_transit_idxs)
+						fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
 					elif dmeth == 'medfilt':
 						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
-						fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, size=kernel, mask_idxs=mask_transit_idxs)
+						fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, size=kernel, mask_idxs=mask_transit_idxs)
 						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 
 				except:
+					traceback.print_exc()
 					print('Detrending failed for this quarter. All points have likely been screened.')
 					fluxes_detrend, errors_detrend = dfluxes, derrors 
 					flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
