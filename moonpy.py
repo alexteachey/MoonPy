@@ -216,7 +216,7 @@ class MoonpyLC(object):
 					if self.target.startswith("TOI"):
 						ticnum = int(np.array(exofop_data['TIC ID'])[rowidx])
 						ticname = 'TIC '+str(ticnum)
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
 						print('lc_times.shape = ', lc_times.shape)
 					else:
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID)
@@ -355,9 +355,14 @@ class MoonpyLC(object):
 		else:
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
 		
-		for qidx,quarters in enumerate(lc_quarters):
+		nquarters = len(lc_quarters)
+		#for qidx,quarters in enumerate(lc_quarters):
+		for qidx in np.arange(0,nquarters,1):
 			### remove NaNs
+			#if nquarters != 1:
 			nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
+			#elif nquarters == 1:
+			#	nan_idxs = np.where(np.isfinite(lc_fluxes) == False)[0]
 
 			if len(nan_idxs) > 0:
 				if len(lc_quarters) > 1:
@@ -406,11 +411,13 @@ class MoonpyLC(object):
 				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
 
 				len_times = len(lc_times)
+				"""
 				lc_times = lc_times.reshape(1, len_times)
 				lc_fluxes = lc_fluxes.reshape(1, len_times)
 				lc_errors = lc_errors.reshape(1, len_times)
 				lc_fluxes_detrend = lc_fluxes_detrend.reshape(1, len_times)
 				lc_errors_detrend = lc_errors_detrend.reshape(1, len_times)
+				"""
 
 		self.times = lc_times
 		self.fluxes = lc_fluxes
@@ -441,13 +448,18 @@ class MoonpyLC(object):
 			### write to a file!
 			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.tsv', mode='w')
 			lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
-			try:
+			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
 					qtq = lc_quarters[qidx]
 					qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
 					for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
 						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
-			except:
+			elif len(self.quarters) == 1:
+				if self.times.shape[0] == 1:
+					lc_times, lc_fluxes, lc_errors = lc_times[0], lc_fluxes[0], lc_errors[0]
+				else:
+					pass
+
 				for qt, qf, qe, qfl in zip(lc_times, lc_fluxes, lc_errors, lc_flags):
 					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
 			lcfile.close()
@@ -475,10 +487,14 @@ class MoonpyLC(object):
 
 		master_detrend, master_error_detrend, master_flags_detrend = [], [], []
 
-		for qidx in np.arange(0,self.times.shape[0],1):
+		nquarters = len(self.quarters)
+		for qidx in np.arange(0,nquarters,1):
 			skip_quarter = 'n'
 			print('quarter = ', self.quarters[qidx])
-			dtimes, dfluxes, derrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			if nquarters != 1:
+				dtimes, dfluxes, derrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			elif nquarters == 1:
+				dtimes, dfluxes, derrors = self.times, self.fluxes, self.errors
 			print('dtimes.shape = ', dtimes.shape)
 
 			dtimesort = np.argsort(dtimes)
@@ -625,8 +641,39 @@ class MoonpyLC(object):
 						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
 
 					print('quarter written to file.')
+
 			elif len(self.quarters) == 1:
 				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags
+				
+				if qtimes.shape[0] == 1:
+					qtimes = qtimes[0]
+				if qfluxes.shape[0] == 1:
+					qfluxes = qfluxes[0]
+				if qerrors.shape == 1:
+					qerrors = qerrors[0]
+
+				try:
+					if qfluxes_detrend.shape == 1:
+						qfluxes_detrend = qfluxes_detrend[0]
+				except:
+					if type(qfluxes_detrend) == list:
+						qfluxes_detrend = qfluxes_detrend[0]
+
+				try:
+					if qerrors_detrend.shape == 1:
+						qerrors_detrend = qerrors_detrend[0]
+				except:
+					if type(qerrors_detrend) == list:
+						qerrors_detrend = qerrors_detrend[0]
+
+				try:
+					if qflags.shape == 1:
+						qflags = qflags[0]
+				except:
+					if type(qflags) == list:
+						qflags = qflags[0]
+
+
 				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
 					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
 
@@ -802,8 +849,13 @@ class MoonpyLC(object):
 		LSperiods = []
 		LSpowers = []
 		LSfaps = []
-		for qidx in np.arange(0,self.times.shape[0],1):
-			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+		nquarters = len(self.quarters)
+
+		for qidx in np.arange(0,nquarters,1):
+			if nquarters != 1:
+				qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			else:
+				qtimes, qfluxes, qerrors = self.times, self.fluxes, self.errors 
 			maxperiod = 0.5 * (np.nanmax(qtimes) - np.nanmin(qtimes))
 			minperiod = 0.5
 			minfreq, maxfreq = 1/maxperiod, 1/minperiod
@@ -1191,7 +1243,10 @@ class MoonpyLC(object):
 		### update properties!
 		self.period = float(target_period)
 		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
-		self.tau0 = float(target_tau0)
+		if (self.telescope == 'tess') and (float(target_tau0) > 2454833):
+			self.tau0 = float(target_tau0) - 2457000 ### native TESS offset value
+		else:
+			self.tau0 = float(target_tau0)
 		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
 		if np.isfinite(target_impact):
 			self.impact = float(target_impact)
@@ -1240,7 +1295,12 @@ class MoonpyLC(object):
 	def find_taus(self):
 		transit_midtimes = [self.tau0]
 		next_transit = transit_midtimes[-1]+self.period
-		while next_transit < np.nanmax(np.concatenate((self.times))):
+		nquarters = len(self.quarters)
+		if nquarters != 1:
+			maxtime = np.nanmax(np.concatenate((self.times)))
+		elif nquarters == 1:
+			maxtime = np.nanmax(self.times)
+		while next_transit < maxtime:
 			transit_midtimes.append(next_transit)
 			next_transit = transit_midtimes[-1]+self.period
 		self.taus = np.array(transit_midtimes)
@@ -1255,8 +1315,12 @@ class MoonpyLC(object):
 		self.find_taus()
 		### calculate transit times for this target... assuming linear ephemeris!
 		transit_times = []
-		for qidx in np.arange(0,len(self.quarters),1):
-			qtimes = self.times[qidx]
+		nquarters = len(self.quarters)
+		for qidx in np.arange(0,nquarters,1):
+			if nquarters != 1:
+				qtimes = self.times[qidx]
+			elif nquarters == 1:
+				qtimes = self.times
 			for qtime in qtimes:
 				for tau in self.taus:
 					if (qtime >= tau - 0.5*self.duration_days) and (qtime <= tau + 0.5*self.duration_days):
@@ -1551,8 +1615,13 @@ class MoonpyLC(object):
 		OC_over_durs = []
 		epochs = []
 
-		for qidx,q in enumerate(self.quarters):
-			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes_detrend[qidx], self.errors_detrend[qidx]
+		nquarters = len(self.quarters)
+		#for qidx,q in enumerate(self.quarters):
+		for qidx in np.arange(0,quarters,1):
+			if nquarters != 1:
+				qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes_detrend[qidx], self.errors_detrend[qidx]
+			elif nquarters == 1:
+				qtimes, qfluxes, qerrors = self.times, self.fluxes_detrend, self.errors_detrend 
 			for epoch, tau in enumerate(self.taus):
 				if tau >= np.nanmin(qtimes) and tau <= np.nanmax(qtimes):
 					### this tau is in the quarter
