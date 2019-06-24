@@ -497,6 +497,20 @@ class MoonpyLC(object):
 			elif nquarters == 1:
 				dtimes, dfluxes, derrors = self.times, self.fluxes, self.errors
 			print('dtimes.shape = ', dtimes.shape)
+			print('dtimes.shape[0] = ', dtimes.shape[0])
+			if dtimes.shape[0] == 0:
+				exceptions_raised = 'y'
+				fluxes_detrend, errors_detrend = dfluxes, derrors 
+				flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
+				master_detrend.append(np.array(fluxes_detrend))
+				master_error_detrend.append(np.array(errors_detrend))
+				master_flags_detrend.append(np.array(flags_detrend))
+				continue
+
+			#if int(dtimes.shape[0]) < 10:
+			#	print('not enough times to detrend!')
+			#	continue ### there's nothing to detrend here!
+
 
 			dtimesort = np.argsort(dtimes)
 			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
@@ -603,9 +617,11 @@ class MoonpyLC(object):
 				assert np.all(dfluxes != fluxes_detrend)
 				assert np.all(derrors != errors_detrend)
 
+
 			master_detrend.append(np.array(fluxes_detrend))
 			master_error_detrend.append(np.array(errors_detrend))
 			master_flags_detrend.append(np.array(flags_detrend))
+
 
 		### this is the first initialization of the detrended fluxes.
 		self.fluxes_detrend = master_detrend
