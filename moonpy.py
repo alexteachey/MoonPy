@@ -2,17 +2,16 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import astropy
+#import astropy
 import warnings
 from astropy.io import ascii
 import time
-import datetime
+#import datetime
 import pandas
 import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from astropy.stats import LombScargle
-import os
 
 #### BELOW ARE MOONPY PACKAGES
 from mp_tools import *
@@ -21,8 +20,8 @@ from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
-from pyluna import run_LUNA, prepare_files
-import time
+#from pyluna import run_LUNA, prepare_files
+from pyluna import prepare_files
 
 
 #from matplotlib import rc
@@ -292,21 +291,15 @@ class MoonpyLC(object):
 							target_name = 'TIC '+str(self.target) ### only update if this worked!
 							self.RA = simbad_query['RA']
 							self.Dec = simbad_query['DEC']
-							target_in_simbad = 'y'
+							#target_in_simbad = 'y'
 						except:
-							target_in_simbad = 'n'
+							#target_in_simbad = 'n'
 							try:
 								self.RA = np.array(exofop_data['RA'][rowidx])[0]
 								self.Dec = np.array(exofop_data['Dec'][rowidx])[0]
 							except:
 								pass
 
-
-				#if target_in_simbad == 'n':
-					#print('WARNING: Target not listed in SIMBAD under this name.')
-					#print('RA/Dec not recovered. Aliases not available. get_properties() will fail.')
-
-				#elif target_in_simbad == 'y':
 				try:
 					self.find_aliases()
 				except:
@@ -410,14 +403,6 @@ class MoonpyLC(object):
 				timesort = np.argsort(lc_times)
 				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
 
-				len_times = len(lc_times)
-				"""
-				lc_times = lc_times.reshape(1, len_times)
-				lc_fluxes = lc_fluxes.reshape(1, len_times)
-				lc_errors = lc_errors.reshape(1, len_times)
-				lc_fluxes_detrend = lc_fluxes_detrend.reshape(1, len_times)
-				lc_errors_detrend = lc_errors_detrend.reshape(1, len_times)
-				"""
 
 		self.times = lc_times
 		self.fluxes = lc_fluxes
@@ -1032,16 +1017,16 @@ class MoonpyLC(object):
 		download_new = 'n'
 		try:
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-				filecreated_time1 = os.path.getctime('cumkois.txt')
-				filecreated_time2 = os.path.getctime('cfop_targets.csv')
+				filecreated_time1 = os.path.getctime(moonpydir+'/cumkois.txt')
+				filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
 
 			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-				filecreated_time1 = os.path.getctime('cumk2ois.txt')
-				filecreated_time2 = os.path.getctime('exofop_targets.csv')
+				filecreated_time1 = os.path.getctime(moonpydir+'/cumk2ois.txt')
+				filecreated_time2 = os.path.getctime(moonpydir+'/exofop_targets.csv')
 
 			elif (self.telescope == 'tess') or (self.telescope == 'TESS') or (self.telescope == "Tess"):
-				filecreated_time1 = os.path.getctime('exofop_toilists.pipe')
-				filecreated_time2 = os.path.getctime('confirmed_planets.txt')
+				filecreated_time1 = os.path.getctime(moonpydir+'/exofop_toilists.pipe')
+				filecreated_time2 = os.path.getctime(moonpydir+'/confirmed_planets.txt')
 
 			filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
 			current_time = time.time()
@@ -1054,16 +1039,16 @@ class MoonpyLC(object):
 		if download_new == 'y':
 			### download a new version!
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"')
-				os.system('wget -O cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
+				os.system('wget -O '+moonpydir+'/cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
 
 			elif (self.telescope == 'k2') or (self.telescope == "K2"):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"')
-				os.system('wget -O exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
+				os.system('wget -O '+moonpydir+'/exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
 
 			elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
-				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "confirmed_planets.txt"')
-				os.system('wget -O exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
+				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
+				os.system('wget -O '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
 
 
 		### find by KICID, KOI number of planet!
