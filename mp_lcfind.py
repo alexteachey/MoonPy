@@ -12,7 +12,7 @@ import traceback
 
 moonpydir = os.getcwd()
 
-def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
+def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
 	import kplr
 	import k2plr
 	#print("nothing happening right now.")
@@ -21,24 +21,71 @@ def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', te
 	elif (telescope == 'k2') or (telescope == "K2"):
 		client = k2plr.API()
 
-	if type == 'koi':
-		kplr_obj = client.koi(targID)
-	elif type == 'planet':
-		kplr_obj = client.planet(str(targID))
-	elif type == 'kic':
-		kplr_obj = client.star(targID)
-
-	lcs = kplr_obj.get_light_curves(short_cadence=sc)
-
 	kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = [], [], [], [], [], [], []
 
+	if targtype == 'koi':
+		kplr_obj = client.koi(targID)
+		lcs = kplr_obj.get_light_curves(short_cadence=sc)
+
+	elif targtype == 'planet':
+		kplr_obj = client.planet(str(targID))
+		lcs = kplr_obj.get_light_curves(short_cadence=sc)
+
+	elif targtype == 'kic':
+		kplr_obj = client.star(targID)
+		lcs = kplr_obj.get_light_curves(short_cadence=sc)
+
+	elif targtype == 'epic':
+		lcs = []
+		if (telescope == 'k2') or (telescope == 'K2'):
+			### attempt to download the fits file using it's EPIC ID.
+			campaigns = ['c0', 'c1', 'c102', 'c111', 'c12', 'c13', 'c14', 'c15', 'c16', 'c17', 'c18', 'c19', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']
+			for campaign in campaigns:
+				if targID.startswith("EPIC"):
+					epictarg = targID[4:]
+					if epictarg.startswith(' '):
+						epictarg = epictarg[1:]
+					epic_prefix = epictarg[:4] ### first four numbers
+					epic_suffix = epictarg[-5:] ### last five numbers
+					epic_suffix_prefix = epic_suffix[:2] ### first two numbers of last five numbers
+					lc_URL = 'https://archive.stsci.edu/missions/k2/lightcurves/'+campaign+'/'+epic_prefix+'00000/'+epic_suffix_prefix+'000/ktwo'+epictarg+'-'+campaign+'_llc.fits'
+					lcdownload_name = 'EPIC'+epictarg+'_'+campaign+'_llc.fits'
+					print('attempting to download '+targID+' from campaign '+campaign)
+					if os.path.exists(moonpydir+'/k2_lcs'):
+						pass
+					else:
+						os.system('mkdir '+moonpydir+'/k2_lcs')
+					os.system('wget -O '+moonpydir+'/k2_lcs/'+lcdownload_name+' '+lc_URL)
+					lcs.append(moonpydir+'/k2_lcs/'+lcdownload_name)
+
 	for lc in lcs:
-		with lc.open() as f:
+		if targtype != 'epic':
+			with lc.open() as f:
+				hdu_header = f[0].header 
+				hdu_data = f[1].data 
+
+				obj_ra, obj_dec = hdu_header['RA_OBJ'], hdu_header['DEC_OBJ']
+				quarter = hdu_header['QUARTER']
+
+				kobj_times.append(hdu_data['time'])
+				
+				kobj_sap_fluxes.append(hdu_data['sap_flux'])
+				kobj_sap_errors.append(hdu_data['sap_flux_err'])
+				kobj_pdc_fluxes.append(hdu_data['pdcsap_flux'])
+				kobj_pdc_errors.append(hdu_data['pdcsap_flux_err'])
+				kobj_flags.append(hdu_data['sap_quality'])
+				kobj_quarters.append(quarter)
+
+		elif targtype == 'epic':
+			try:
+				f = pyfits.open(lc)
+			except: ### likely means the fits file is empty (it's still generated even if the target was not observed).
+				continue
 			hdu_header = f[0].header 
 			hdu_data = f[1].data 
 
 			obj_ra, obj_dec = hdu_header['RA_OBJ'], hdu_header['DEC_OBJ']
-			quarter = hdu_header['QUARTER']
+			quarter = hdu_header['CAMPAIGN']
 
 			kobj_times.append(hdu_data['time'])
 			
@@ -48,6 +95,11 @@ def kplr_target_download(targID, type='koi', quarters='all', lc_format='pdc', te
 			kobj_pdc_errors.append(hdu_data['pdcsap_flux_err'])
 			kobj_flags.append(hdu_data['sap_quality'])
 			kobj_quarters.append(quarter)
+
+			### remove those light curves after you've downloaded them!
+			os.system('rm -f '+lc)
+
+			
 
 	kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = np.array(kobj_times), np.array(kobj_sap_fluxes), np.array(kobj_sap_errors), np.array(kobj_pdc_fluxes), np.array(kobj_pdc_errors), np.array(kobj_flags), np.array(kobj_quarters)
 
@@ -142,11 +194,11 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 	if lc_format == 'pdc':
-		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
 	elif lc_format == 'sap':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
 	elif lc_format == 'both':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, type=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
 
 
 	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
@@ -160,7 +212,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def tess_target_download(targID, sectors='all', sc=False, lc_format='pdc', delete_fits='n'):
+def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete_fits='n'):
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
 		pass

@@ -83,7 +83,7 @@ class MoonpyLC(object):
 				telescope='kepler'
 			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
 				telescope='tess'
-			elif (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC')):
+			elif (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC') or (str(targetID).startswith('epic'))):
 				telescope='k2'
 			else:
 				telescope = input('Please specify the telescope: ')
@@ -119,14 +119,17 @@ class MoonpyLC(object):
 
 		### intuit whether the targetID is a 'planet' (includes a letter), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
-			if '.' in str(targetID) and ((telescope=='kepler') or (telescope=="Kepler")):
+			if '.' in str(self.target) and ((telescope=='kepler') or (telescope=="Kepler")):
 				target_type='koi'
-			elif '.' in str(targetID) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
+			elif '.' in str(self.target) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
 				target_type='toi'
-			elif (('b' in str(targetID)) or ('c' in str(targetID)) or ('d' in str(targetID)) or ('e' in str(targetID)) or ('f' in str(targetID)) or ('g' in str(targetID))) and ((telescope=='kepler') or (telescope=='Kepler')):
+			elif (('b' in str(self.target)) or ('c' in str(self.target)) or ('d' in str(self.target)) or ('e' in str(self.target)) or ('f' in str(self.target)) or ('g' in str(self.target))) and ((telescope=='kepler') or (telescope=='Kepler')):
 				target_type='planet'
 			elif (telescope=='k2') or (telescope=='K2'):
-				target_type='planet'
+				if ('epic' in str(self.target)) or ('EPIC' in str(self.target)):
+					target_type = 'epic'
+				else:
+					target_type='planet'
 			else:
 				if ((telescope == 'kepler') or (telescope=='Kepler')):
 					target_type='kic'
@@ -199,11 +202,26 @@ class MoonpyLC(object):
 			### implies you've selected a target you want to download.
 			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope == 'KEPLER'):
 				rowidx, mast_data, NEA_targetname = self.find_planet_row()
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				try:
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				except:
+					try:
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
+					except:
+						traceback.print_exc()
 
 			elif (telescope == 'K2') or (telescope == 'k2'):
-				rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, type=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				try:
+					rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
+				except:
+					traceback.print_exc()
+				#try:
+				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				#except:
+				#	try:
+				#		lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				#	except:
+				#		traceback.print_exc()
 
 			elif (telescope == 'tess') or (telescope == "Tess") or (telescope == "TESS"):
 				rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
