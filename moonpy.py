@@ -149,11 +149,11 @@ class MoonpyLC(object):
 		print('telescope = ', telescope)
 
 		if load_lc == 'y':
-			if self.target.startswith('K2') or self.target.startswith('k2'):
+			if self.target.lower().startswith('k2'):
 				self.telescope = "k2"
-			elif self.target.startswith('Kepler') or self.target.startswith("kepler") or self.target.startswith('KIC') or self.target.startswith('kic') or self.target.startswith('KOI') or self.target.startswith('koi'):
+			elif self.target.lower().startswith('kepler') or self.target.lower().startswith('kic') or self.target.lower().startswith('koi'):
 				self.telescope = "kepler"
-			elif self.target.startswith('TIC') or self.target.startswith('TOI'):
+			elif self.target.lower().startswith('tic'):
 				self.telescope = 'tess'
 			else:
 				telescope = input('Please specify the telescope: ')
@@ -277,7 +277,7 @@ class MoonpyLC(object):
 			#self.rowidx = rowidx #### IMPORTANT: only define self.rowidx for your TARGET! not for neighbors!
 			self.mast_rowidx = mast_rowidx
 
-			if self.telescope != 'Kepler' and self.telescope != 'kepler' and self.telescope != 'KEPLER':
+			if self.telescope.lower() != 'kepler':
 				self.exofop_rowidx = exofop_rowidx
 			self.telescope = telescope
 			### SIMBAD_QUERY
@@ -913,7 +913,7 @@ class MoonpyLC(object):
 		try:
 			print(self.RA, self.Dec)
 		except:
-			if (self.telescope == 'kepler') or (self.telescope == 'Kepler') or (self.telescope == "KEPLER"):
+			if (self.telescope.lower() == 'kepler'):
 				if self.target_type == 'koi':
 					target_name = "KOI-"+str(targetID)
 				elif self.target_type == 'planet':
@@ -934,7 +934,7 @@ class MoonpyLC(object):
 					except:
 						pass
 
-			elif (self.telescope == 'k2') or (self.telescope == "K2"):
+			elif (self.telescope.lower() == 'k2'):
 				target_name = "K2-"+str(targetID)
 				try:
 					simbad_query = Simbad.query_object(self.target)[0]
@@ -950,7 +950,7 @@ class MoonpyLC(object):
 						pass
 
 
-			elif (self.telescope == 'TESS') or (self.telescope == 'tess') or (self.telescope == 'Tess'):
+			elif (self.telescope.lower() == 'tess'):
 				try:
 					simbad_query = Simbad.query_object(self.target)[0] ### this will look for any object!
 					target_name = self.target
@@ -1081,18 +1081,18 @@ class MoonpyLC(object):
 		download_new = 'n'
 		if row_known == 'y':
 			mast_rowidx = self.mast_rowidx
-			if self.telescope != "kepler" and self.telescope != 'Kepler' and self.telescope != 'KEPLER':
+			if self.telescope.lower() != "kepler":
 				exofop_rowidx = self.exofop_rowidx
 		try:
-			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+			if (self.telescope.lower() == 'kepler'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumkois.txt')
 				filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
 
-			elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+			elif (self.telescope.lower() == 'k2'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumk2ois.txt')
 				filecreated_time2 = os.path.getctime(moonpydir+'/exofop_targets.csv')
 
-			elif (self.telescope == 'tess') or (self.telescope == 'TESS') or (self.telescope == "Tess"):
+			elif (self.telescope.lower() == 'tess'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/exofop_toilists.pipe')
 				filecreated_time2 = os.path.getctime(moonpydir+'/confirmed_planets.txt')
 
@@ -1106,21 +1106,21 @@ class MoonpyLC(object):
 
 		if download_new == 'y':
 			### download a new version!
-			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+			if (self.telescope.lower() == 'kepler'):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
 				os.system('wget -O '+moonpydir+'/cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
 
-			elif (self.telescope == 'k2') or (self.telescope == "K2"):
+			elif (self.telescope.lower() == 'k2'):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
 				os.system('wget -O '+moonpydir+'/exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
 
-			elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
+			elif (self.telescope.lower() == 'tess'):
 				os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
 				os.system('wget -O '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
 
 
 		### KEPLER HANDLING 
-		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
+		if (self.telescope.lower() == 'kepler'):
 			mast_data = ascii.read('cumkois.txt')
 			mast_columns = mast_data.columns
 			try:
@@ -1176,7 +1176,7 @@ class MoonpyLC(object):
 
 
 		### K2 HANDLING 
-		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+		elif (self.telescope.lower() == 'k2'):
 			mast_data = ascii.read('cumk2ois.txt')
 			mast_columns = mast_data.columns
 			exofop_data = pandas.read_csv('exofop_targets.csv', header=10)
@@ -1206,7 +1206,7 @@ class MoonpyLC(object):
 
 
 		### TESS HANDLING 
-		elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
+		elif (self.telescope.lower() == 'tess'):
 			mast_data = ascii.read('confirmed_planets.txt')
 			mast_columns = mast_data.columns
 			exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
@@ -1309,12 +1309,12 @@ class MoonpyLC(object):
 				pass
 
 		#print('rowidx = ', rowidx)
-		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
+		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			try:
 				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
 			except:
 				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 
-		elif self.telescope == 'Kepler' or self.telescope == 'kepler' or self.telescope == "KEPLER":
+		elif self.telescope.lower() == 'kepler':
 			try:
 				return mast_rowidx, mast_data, NEA_targetname
 			except:
@@ -1328,13 +1328,13 @@ class MoonpyLC(object):
 
 	def get_properties(self, locate_neighbor='n'):
 		print("calling 'get_properties()...")
-		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
+		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
 		else:
 			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
 
 		### now with the rowidx we can access the other properties we want!
-		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
+		if (self.telescope.lower() == 'kepler'):
 			target_period, target_period_uperr, target_period_lowerr = mast_data['koi_period'][mast_rowidx], mast_data['koi_period_err1'][mast_rowidx], mast_data['koi_period_err2'][mast_rowidx]
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = mast_data['koi_time0bk'][mast_rowidx], mast_data['koi_time0bk_err1'][mast_rowidx], mast_data['koi_time0bk_err2'][mast_rowidx]
 			target_impact, target_impact_uperr, target_impact_lowerr = mast_data['koi_impact'][mast_rowidx], mast_data['koi_impact_err1'][mast_rowidx], mast_data['koi_impact_err2'][mast_rowidx]
@@ -1345,7 +1345,7 @@ class MoonpyLC(object):
 			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][mast_rowidx], mast_data['koi_insol_err1'][mast_rowidx], mast_data['koi_insol_err2'][mast_rowidx]
 
 
-		elif (self.telescope == 'k2') or (self.telescope == "K2"):
+		elif (self.telescope.lower() == 'k2'):
 			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][mast_rowidx])
 			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr2'][mast_rowidx])
@@ -1356,7 +1356,7 @@ class MoonpyLC(object):
 			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(mast_data['pl_eqt'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr1'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr2'][mast_rowidx])
 
 
-		elif (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
+		elif (self.telescope.lower() == "tess"):
 			#if (self.target.startswith('TIC')) or (self.target.startswith("TOI")):
 			if (np.isfinite(self.exofop_rowidx) == True) or (np.isfinite(self.exofop_rowidx) == np.array([True])):
 				print('searching for target parameters in the exofop database.')
@@ -1386,7 +1386,7 @@ class MoonpyLC(object):
 			self.period_err = (float(target_period_lowerr), float(target_period_uperr))
 		except:
 			self.period_err = (np.nan, np.nan)
-		if (self.telescope == 'tess') and (float(target_tau0) > 2454833):
+		if (self.telescope.lower() == 'tess') and (float(target_tau0) > 2454833):
 			try:
 				self.tau0 = float(target_tau0) - 2457000 ### native TESS offset value
 			except:
@@ -1528,7 +1528,7 @@ class MoonpyLC(object):
 			row_known = 'n'
 		else:
 			row_known = 'y'
-		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
+		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
 		else:
 			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
@@ -1587,7 +1587,7 @@ class MoonpyLC(object):
 					neighbor_targets.append(neighbor)		
 
 		else:
-			if (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
+			if (self.telescope.lower() == "tess"):
 				if self.target.startswith("TIC"):
 					for cr in check_exofop_rows:
 						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
@@ -1636,7 +1636,7 @@ class MoonpyLC(object):
 			for neighbor in self.neighbors:
 				###
 				try:
-					if (self.telescope == 'kepler') or (self.telescope == 'Kepler') or (self.telescope == 'KEPLER'):
+					if (self.telescope.lower() == 'kepler'):
 						if neighbor.startswith('Kepler') or neighbor.startswith('kepler'):
 							neighbor_key = 'k'+str(neighbor[7:])
 						else:
@@ -1645,10 +1645,10 @@ class MoonpyLC(object):
 							while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
 								neighbor_key = neighbor_key[1:]
 							neighbor_key = 'k'+str(neighbor_key)
-					elif (self.telescope == 'k2') or (self.telescope == 'K2'):
+					elif (self.telescope.lower() == 'k2'):
 						neighbor_key = 'k2_'+str(neighbor_key[3:])
 
-					elif (self.telescope == 'tess') or (self.telescope == 'TESS') or (self.telescope == 'Tess'):
+					elif (self.telescope.lower() == 'tess'):
 						neighbor_key = neighbor 
 
 					### now generate the LC object -- note that this will download duplicate light curves!
@@ -1805,7 +1805,10 @@ class MoonpyLC(object):
 				if flag_neighbors == 'y':
 					neighbor_transit_idxs = np.where(flag_array == 1)[0]
 					plt.scatter(cnn_stack[0][neighbor_transit_idxs], cnn_stack[3][neighbor_transit_idxs], c='g', marker='x', s=15)
-				plt.xlabel("BKJD")
+				if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
+					plt.xlabel("BKJD")
+				elif self.telescope.lower() == 'tess':
+					plt.xlabel("BTJD")
 				plt.ylabel('Flux')
 				plt.show()
 
@@ -1954,7 +1957,11 @@ class MoonpyLC(object):
 			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			if show_errors == 'y':
 				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
-		plt.xlabel('BKJD')
+		#plt.xlabel('BKJD')
+		if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
+			plt.xlabel('BKJD')
+		elif (self.telescope.lower() == 'tess'):
+			plt.xlabel('BTJD')
 		plt.ylabel('Flux')
 		try:
 			plt.title(str(self.target))
