@@ -212,6 +212,84 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
+
+
+
+def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', sc=False):
+	### find the object in Simbad using it's coordinates, and call kplr_target_download
+
+	print('ra,dec = ', ra, dec)
+
+	### try to interpret the coordinate_format 
+	if 'h' in str(ra) or ':' in str(ra):
+		coord_format == 'sexagesimal'
+		ra = ra.replace(' ', '') ### remove the spaces
+		dec = dec.replace(' ', '') ### remove the spaces
+
+	if coord_format=='degrees':
+		nearby_objects = Simbad.query_region(coord.SkyCoord(ra, dec, unit=(u.deg, u.deg), frame='icrs'), radius='0d0m5s')
+	elif coord_format=='sexagesimal':
+		nearby_objects = Simbad.query_region(coord.SkyCoord(str(ra)+' '+str(dec), frame='icrs'), radius='0d0m'+str(search_radius)+'s')
+
+	print(nearby_objects)
+	best_hit = nearby_objects[0][0].decode('UTF-8')
+	print("best_hit = ", best_hit)
+
+	if (best_hit.startswith('TOI') == False) and (best_hit.startswith('toi') == False) and (best_hit.startswith('TIC') == False) and (best_hit.startswith('tic') == False):
+		### look for aliases if TOI or TIC number was not listed to start.
+		alias_query = Simbad.query_objectids(str(best_hit))['ID']
+		search_idx = 0
+		while search_idx < 10: ### maximum tries
+			try:
+				alias = alias_query[search_idx]
+				print('potential alias: ', alias)
+				if alias.startswith('TOI') or alias.statswith('TIC'):
+					best_hit = alias
+					break
+				else:
+					search_idx += 1
+			except:
+				break 
+
+		print("alias = ", alias)
+		best_hit = alias
+
+	if best_hit.startswith('TOI'):
+		object_number = float(best_hit[4:]) ### strips off "KOI-"
+		### it's valuable to keep the quarters separated like this, because they should be detrended separately!
+		targtype = 'toi'
+		object_name = "TOI-"+str(object_number)
+
+
+	elif best_hit.startswith("TIC"):
+		object_number = int(best_hit[4:])
+		targtype = 'tic'
+		object_name = 'TIC'+str(object_number)
+
+	try:
+		print("object_number = ", object_number)
+	except:
+		pass
+
+
+	if lc_format == 'pdc':
+		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+	elif lc_format == 'sap':
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+	elif lc_format == 'both':
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+
+
+	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
+	if lc_format == 'pdc':
+		return kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters, object_name
+	elif lc_format == 'sap':
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters, object_name
+	elif lc_format == 'both':
+		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters, object_name
+
+
+
 def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete_fits='n'):
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
@@ -234,10 +312,10 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 			if ticnum.startswith(' '):
 				ticnum = str(ticnum)[1:]
 		else:
-			ticnum = str(targID)
+			ticnum = str(targID) ### you've already handled the TOI already!
 			if ticnum.startswith(' '):
 				ticnum = ticnum[1:]
-	
+
 		### prepare for the query
 		query_num = ticnum
 		while len(query_num) < 16:
@@ -261,7 +339,7 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		for sector in np.arange(1,12,1):
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			os.system('curl -C - -L -o '+moonpydir+'/TESS_lcs/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
-			print('downloading the light curve for '+str(targID)+'in sector ', sector)
+			print('downloading the light curve for '+str(targID)+' in sector ', sector)
 
 			try:
 				lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)

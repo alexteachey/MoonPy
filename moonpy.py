@@ -66,6 +66,8 @@ class MoonpyLC(object):
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
 	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+		if target_type != None:
+			self.target_type = target_type 
 
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
@@ -81,7 +83,7 @@ class MoonpyLC(object):
 		if telescope == None: # if user hasn't specified, figure it out!
 			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
 				telescope='kepler'
-			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI'):
+			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI') or str(targetID).startswith("EPIC") or str(targetID).startswith('epic'):
 				telescope='tess'
 			elif (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC') or (str(targetID).startswith('epic'))):
 				telescope='k2'
@@ -91,55 +93,60 @@ class MoonpyLC(object):
 		self.telescope = telescope 
 
 		if load_lc == 'y':
-			save_lc = 'n'
+			save_lc = 'n' ### don't re-write what you've already got!
 
-		target_name = targetID 
-		self.target = target_name
+		target_name = targetID ### maybe redundant but possibly helpful.
+		self.target = target_name ### preserves the full name of the target, not just the number. 
 
-		if str(targetID).startswith('KIC'):
+		### strip off the prefix, find just the numbers and letters.
+		if (str(targetID).startswith('KIC')) or (str(targetID).startswith('kic')):
 			targetID = targetID[3:]
-		elif str(targetID).startswith('TIC'):
+		elif (str(targetID).startswith('TIC')) or (str(targetID).startswith('tic')):
 			targetID = targetID[3:]
-		elif str(targetID).startswith('Kepler-'):
+		elif (str(targetID).startswith('Kepler-')) or (str(targetID).startswith('kepler-')):
 			targetID = targetID[7:]
-		elif str(targetID).startswith('kepler-'):
-			targetID = targetID[7:]
-		elif str(targetID).startswith('KOI-'):
+		elif (str(targetID).startswith('KOI-')) or (str(targetID).startswith('koi-')):
 			targetID = targetID[4:]
-		elif str(targetID).startswith('TOI-'):
+		elif (str(targetID).startswith('TOI-')) or (str(targetID).startswith('toi-')):
 			targetID = targetID[4:]
-		elif str(targetID).startswith('K2-'):
+		elif (str(targetID).startswith('K2-')) or (str(targetID).startswith('k2-')):
 			targetID = targetID[3:]
-		elif str(targetID).startswith("EPIC"):
+		elif (str(targetID).startswith("EPIC")) or (str(targetID).startswith('epic')):
 			targetID = targetID[4:]
 
 		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
+			### isolate just the number!
 			targetID = targetID[1:]
+
+		self.targetID = targetID
 
 
 		### intuit whether the targetID is a 'planet' (includes a letter), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
 			if '.' in str(self.target) and ((telescope=='kepler') or (telescope=="Kepler")):
-				target_type='koi'
+				target_type='koi' ### since numbers are something like KOI-101.01
 			elif '.' in str(self.target) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
-				target_type='toi'
+				target_type='toi' ### since TOIs are something like TOI-101.01
 			elif (('b' in str(self.target)) or ('c' in str(self.target)) or ('d' in str(self.target)) or ('e' in str(self.target)) or ('f' in str(self.target)) or ('g' in str(self.target))) and ((telescope=='kepler') or (telescope=='Kepler')):
-				target_type='planet'
-			elif (telescope=='k2') or (telescope=='K2'):
-				if ('epic' in str(self.target)) or ('EPIC' in str(self.target)):
-					target_type = 'epic'
-				else:
-					target_type='planet'
+				target_type='planet' ### confirmed planets are given letters to identify them, a la Kepler-1625b.
+			elif (('b' in str(self.target)) or ('c' in str(self.target)) or ('d' in str(self.target)) or ('e' in str(self.target)) or ('f' in str(self.target)) or ('g' in str(self.target))) and ((telescope=='k2') or (telescope=='K2')):		
+				target_type='planet' ### k2 confirmed planets have names like K2-17b
+			elif (('epic' in self.target) or ("EPIC" in self.target)) and ((telescope=='k2') or (telescope=='K2')):
+				target_type = 'epic' 
 			else:
-				if ((telescope == 'kepler') or (telescope=='Kepler')):
+				### when in doubt, try these.
+				if ((telescope == 'Kepler') or (telescope == 'kepler')):
 					target_type='kic'
+				elif ((telescope == 'k2') or (telescope=='K2')):
+					target_type = 'epic'
 				elif ((telescope == 'tess') or (telescope=='Tess') or (telescope=='TESS')):
 					target_type = 'tic'
+
+		self.target_type = target_type
 
 		print("targetID = ", targetID)
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
-
 
 		if load_lc == 'y':
 			if self.target.startswith('K2') or self.target.startswith('k2'):
@@ -200,128 +207,86 @@ class MoonpyLC(object):
 		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
 		if (load_lc=='n') and (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
+
+			### KEPLER HANDLING
 			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope == 'KEPLER'):
-				rowidx, mast_data, NEA_targetname = self.find_planet_row()
+				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				try:
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try:
+						### maybe it needs the full name!
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
 					except:
 						traceback.print_exc()
 
+			### K2 HANDLING
 			elif (telescope == 'K2') or (telescope == 'k2'):
 				try:
-					rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
+					mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
 				except:
 					traceback.print_exc()
-				#try:
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
-				#except:
-				#	try:
-				#		lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
-				#	except:
-				#		traceback.print_exc()
+				try:
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+				except:
+					try: ### maybe it just wants the number.
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					except:
+						traceback.print_exc()
 
+			### TESS HANDLING
 			elif (telescope == 'tess') or (telescope == "Tess") or (telescope == "TESS"):
-				rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
+				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.
 
-				if ffi == 'y':
+				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 
 				elif ffi == 'n':
-					if self.target.startswith("TOI"):
-						ticnum = int(np.array(exofop_data['TIC ID'])[rowidx])
+					if (self.target.startswith("TOI")) or (self.target.startswith('toi')):
+						ticnum = int(np.array(exofop_data['TIC ID'])[exofop_rowidx]) ### identify the TIC# based on the matching TOI row.
 						ticname = 'TIC '+str(ticnum)
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
 						print('lc_times.shape = ', lc_times.shape)
-					else:
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID)
+
+					elif (self.target.startswith('TIC')) or (self.target.startswith('tic')):
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID) ### TIC number -- LACKS the TIC prefix!
 						print('lc_times.shape = ', lc_times.shape)
 
+					else: ### for targets that don't have a TIC number or a TOI number, have to find the tic number using mast_data!
+						### rowidx corresponds to the mast_data!
+
+						### first, see if your planet name is in the comments!
+						try:
+							### does not provide a TIC number!!!
+							tess_ra, tess_dec = np.array(mast_data['ra'])[mast_rowidx][0], np.array(mast_data['dec'])[mast_rowidx][0]
+						except:
+							tess_ra, tess_dec = np.array(exofop_data['RA'])[exofop_rowidx], np.array(exofop_data['Dec'])[exofop_rowidx]
+						
+						ticnum = np.array(exofop_data['TIC ID'][exofop_rowidx])
+						ticname = 'TIC '+str(ticnum)
+
+						print('tess_ra, tess_dec ', tess_ra, tess_dec)
+						self.RA, self.Dec = tess_ra, tess_dec 
+						try:
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
+						except:
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
+
+						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
+
+			#self.rowidx = rowidx #### IMPORTANT: only define self.rowidx for your TARGET! not for neighbors!
+			self.mast_rowidx = mast_rowidx
+
+			if self.telescope != 'Kepler' and self.telescope != 'kepler' and self.telescope != 'KEPLER':
+				self.exofop_rowidx = exofop_rowidx
 			self.telescope = telescope
+			### SIMBAD_QUERY
+			self.get_coords()
 
-			if (telescope == 'kepler') or (telescope == 'Kepler') or (telescope == "KEPLER"):
-				if target_type == 'koi':
-					target_name = "KOI-"+str(targetID)
-				elif target_type == 'planet':
-					target_name = 'Kepler-'+str(targetID)
-				elif target_type == 'kic':
-					target_name = "KIC "+str(targetID)
-
-				try:
-					simbad_query = Simbad.query_object(self.target)[0]
-					self.RA = simbad_query['RA']
-					self.Dec = simbad_query['DEC']
-					target_in_simbad = 'y'
-				except:
-					target_in_simbad = 'n'
-					try:
-						self.RA = mast_data['ra'][rowidx]
-						self.Dec = mast_data['dec'][rowidx]
-					except:
-						pass
-
-
-			elif (telescope == 'k2') or (telescope == "K2"):
-				target_name = "K2-"+str(targetID)
-				try:
-					simbad_query = Simbad.query_object(self.target)[0]
-					self.RA = simbad_query['RA']
-					self.Dec = simbad_query['DEC']
-					target_in_simbad = 'y'
-				except:
-					target_in_simbad = 'n'
-					try:
-						self.RA = np.array(exofop_data['RA'][rowidx])[0]
-						self.Dec = np.array(exofop_data["DEC"][rowidx])[0]
-					except:
-						pass
-
-
-			elif (telescope == 'TESS') or (telescope == 'tess') or (telescope == 'Tess'):
-				try:
-					simbad_query = Simbad.query_object(self.target)[0]
-					target_name = self.target
-					self.RA = simbad_query['RA']
-					self.Dec = simbad_query['DEC']
-					target_in_simbad = 'y'
-
-				except:
-					if target_type == 'toi':
-						try:
-							simbad_query = Simbad.query_object('TOI-'+self.target)[0]
-							target_name = 'TOI-'+str(self.target) ### only update if this worked!
-							self.RA = simbad_query['RA']
-							self.Dec = simbad_query['DEC']
-							target_in_simbad = 'y'
-						except:
-							target_in_simbad = 'n'
-							try:
-								self.RA = np.array(exofop_data['RA'][rowidx])[0]
-								self.Dec = np.array(exofop_data['Dec'][rowidx])[0]
-							except:
-								pass
-
-					elif target_type == 'tic':
-						try:
-							simbad_query = Simbad.query_object('TIC '+self.target)[0] 
-							target_name = 'TIC '+str(self.target) ### only update if this worked!
-							self.RA = simbad_query['RA']
-							self.Dec = simbad_query['DEC']
-							#target_in_simbad = 'y'
-						except:
-							#target_in_simbad = 'n'
-							try:
-								self.RA = np.array(exofop_data['RA'][rowidx])[0]
-								self.Dec = np.array(exofop_data['Dec'][rowidx])[0]
-							except:
-								pass
-
-				try:
-					self.find_aliases()
-				except:
-					print('ALIASES COULD NOT BE FOUND.')
+			try:
+				self.find_aliases()
+			except:
+				print('ALIASES COULD NOT BE FOUND.')
 
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
@@ -331,7 +296,7 @@ class MoonpyLC(object):
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				
 				elif telescope == 'tess':
-					lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = tess_coord_download(RA, Dec)
 			
 			except:
 				telescope = input('Specify the telescope: ')
@@ -344,8 +309,6 @@ class MoonpyLC(object):
 					except:
 						lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
 					
-
-
 			self.target = target_name
 
 
@@ -945,6 +908,89 @@ class MoonpyLC(object):
 
 
 
+	def get_coords(self):
+		targetID = self.targetID
+		try:
+			print(self.RA, self.Dec)
+		except:
+			if (self.telescope == 'kepler') or (self.telescope == 'Kepler') or (self.telescope == "KEPLER"):
+				if self.target_type == 'koi':
+					target_name = "KOI-"+str(targetID)
+				elif self.target_type == 'planet':
+					target_name = 'Kepler-'+str(targetID)
+				elif self.target_type == 'kic':
+					target_name = "KIC "+str(targetID)
+
+				try:
+					simbad_query = Simbad.query_object(self.target)[0]
+					self.RA = simbad_query['RA']
+					self.Dec = simbad_query['DEC']
+					target_in_simbad = 'y'
+				except:
+					target_in_simbad = 'n'
+					try:
+						self.RA = mast_data['ra'][self.mast_rowidx]
+						self.Dec = mast_data['dec'][self.mast_rowidx]
+					except:
+						pass
+
+			elif (self.telescope == 'k2') or (self.telescope == "K2"):
+				target_name = "K2-"+str(targetID)
+				try:
+					simbad_query = Simbad.query_object(self.target)[0]
+					self.RA = simbad_query['RA']
+					self.Dec = simbad_query['DEC']
+					target_in_simbad = 'y'
+				except:
+					target_in_simbad = 'n'
+					try:
+						self.RA = np.array(exofop_data['RA'][self.exofop_rowidx])[0]
+						self.Dec = np.array(exofop_data["DEC"][self.exofop_rowidx])[0]
+					except:
+						pass
+
+
+			elif (self.telescope == 'TESS') or (self.telescope == 'tess') or (self.telescope == 'Tess'):
+				try:
+					simbad_query = Simbad.query_object(self.target)[0] ### this will look for any object!
+					target_name = self.target
+					self.RA = simbad_query['RA']
+					self.Dec = simbad_query['DEC']
+					target_in_simbad = 'y'
+
+				except:
+					if (self.target_type == 'toi') or (self.target_type == 'TOI'):
+						try:
+							simbad_query = Simbad.query_object('TOI-'+self.target)[0]
+							target_name = 'TOI-'+str(self.target) ### only update if this worked!
+							self.RA = simbad_query['RA']
+							self.Dec = simbad_query['DEC']
+							target_in_simbad = 'y'
+						except:
+							target_in_simbad = 'n'
+							try:
+								self.RA = np.array(exofop_data['RA'][self.exofop_rowidx])[0]
+								self.Dec = np.array(exofop_data['Dec'][self.exofop_rowidx])[0]
+							except:
+								pass
+
+					elif (self.target_type == 'tic') or (self.target_type == 'TIC'):
+						try:
+							simbad_query = Simbad.query_object('TIC '+self.target)[0] 
+							target_name = 'TIC '+str(self.target) ### only update if this worked!
+							self.RA = simbad_query['RA']
+							self.Dec = simbad_query['DEC']
+							#target_in_simbad = 'y'
+						except:
+							#target_in_simbad = 'n'
+							try:
+								self.RA = np.array(exofop_data['RA'][self.exofop_rowidx])[0]
+								self.Dec = np.array(exofop_data['Dec'][self.exofop_rowidx])[0]
+							except:
+								pass
+				
+
+
 	def fold(self, detrended='y'):
 		### this method will phase fold your light curve. 
 		### first tau in the time series:
@@ -1031,8 +1077,12 @@ class MoonpyLC(object):
 
 
 
-	def find_planet_row(self):
+	def find_planet_row(self, row_known='n'):
 		download_new = 'n'
+		if row_known == 'y':
+			mast_rowidx = self.mast_rowidx
+			if self.telescope != "kepler" and self.telescope != 'Kepler' and self.telescope != 'KEPLER':
+				exofop_rowidx = self.exofop_rowidx
 		try:
 			if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumkois.txt')
@@ -1069,7 +1119,7 @@ class MoonpyLC(object):
 				os.system('wget -O '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
 
 
-		### find by KICID, KOI number of planet!
+		### KEPLER HANDLING 
 		if (self.telescope == 'kepler') or (self.telescope == "Kepler"):
 			mast_data = ascii.read('cumkois.txt')
 			mast_columns = mast_data.columns
@@ -1079,201 +1129,275 @@ class MoonpyLC(object):
 			except:
 				pass
 
+			if row_known == 'n':
+				if (str(self.target).startswith('Kepler-')) or (str(self.target).startswith('kepler-')):
+					target_letter = str(self.target)[-1]
+					if ' ' in self.target: ### already in the correct format, with a space between the letter.
+						NEA_targetname = self.target
+					else: #### there isn't a space, so add it!
+						NEA_targetname = self.target[:-1]+' '+target_letter
+					mast_rowidx = np.where(mast_data['kepler_name'] == NEA_targetname)[0]
+
+
+				elif (str(self.target).startswith('KIC')) or (str(self.target).startswith('kic')):
+					NEA_targetname = int(self.target[4:])
+					mast_rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
+
+				elif (str(self.target).startswith('KOI')) or (str(self.target).startswith('koi')):
+					NEA_targetname = str(self.target[4:])
+					if len(NEA_targetname) == 7: ### of the form 5084.01
+						NEA_targetname = 'K0'+str(NEA_targetname)
+					elif len(NEA_targetname) == 6: ### of the form 163.01
+						NEA_targetname = 'K00'+str(NEA_targetname)
+					elif len(NEA_targetname) == 5: ### of the form 23.01
+						NEA_targetname = 'K000'+str(NEA_targetname)
+					elif len(NEA_targetname) == 4: ### of the form 1.01
+						NEA_targetname = 'K0000'+str(NEA_targetname)
+					mast_rowidx = np.where(mast_data['kepoi_name'] == NEA_targetname)[0]
+
+
+				else: ### was observed by Kepler but you don't know it's KOI/KIC or Kepler name:
+					mast_data = ascii.read('confirmed_planets.txt') ### overwrite before! won't be found in cumkois!
+					try:
+						float(self.target[-1]) ### if this works, query the mast_data['pl_hostname'] because you end with a number!
+						NEA_taretname = self.target 
+						mast_rowidx = np.where(mast_data['pl_hostname'] == self.target)[0]
+
+					except:
+						### implies the last thing is a number
+						target_letter = self.target[-1]
+						if ' ' in self.target:
+							NEA_targetname = self.target
+						else:
+							NEA_targetname = self.target[:-1]+' '+target_letter
+						mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
+
+				self.mast_rowidx = mast_rowidx 
+
+
+		### K2 HANDLING 
 		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
 			mast_data = ascii.read('cumk2ois.txt')
 			mast_columns = mast_data.columns
 			exofop_data = pandas.read_csv('exofop_targets.csv', header=10)
 			exofop_columns = exofop_data.columns
 
+			if row_known == 'n':
+				if str(self.target).startswith('K2-'):
+					target_letter = str(self.target[-1])
+					if ' ' in self.target:
+						NEA_targetname = self.target
+					else:
+						NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
+					mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
+
+					print("number of rows matching this description = ", len(mast_rowidx))
+
+				elif str(self.target).startswith('EPIC'):
+					if self.target.startswith('EPIC'):
+						NEA_targetname = self.target[4:] ### just the numbers!
+						if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
+							NEA_targetname = NEA_targetname[1:]
+					try:
+						exofop_rowidx = np.where(exofop_data['EPIC ID'] == NEA_targetname)[0]
+					except:
+						print('exofop_data.columns = ')
+						print(exofop_data.columns)	
+
+
+		### TESS HANDLING 
 		elif (self.telescope == 'TESS') or (self.telescope == 'Tess') or (self.telescope == 'tess'):
 			mast_data = ascii.read('confirmed_planets.txt')
 			mast_columns = mast_data.columns
 			exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
 			exofop_columns = exofop_data.columns
 
-
-
-		### KEPLER PRIMARY MISSION HANDLING
-		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
-			if str(self.target).startswith('Kepler-'):
-				target_letter = str(self.target)[-1]
-				if ' ' in self.target: ### already in the correct format, with a space between the letter.
-					NEA_targetname = self.target
-				else: #### there isn't a space, so add it!
-					NEA_targetname = self.target[:-1]+' '+target_letter
-				rowidx = np.where(mast_data['kepler_name'] == NEA_targetname)[0]
-
-			elif str(self.target).startswith('KIC'):
-				NEA_targetname = int(self.target[4:])
-				rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
-
-			elif str(self.target).startswith('KOI'):
-				NEA_targetname = str(self.target[4:])
-				if len(NEA_targetname) == 7: ### of the form 5084.01
-					NEA_targetname = 'K0'+str(NEA_targetname)
-				elif len(NEA_targetname) == 6: ### of the form 163.01
-					NEA_targetname = 'K00'+str(NEA_targetname)
-				elif len(NEA_targetname) == 5: ### of the form 23.01
-					NEA_targetname = 'K000'+str(NEA_targetname)
-				elif len(NEA_targetname) == 4: ### of the form 1.01
-					NEA_targetname = 'K0000'+str(NEA_targetname)
-				rowidx = np.where(mast_data['kepoi_name'] == NEA_targetname)[0]
-
-
-
-		### K2 MISSION HANDLING
-		elif (self.telescope == 'k2') or (self.telescope == 'K2'):
-			if str(self.target).startswith('K2-'):
-				target_letter = str(self.target[-1])
-				if ' ' in self.target:
-					NEA_targetname = self.target
-				else:
-					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
-				rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
-
-				print("number of rows matching this description = ", len(rowidx))
-
-			elif str(self.target).startswith('EPIC'):
-				if self.target.startswith('EPIC'):
-					NEA_targetname = self.target[4:] ### just the numbers!
-					if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
-						NEA_targetname = NEA_targetname[1:]
+			if row_known == 'n':
 				try:
-					rowidx = np.where(exofop_data['EPIC ID'] == NEA_targetname)[0]
-				except:
-					print('exofop_data.columns = ')
-					print(exofop_data.columns)	
-					time.sleep(60)
-
-		### TESS MISSION HANDLING
-		elif (self.telescope == 'TESS') or (self.telescope == "Tess") or (self.telescope == 'tess'):
-			try:
-				float(self.target[-1])
-				### if the except statement isn't triggered, the last value is a number! Therefore
-				NEA_targetname = str(self.target)
-			except:
-				target_letter = str(self.target[-1])
-				### implies the last value is a letter.
-				if ' ' in self.target:
+					float(self.target[-1]) 
+					### if the except statement isn't triggered, the last value is a number! Therefore
 					NEA_targetname = str(self.target)
+				except: 
+					target_letter = str(self.target[-1])
+					### implies the last value is a letter.
+					if ' ' in self.target:
+						NEA_targetname = str(self.target) ### we want a space in here.
+					else: ### put one in!
+						NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
+
+				### FOR TESS TARGETS THE EXOFOP TABLE IS LIKELY BETTER THAN THE NEA table.
+				if (NEA_targetname.startswith('TIC')) or (NEA_targetname.startswith('tic')):
+					### search the "TIC ID" column
+					ticnum = NEA_targetname[3:]
+					if (ticnum.startswith(' ')) or (ticnum.startswith('-')):
+						ticnum = ticnum[1:]
+					exofop_rowidx = np.where(exofop_data['TIC ID'] == int(ticnum))[0]
+					print('looking for '+str(ticnum)+' in the exofop database.')
+					#print('rowidx (pre-clean) = ', rowidx)
+					if len(exofop_rowidx) > 1:
+						exofop_rowidx = rowidx[0]
+					print("exofop_rowidx = ", exofop_rowidx)
+					mast_rowidx = np.nan 
+
+				elif (NEA_targetname.startswith("TOI")) or (NEA_targetname.startswith('toi')):
+					### search the TOI column 
+					toinum = NEA_targetname[3:]
+					if (toinum.startswith(' ')) or (toinum.startswith('-')):
+						toinum = toinum[1:]
+					print('looking for '+str(toinum)+' in the exofop database.')
+					exofop_rowidx = np.where(exofop_data['TOI'] == float(toinum))[0]
+					print('exofop_rowidx = ', exofop_rowidx)
+					mast_rowidx = np.nan 
+
 				else:
-					NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
-
-			### FOR TESS TARGETS THE EXOFOP TABLE IS LIKELY BETTER THAN THE NEA table.
-			if NEA_targetname.startswith('TIC'):
-				### search the "TIC ID" column
-				ticnum = NEA_targetname[3:]
-				if (ticnum.startswith(' ')) or (ticnum.startswith('-')):
-					ticnum = ticnum[1:]
-				rowidx = np.where(exofop_data['TIC ID'] == int(ticnum))[0]
-				print('looking for '+str(ticnum)+' in the exofop database.')
-				#print('rowidx (pre-clean) = ', rowidx)
-				if len(rowidx) > 1:
-					rowidx = rowidx[0]
-				print("rowidx = ", rowidx)
-
-
-			elif NEA_targetname.startswith("TOI"):
-				toinum = NEA_targetname[3:]
-				if (toinum.startswith(' ')) or (toinum.startswith('-')):
-					toinum = toinum[1:]
-				print('looking for '+str(toinum)+' in the exofop database.')
-				rowidx = np.where(exofop_data['TOI'] == float(toinum))[0]
-				print('rowidx = ', rowidx)
-
-
-
-			else:
-				rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
-				if len(rowidx) == 0:
-					rowidx = np.where(mast_data['pl_hostname'] == NEA_targetname)[0]
-					### try aliases!
-					if len(rowidx) == 0: ### if you STILL haven't found it.
+					### in this case, you have to look in the mast list!
+					mast_rowidx = np.where(mast_data['pl_hostname'] == NEA_targetname)[0] ### in "confirmed" planets.
+					nfound = 0
+					exofop_rowidxs = []
+					for idx in np.arange(0,len(exofop_data['Comments']),1): ### have to use a loop here.
 						try:
-							for alias in self.aliases:
-								rowidx = np.where(mast_data['pl_hostname'] == alias)[0]
-								if len(rowidx) != 0:
-									break
+							float(self.target[-1]) ### if this works, last digit is a number, so use self.target
+							if (self.target in exofop_data['Comments'][idx]):
+								exofop_rowidx = idx
+								exofop_rowidxs.append(exofop_rowidx)
+								print('found a planet in CFOP!, exofop_rowidx = ', exofop_rowidx)
+								#print('TIC = ', exofop_data['TIC ID'][exofop_rowidx])
+								nfound += 1
 						except:
-							pass
+							### last digit is a letter, so get rid of it when searching!
+							try:
+								if (self.target[:-1] in np.array(exofop_data['Comments'])[idx]):
+									exofop_rowidx = idx
+									exofop_rowidxs.append(exofop_rowidx)
+									print('found a planet in CFOP!, exofop_rowidx = ', exofop_rowidx)
+									#print("TIC = ", exofop_data['TIC ID'][exofop_rowidx])
+									nfound += 1
+							except:
+								pass
 
+					if nfound > 1:
+						print('found multiple possible entries for '+self.target)
+						for exfidx in exofop_rowidxs:
+							print("idx, TIC, comment = ", exfidx, exofop_data['TIC ID'][exfidx], exofop_data['Comments'][exfidx])
+						print(' ')
+						exofop_rowidx = int(input('Which is the correct index? ')) 
 
+					elif nfound == 1:
+						exofop_rowidx 
+
+					elif nfound == 0:
+						### try aliases!
+						exofop_rowidx = np.nan
+						if len(rowidx) == 0: ### if you STILL haven't found it.
+							try:
+								for alias in self.aliases:
+									mast_rowidx = np.where(mast_data['pl_hostname'] == alias)[0]
+									if len(mast_rowidx) != 0:
+										break
+							except:
+								pass
+
+		if row_known == 'n':
+			try:
+				self.exofop_rowidx = exofop_rowidx
+			except:
+				pass
+
+			try:
+				self.mast_rowidx = mast_rowidx
+			except:
+				pass
 
 		#print('rowidx = ', rowidx)
 		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
-			return rowidx, mast_data, exofop_data, NEA_targetname
-		else:
-			return rowidx, mast_data, NEA_targetname
+			try:
+				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
+			except:
+				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 
+		elif self.telescope == 'Kepler' or self.telescope == 'kepler' or self.telescope == "KEPLER":
+			try:
+				return mast_rowidx, mast_data, NEA_targetname
+			except:
+				return mast_rowidx, mast_data, self.target
+
+
+
 
 
 
 
 	def get_properties(self, locate_neighbor='n'):
+		print("calling 'get_properties()...")
 		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
-			rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
+			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
 		else:
-			rowidx, mast_data, NEA_targetname = self.find_planet_row()
+			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
 
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope == 'Kepler') or (self.telescope == 'kepler'):
-			target_period, target_period_uperr, target_period_lowerr = mast_data['koi_period'][rowidx], mast_data['koi_period_err1'][rowidx], mast_data['koi_period_err2'][rowidx]
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = mast_data['koi_time0bk'][rowidx], mast_data['koi_time0bk_err1'][rowidx], mast_data['koi_time0bk_err2'][rowidx]
-			target_impact, target_impact_uperr, target_impact_lowerr = mast_data['koi_impact'][rowidx], mast_data['koi_impact_err1'][rowidx], mast_data['koi_impact_err2'][rowidx]
-			target_duration, target_duration_uperr, target_duration_lowerr = mast_data['koi_duration'][rowidx], mast_data['koi_duration_err1'][rowidx], mast_data['koi_duration_err2'][rowidx]
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = mast_data['koi_ror'][rowidx], mast_data['koi_ror_err1'][rowidx], mast_data['koi_ror_err2'][rowidx]
-			target_rp, target_rp_uperr, target_rp_lowerr = mast_data['koi_prad'][rowidx], mast_data['koi_prad_err1'][rowidx], mast_data['koi_prad_err2'][rowidx]
-			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][rowidx], mast_data['koi_sma_err1'][rowidx], mast_data['koi_sma_err2'][rowidx]
-			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][rowidx], mast_data['koi_insol_err1'][rowidx], mast_data['koi_insol_err2'][rowidx]
+			target_period, target_period_uperr, target_period_lowerr = mast_data['koi_period'][mast_rowidx], mast_data['koi_period_err1'][mast_rowidx], mast_data['koi_period_err2'][mast_rowidx]
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = mast_data['koi_time0bk'][mast_rowidx], mast_data['koi_time0bk_err1'][mast_rowidx], mast_data['koi_time0bk_err2'][mast_rowidx]
+			target_impact, target_impact_uperr, target_impact_lowerr = mast_data['koi_impact'][mast_rowidx], mast_data['koi_impact_err1'][mast_rowidx], mast_data['koi_impact_err2'][mast_rowidx]
+			target_duration, target_duration_uperr, target_duration_lowerr = mast_data['koi_duration'][mast_rowidx], mast_data['koi_duration_err1'][mast_rowidx], mast_data['koi_duration_err2'][mast_rowidx]
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = mast_data['koi_ror'][mast_rowidx], mast_data['koi_ror_err1'][mast_rowidx], mast_data['koi_ror_err2'][mast_rowidx]
+			target_rp, target_rp_uperr, target_rp_lowerr = mast_data['koi_prad'][mast_rowidx], mast_data['koi_prad_err1'][mast_rowidx], mast_data['koi_prad_err2'][mast_rowidx]
+			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][mast_rowidx], mast_data['koi_sma_err1'][mast_rowidx], mast_data['koi_sma_err2'][mast_rowidx]
+			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][mast_rowidx], mast_data['koi_insol_err1'][mast_rowidx], mast_data['koi_insol_err2'][mast_rowidx]
 
 
 		elif (self.telescope == 'k2') or (self.telescope == "K2"):
-			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][rowidx])
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][rowidx])
-			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][rowidx]), np.nanmedian(mast_data['pl_impparerr1'][rowidx]), np.nanmedian(mast_data['pl_impparerr2'][rowidx])
-			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][rowidx])
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][rowidx])
-			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][rowidx]), np.nanmedian(mast_data['pl_radeerr1'][rowidx]), np.nanmedian(mast_data['pl_radeerr2'][rowidx])
-			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(mast_data['pl_ratdor'][rowidx]), np.nanmedian(mast_data['pl_ratdorerr1'][rowidx]), np.nanmedian(mast_data['pl_ratdorerr2'][rowidx])
-			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(mast_data['pl_eqt'][rowidx]), np.nanmedian(mast_data['pl_eqterr1'][rowidx]), np.nanmedian(mast_data['pl_eqterr2'][rowidx])
+			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][mast_rowidx])
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr2'][mast_rowidx])
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][mast_rowidx])
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][mast_rowidx])
+			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr2'][mast_rowidx])
+			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(mast_data['pl_ratdor'][mast_rowidx]), np.nanmedian(mast_data['pl_ratdorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratdorerr2'][mast_rowidx])
+			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(mast_data['pl_eqt'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr1'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr2'][mast_rowidx])
 
 
 		elif (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
-			if (self.target.startswith('TIC')) or (self.target.startswith("TOI")):
+			#if (self.target.startswith('TIC')) or (self.target.startswith("TOI")):
+			if (np.isfinite(self.exofop_rowidx) == True) or (np.isfinite(self.exofop_rowidx) == np.array([True])):
 				print('searching for target parameters in the exofop database.')
-				target_period, target_period_uperr, target_period_lowerr = np.array(exofop_data['Period (days)'])[rowidx], np.array(exofop_data['Period (days) err'])[rowidx], np.array(exofop_data['Period (days) err'])[rowidx]
-				target_tau0, target_tau0_uperr, target_tau0_lowerr = np.array(exofop_data['Epoch (BJD)'])[rowidx], np.array(exofop_data['Epoch (BJD) err'])[rowidx], np.array(exofop_data['Epoch (BJD) err'])[rowidx]
+				print(' ')
+				target_period, target_period_uperr, target_period_lowerr = np.array(exofop_data['Period (days)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
 				target_impact, target_impact_uperr, target_impact_lowerr = np.nan, np.nan, np.nan 
-				target_duration, target_duration_uperr, target_duration_lowerr = np.array(exofop_data['Duration (hours)'])[rowidx], np.array(exofop_data['Duration (hours) err'])[rowidx], np.array(exofop_data['Duration (hours) err'])[rowidx]
-				target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.sqrt(1e-6*np.array(exofop_data['Depth (ppm)'])[rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[rowidx])
-				target_rp, target_rp_uperr, target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[rowidx]
-			
-			else:
+				target_duration, target_duration_uperr, target_duration_lowerr = np.array(exofop_data['Duration (hours)'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx]
+				target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.sqrt(1e-6*np.array(exofop_data['Depth (ppm)'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx])
+				target_rp, target_rp_uperr, target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx]
+				target_tau0 = np.nan
+
+			elif np.isfinite(self.mast_rowidx) == True:
 				print('search for target parameters in the mast database.')
-				target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][rowidx])
-				target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][rowidx])
-				target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][rowidx]), np.nanmedian(mast_data['pl_impparerr1'][rowidx]), np.nanmedian(mast_data['pl_impparerr2'][rowidx])
-				target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][rowidx])
-				target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][rowidx])
-				target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][rowidx]), np.nanmedian(mast_data['pl_radeerr1'][rowidx]), np.nanmedian(mast_data['pl_radeerr2'][rowidx])
-
-		"""
-		print('target_period = ', target_period)
-		print('target_tau0 = ', target_tau0)
-		print('target_impact = ', target_impact)
-		print("target_duration = ", target_duration)
-		print('target_rprstar = ', target_rprstar)
-		print('target_rp = ', target_rp)
-		"""
-
+				print(' ')
+				target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
+				target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][mast_rowidx])
+				target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr2'][mast_rowidx])
+				target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][mast_rowidx])
+				target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][mast_rowidx])
+				target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr2'][mast_rowidx])
+			else:
+				pass
 
 		### update properties!
 		self.period = float(target_period)
-		self.period_err = (float(target_period_lowerr), float(target_period_uperr))
+		try:
+			self.period_err = (float(target_period_lowerr), float(target_period_uperr))
+		except:
+			self.period_err = (np.nan, np.nan)
 		if (self.telescope == 'tess') and (float(target_tau0) > 2454833):
-			self.tau0 = float(target_tau0) - 2457000 ### native TESS offset value
+			try:
+				self.tau0 = float(target_tau0) - 2457000 ### native TESS offset value
+			except:
+				self.tau0 = np.nan
 		else:
 			self.tau0 = float(target_tau0)
-		self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
+		try:
+			self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
+		except:
+			self.tau0_err = (np.nan, np.nan)
+
 		if np.isfinite(target_impact):
 			self.impact = float(target_impact)
 			self.impact_err = (float(target_impact_lowerr), float(target_impact_uperr))
@@ -1347,12 +1471,16 @@ class MoonpyLC(object):
 
 		if locate_neighbor=='y':
 			self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
-
-		self.find_taus()
+		try:
+			self.find_taus()
+		except:
+			traceback.print_exc()
+			print("UNABLE TO CALCULATE transit times. You may not have downloaded any data.")
 		###	identify in-transit times
 
 
 	def find_taus(self):
+		print("calling 'find_taus()'.")
 		transit_midtimes = [self.tau0]
 		next_transit = transit_midtimes[-1]+self.period
 		nquarters = len(self.quarters)
@@ -1396,23 +1524,40 @@ class MoonpyLC(object):
 
 	def find_neighbors(self, is_neighbor='n'):
 		print('calling find_neighbors. is_neighbor = ', is_neighbor)
-		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
-			rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row()
+		if is_neighbor == 'y':
+			row_known = 'n'
 		else:
-			rowidx, mast_data, NEA_targetname = self.find_planet_row()
+			row_known = 'y'
+		if self.telescope == 'K2' or self.telescope == 'k2' or self.telescope == 'TESS' or self.telescope == 'Tess' or self.telescope == 'tess':
+			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+		else:
+			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
 
 
 		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
-		if rowidx < 10:
-			check_rows = np.arange(0,rowidx+11,1)
-		else:
-			check_rows = np.arange(rowidx-10,rowidx+11,1)
+		try:
+			if mast_rowidx < 10:
+				check_mast_rows = np.arange(0,mast_rowidx+11,1)
+			else:
+				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+11,1)
+		except:
+			pass 
+
+		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
+		try:
+			if exofop_rowidx < 10:
+				check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
+			else:
+				check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+		except:
+			pass
+
 		neighbor_rows = []
 		neighbor_targets = []
 
 		if (self.target).startswith('KOI') or (self.target).startswith('koi'):
-			for cr in check_rows:
-				if (np.array(mast_data['kepoi_name'])[cr][:-1] == NEA_targetname[:-1]) and (cr != rowidx):
+			for cr in check_mast_rows:
+				if (np.array(mast_data['kepoi_name'])[cr][:-1] == NEA_targetname[:-1]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
 					neighbor = str(mast_data['kepoi_name'][cr])
 					while neighbor.startswith('K') or neighbor.startswith('0'):
@@ -1422,8 +1567,8 @@ class MoonpyLC(object):
 					neighbor_targets.append(neighbor)
 
 		elif (self.target).startswith('Kepler') or (self.target).startswith('kepler') or (self.target).startswith("KEPLER"):
-			for cr in check_rows:
-				if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != rowidx):
+			for cr in check_mast_rows:
+				if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
 					neighbor = str(mast_data['kepler_name'][cr])
 					if ' ' in neighbor:
@@ -1432,7 +1577,7 @@ class MoonpyLC(object):
 					neighbor_targets.append(neighbor)
 
 		elif (self.target).startswith('K2') or (self.target).startswith('k2'):
-			for cr in check_rows:
+			for cr in check_mast_rows:
 				if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
 					neighbor = str(mast_data['pl_name'][cr])
@@ -1444,8 +1589,8 @@ class MoonpyLC(object):
 		else:
 			if (self.telescope == "TESS") or (self.telescope == "Tess") or (self.telescope == 'tess'):
 				if self.target.startswith("TIC"):
-					for cr in check_rows:
-						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != rowidx):
+					for cr in check_exofop_rows:
+						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TIC ID'][cr]))
 							neighbor = str(exofop_data['TIC ID'][cr])
 							if ' ' in neighbor:
@@ -1454,8 +1599,8 @@ class MoonpyLC(object):
 							neighbor_targets.append('TIC '+str(neighbor))
 
 				elif self.target.startswith('TOI'):
-					for cr in check_rows:
-						if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != rowidx):
+					for cr in check_exofop_rows:
+						if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TOI'][cr]))
 							neighbor = str(exofop_data['TOI'][cr])
 							if ' ' in neighbor:
@@ -1464,7 +1609,7 @@ class MoonpyLC(object):
 							neighbor_targets.append('TOI-'+str(neighbor))						
 
 				else:
-					for cr in check_rows:
+					for cr in check_mast_rows:
 						if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
 							neighbor = str(mast_data['pl_name'][cr])
