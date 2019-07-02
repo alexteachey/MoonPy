@@ -69,9 +69,24 @@ class MoonpyLC(object):
 		if target_type != None:
 			self.target_type = target_type 
 
+		if telescope == None: # if user hasn't specified, figure it out!
+			if (str(targetID).lower().startswith("kic")) or (str(targetID).lower().startswith('kepler')) or (str(targetID).lower().startswith('koi')):
+				telescope='kepler'
+			elif str(targetID).lower().startswith('tic') or str(targetID).lower().startswith('toi') or str(targetID).lower().startswith("epic"):
+				telescope='tess'
+			elif (str(targetID).lower().startswith("k2")) or (str(targetID).lower().startswith('epic')):
+				telescope='k2'
+			else:
+				telescope = input('Please specify the telescope: ')
+
+		self.telescope = telescope 
+		target_name = targetID ### maybe redundant but possibly helpful.
+		self.target = target_name ### preserves the full name of the target, not just the number. 
+
+
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
-			if os.path.exists(savepath+'/'+str(targetID)+'_lightcurve.tsv'):
+			if os.path.exists(savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv'):
 				clobber = input('light curve already exists. Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
@@ -80,38 +95,28 @@ class MoonpyLC(object):
 		elif (load_lc == 'n') and (clobber == 'y'):
 			pass 
 
-		if telescope == None: # if user hasn't specified, figure it out!
-			if (str(targetID).startswith("KIC")) or (str(targetID).startswith('Kepler')) or (str(targetID).startswith('kepler')) or (str(targetID).startswith('KOI')):
-				telescope='kepler'
-			elif str(targetID).startswith('TIC') or str(targetID).startswith('TOI') or str(targetID).startswith("EPIC") or str(targetID).startswith('epic'):
-				telescope='tess'
-			elif (str(targetID).startswith("K2")) or (str(targetID).startswith('k2')) or (str(targetID).startswith('EPIC') or (str(targetID).startswith('epic'))):
-				telescope='k2'
-			else:
-				telescope = input('Please specify the telescope: ')
-
-		self.telescope = telescope 
-
 		if load_lc == 'y':
 			save_lc = 'n' ### don't re-write what you've already got!
 
-		target_name = targetID ### maybe redundant but possibly helpful.
-		self.target = target_name ### preserves the full name of the target, not just the number. 
+		if load_lc == 'y':
+			self.newlc = 'n'
+		else:
+			self.newlc = 'y'
 
 		### strip off the prefix, find just the numbers and letters.
-		if (str(targetID).startswith('KIC')) or (str(targetID).startswith('kic')):
+		if str(targetID).lower().startswith('kic'):
 			targetID = targetID[3:]
-		elif (str(targetID).startswith('TIC')) or (str(targetID).startswith('tic')):
+		elif str(targetID).lower().startswith('tic'):
 			targetID = targetID[3:]
-		elif (str(targetID).startswith('Kepler-')) or (str(targetID).startswith('kepler-')):
+		elif str(targetID).lower().startswith('kepler-'):
 			targetID = targetID[7:]
-		elif (str(targetID).startswith('KOI-')) or (str(targetID).startswith('koi-')):
+		elif str(targetID).lower().startswith('koi-'):
 			targetID = targetID[4:]
-		elif (str(targetID).startswith('TOI-')) or (str(targetID).startswith('toi-')):
+		elif str(targetID).lower().startswith('toi-'):
 			targetID = targetID[4:]
-		elif (str(targetID).startswith('K2-')) or (str(targetID).startswith('k2-')):
+		elif str(targetID).lower().startswith('k2-'):
 			targetID = targetID[3:]
-		elif (str(targetID).startswith("EPIC")) or (str(targetID).startswith('epic')):
+		elif str(targetID).lower().startswith("epic"):
 			targetID = targetID[4:]
 
 		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
@@ -123,23 +128,23 @@ class MoonpyLC(object):
 
 		### intuit whether the targetID is a 'planet' (includes a letter), a KOI (includes a decimal), or a KIC (neither).
 		if target_type==None: ### not specified.
-			if '.' in str(self.target) and ((telescope=='kepler') or (telescope=="Kepler")):
+			if '.' in str(self.target) and ((telescope.lower() =='kepler')):
 				target_type='koi' ### since numbers are something like KOI-101.01
-			elif '.' in str(self.target) and ((telescope=='tess') or (telescope=='Tess') or (telescope=='TESS')):
+			elif '.' in str(self.target) and ((telescope.lower() =='tess')):
 				target_type='toi' ### since TOIs are something like TOI-101.01
 			elif (('b' in str(self.target)) or ('c' in str(self.target)) or ('d' in str(self.target)) or ('e' in str(self.target)) or ('f' in str(self.target)) or ('g' in str(self.target))) and ((telescope=='kepler') or (telescope=='Kepler')):
 				target_type='planet' ### confirmed planets are given letters to identify them, a la Kepler-1625b.
 			elif (('b' in str(self.target)) or ('c' in str(self.target)) or ('d' in str(self.target)) or ('e' in str(self.target)) or ('f' in str(self.target)) or ('g' in str(self.target))) and ((telescope=='k2') or (telescope=='K2')):		
 				target_type='planet' ### k2 confirmed planets have names like K2-17b
-			elif (('epic' in self.target) or ("EPIC" in self.target)) and ((telescope=='k2') or (telescope=='K2')):
+			elif (('epic' in self.target.lower())) and ((telescope.lower() =='k2')):
 				target_type = 'epic' 
 			else:
 				### when in doubt, try these.
-				if ((telescope == 'Kepler') or (telescope == 'kepler')):
+				if telescope.lower() == 'kepler':
 					target_type='kic'
-				elif ((telescope == 'k2') or (telescope=='K2')):
+				elif telescope.lower() == 'k2':
 					target_type = 'epic'
-				elif ((telescope == 'tess') or (telescope=='Tess') or (telescope=='TESS')):
+				elif telescope.lower() == 'tess':
 					target_type = 'tic'
 
 		self.target_type = target_type
@@ -149,19 +154,28 @@ class MoonpyLC(object):
 		print('telescope = ', telescope)
 
 		if load_lc == 'y':
-			if self.target.lower().startswith('k2'):
+			if self.target.lower().startswith('k2') or (self.target.lower().startswith('epic')):
 				self.telescope = "k2"
 			elif self.target.lower().startswith('kepler') or self.target.lower().startswith('kic') or self.target.lower().startswith('koi'):
 				self.telescope = "kepler"
-			elif self.target.lower().startswith('tic'):
+			elif (self.target.lower().startswith('tic')) or (self.target.lower().startswith('toi')):
 				self.telescope = 'tess'
 			else:
-				telescope = input('Please specify the telescope: ')
+				try:
+					print(telescope)
+				except:
+					telescope = input('Please specify the telescope: ')
 				self.telescope = telescope 
 
 			try:
-				pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t')
-				ptimes = np.array(pandafile['BKJD'])
+				pandafile = pandas.read_csv(savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+				if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+					ptimes = np.array(pandafile['BKJD'])
+				elif self.telescope.lower() == 'tess':
+					try:
+						ptimes = np.array(pandafile['BTJD'])
+					except:
+						ptimes = np.array(pandafile['BKJD']) ### fix for earlier mislabeling of TESS time offsets.
 				pfluxes = np.array(pandafile['fluxes'])
 				perrors = np.array(pandafile['errors'])
 				pquarters = np.array(pandafile['quarter'])
@@ -199,6 +213,7 @@ class MoonpyLC(object):
 					pass
 
 			except:
+				traceback.print_exc()
 				print("could not load the light curve from file. Will download.")
 				load_lc = 'n'
 
@@ -209,7 +224,7 @@ class MoonpyLC(object):
 			### implies you've selected a target you want to download.
 
 			### KEPLER HANDLING
-			if (telescope == 'kepler') or (telescope=="Kepler") or (telescope == 'KEPLER'):
+			if telescope.lower() == 'kepler':
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				try:
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
@@ -221,7 +236,7 @@ class MoonpyLC(object):
 						traceback.print_exc()
 
 			### K2 HANDLING
-			elif (telescope == 'K2') or (telescope == 'k2'):
+			elif telescope.lower() == 'k2':
 				try:
 					mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
 				except:
@@ -235,20 +250,22 @@ class MoonpyLC(object):
 						traceback.print_exc()
 
 			### TESS HANDLING
-			elif (telescope == 'tess') or (telescope == "Tess") or (telescope == "TESS"):
+			elif telescope.lower() == 'tess':
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.
 
 				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 
 				elif ffi == 'n':
-					if (self.target.startswith("TOI")) or (self.target.startswith('toi')):
+					if self.target.lower().startswith("toi"):
 						ticnum = int(np.array(exofop_data['TIC ID'])[exofop_rowidx]) ### identify the TIC# based on the matching TOI row.
 						ticname = 'TIC '+str(ticnum)
+						print('calling tess_target_download().')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
 						print('lc_times.shape = ', lc_times.shape)
 
-					elif (self.target.startswith('TIC')) or (self.target.startswith('tic')):
+					elif self.target.lower().startswith('tic'):
+						print('calling tess_target_download().')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID) ### TIC number -- LACKS the TIC prefix!
 						print('lc_times.shape = ', lc_times.shape)
 
@@ -268,8 +285,10 @@ class MoonpyLC(object):
 						print('tess_ra, tess_dec ', tess_ra, tess_dec)
 						self.RA, self.Dec = tess_ra, tess_dec 
 						try:
+							print('calling tess_target_download().')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
 						except:
+							print('calling tess_coord_download().')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
 
 						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
@@ -292,19 +311,21 @@ class MoonpyLC(object):
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
 		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
 			try:	
-				if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
+				if (telescope.lower() == 'kepler') or (telescope.lower() =='k2'):
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				
 				elif telescope == 'tess':
+					print('calling tess_coord_download().')
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = tess_coord_download(RA, Dec)
 			
 			except:
 				telescope = input('Specify the telescope: ')
 				self.telescope = telescope 
-				if (telescope == 'kepler') or (telescope=='Kepler') or (telescope=='K2') or (telescope == 'k2'):
+				if (telescope.lower() == 'kepler') or (telescope.lower() =='k2'):
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				elif telescope == 'tess':
 					try:
+						print('calling tess_coord_download().')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_coord_download(RA, Dec)
 					except:
 						lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
@@ -381,8 +402,18 @@ class MoonpyLC(object):
 				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
 			
 			elif len(lc_quarters) == 1:
-				timesort = np.argsort(lc_times)
-				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
+				try:
+					timesort = np.argsort(lc_times)
+					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
+				except:
+					try: ### in some cases the data is loaded as nested lists.
+						timesort = timesort[0]
+						lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[0], lc_fluxes[0], lc_errors[0], lc_fluxes_detrend[0], lc_errors_detrend[0], lc_flags[0]
+						lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
+					except:
+						traceback.print_exc()
+						raise Exception('Something wrong with the way the data has been loaded.')
+						
 
 
 		self.times = lc_times
@@ -413,8 +444,11 @@ class MoonpyLC(object):
 
 		if save_lc == 'y':
 			### write to a file!
-			lcfile = open(savepath+'/'+str(target_name)+'_lightcurve.tsv', mode='w')
-			lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
+			lcfile = open(savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+			if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+				lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
+			elif self.telescope.lower() == 'tess':
+				lcfile.write('BTJD\tfluxes\terrors\tflags\tquarter\n')				
 			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
 					qtq = lc_quarters[qidx]
@@ -609,8 +643,11 @@ class MoonpyLC(object):
 		self.flags_detrend = final_flags
 
 		if save_lc == 'y':
-			lcfile = open(savepath+'/'+self.target+'_lightcurve.tsv', mode='w')
-			lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			lcfile = open(savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+			if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+				lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			elif self.telescope.lower() == 'tess':
+				lcfile.write('BTJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
 
@@ -959,7 +996,7 @@ class MoonpyLC(object):
 					target_in_simbad = 'y'
 
 				except:
-					if (self.target_type == 'toi') or (self.target_type == 'TOI'):
+					if self.target_type.lower() == 'toi':
 						try:
 							simbad_query = Simbad.query_object('TOI-'+self.target)[0]
 							target_name = 'TOI-'+str(self.target) ### only update if this worked!
@@ -974,7 +1011,7 @@ class MoonpyLC(object):
 							except:
 								pass
 
-					elif (self.target_type == 'tic') or (self.target_type == 'TIC'):
+					elif self.target_type.lower() == 'tic':
 						try:
 							simbad_query = Simbad.query_object('TIC '+self.target)[0] 
 							target_name = 'TIC '+str(self.target) ### only update if this worked!
@@ -1130,7 +1167,7 @@ class MoonpyLC(object):
 				pass
 
 			if row_known == 'n':
-				if (str(self.target).startswith('Kepler-')) or (str(self.target).startswith('kepler-')):
+				if str(self.target).lower().startswith('kepler-'):
 					target_letter = str(self.target)[-1]
 					if ' ' in self.target: ### already in the correct format, with a space between the letter.
 						NEA_targetname = self.target
@@ -1139,11 +1176,11 @@ class MoonpyLC(object):
 					mast_rowidx = np.where(mast_data['kepler_name'] == NEA_targetname)[0]
 
 
-				elif (str(self.target).startswith('KIC')) or (str(self.target).startswith('kic')):
+				elif str(self.target).lower().startswith('kic'):
 					NEA_targetname = int(self.target[4:])
 					mast_rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
 
-				elif (str(self.target).startswith('KOI')) or (str(self.target).startswith('koi')):
+				elif str(self.target).lower().startswith('koi'):
 					NEA_targetname = str(self.target[4:])
 					if len(NEA_targetname) == 7: ### of the form 5084.01
 						NEA_targetname = 'K0'+str(NEA_targetname)
@@ -1226,7 +1263,7 @@ class MoonpyLC(object):
 						NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
 
 				### FOR TESS TARGETS THE EXOFOP TABLE IS LIKELY BETTER THAN THE NEA table.
-				if (NEA_targetname.startswith('TIC')) or (NEA_targetname.startswith('tic')):
+				if NEA_targetname.lower().startswith('tic'):
 					### search the "TIC ID" column
 					ticnum = NEA_targetname[3:]
 					if (ticnum.startswith(' ')) or (ticnum.startswith('-')):
@@ -1239,7 +1276,7 @@ class MoonpyLC(object):
 					print("exofop_rowidx = ", exofop_rowidx)
 					mast_rowidx = np.nan 
 
-				elif (NEA_targetname.startswith("TOI")) or (NEA_targetname.startswith('toi')):
+				elif NEA_targetname.lower().startswith("toi"):
 					### search the TOI column 
 					toinum = NEA_targetname[3:]
 					if (toinum.startswith(' ')) or (toinum.startswith('-')):
@@ -1260,7 +1297,7 @@ class MoonpyLC(object):
 							if (self.target in exofop_data['Comments'][idx]):
 								exofop_rowidx = idx
 								exofop_rowidxs.append(exofop_rowidx)
-								print('found a planet in CFOP!, exofop_rowidx = ', exofop_rowidx)
+								print('found a planet in CFOP!, exofop_rowidx, TIC = ', exofop_rowidx, exofop_data['TIC ID'][idx])
 								#print('TIC = ', exofop_data['TIC ID'][exofop_rowidx])
 								nfound += 1
 						except:
@@ -1269,11 +1306,13 @@ class MoonpyLC(object):
 								if (self.target[:-1] in np.array(exofop_data['Comments'])[idx]):
 									exofop_rowidx = idx
 									exofop_rowidxs.append(exofop_rowidx)
-									print('found a planet in CFOP!, exofop_rowidx = ', exofop_rowidx)
+									print('found a planet in CFOP!, exofop_rowidx, TIC = ', exofop_rowidx, exofop_data['TIC ID'][idx])
 									#print("TIC = ", exofop_data['TIC ID'][exofop_rowidx])
 									nfound += 1
 							except:
 								pass
+
+					print('# CFOP entries: ', nfound)
 
 					if nfound > 1:
 						print('found multiple possible entries for '+self.target)
@@ -1283,19 +1322,18 @@ class MoonpyLC(object):
 						exofop_rowidx = int(input('Which is the correct index? ')) 
 
 					elif nfound == 1:
-						exofop_rowidx 
+						pass
 
 					elif nfound == 0:
 						### try aliases!
 						exofop_rowidx = np.nan
-						if len(rowidx) == 0: ### if you STILL haven't found it.
-							try:
-								for alias in self.aliases:
-									mast_rowidx = np.where(mast_data['pl_hostname'] == alias)[0]
-									if len(mast_rowidx) != 0:
-										break
-							except:
-								pass
+						try:
+							for alias in self.aliases:
+								mast_rowidx = np.where(mast_data['pl_hostname'] == alias)[0]
+								if len(mast_rowidx) != 0:
+									break
+						except:
+							pass
 
 		if row_known == 'n':
 			try:
@@ -1329,9 +1367,15 @@ class MoonpyLC(object):
 	def get_properties(self, locate_neighbor='n'):
 		print("calling 'get_properties()...")
 		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
-			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
+			if self.newlc == 'y':
+				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
+			elif self.newlc == 'n':
+				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n')
 		else:
-			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
+			if self.newlc == 'y':
+				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
+			elif self.newlc == 'n': 
+				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n')				
 
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope.lower() == 'kepler'):
@@ -1530,8 +1574,11 @@ class MoonpyLC(object):
 			row_known = 'y'
 		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+			print('mast_rowidx, exofop_rowidx = ', mast_rowidx, exofop_rowidx)
 		else:
 			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+			print('mast_rowidx = ', mast_rowidx)
+
 
 
 		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
@@ -1555,7 +1602,7 @@ class MoonpyLC(object):
 		neighbor_rows = []
 		neighbor_targets = []
 
-		if (self.target).startswith('KOI') or (self.target).startswith('koi'):
+		if self.target.lower().startswith('koi'):
 			for cr in check_mast_rows:
 				if (np.array(mast_data['kepoi_name'])[cr][:-1] == NEA_targetname[:-1]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
@@ -1566,7 +1613,7 @@ class MoonpyLC(object):
 					neighbor_rows.append(cr)
 					neighbor_targets.append(neighbor)
 
-		elif (self.target).startswith('Kepler') or (self.target).startswith('kepler') or (self.target).startswith("KEPLER"):
+		elif self.target.lower().startswith('kepler'):
 			for cr in check_mast_rows:
 				if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
@@ -1576,7 +1623,7 @@ class MoonpyLC(object):
 					neighbor_rows.append(cr)
 					neighbor_targets.append(neighbor)
 
-		elif (self.target).startswith('K2') or (self.target).startswith('k2'):
+		elif self.target.lower().startswith('k2'):
 			for cr in check_mast_rows:
 				if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
@@ -1588,7 +1635,7 @@ class MoonpyLC(object):
 
 		else:
 			if (self.telescope.lower() == "tess"):
-				if self.target.startswith("TIC"):
+				if self.target.lower().startswith("tic"):
 					for cr in check_exofop_rows:
 						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TIC ID'][cr]))
@@ -1598,7 +1645,7 @@ class MoonpyLC(object):
 							neighbor_rows.append(cr)
 							neighbor_targets.append('TIC '+str(neighbor))
 
-				elif self.target.startswith('TOI'):
+				elif self.target.lower().startswith('toi'):
 					for cr in check_exofop_rows:
 						if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TOI'][cr]))
@@ -1609,14 +1656,17 @@ class MoonpyLC(object):
 							neighbor_targets.append('TOI-'+str(neighbor))						
 
 				else:
-					for cr in check_mast_rows:
-						if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
-							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
-							neighbor = str(mast_data['pl_name'][cr])
-							if ' ' in neighbor:
-								neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-							neighbor_rows.append(cr)
-							neighbor_targets.append(neighbor)									
+					try:
+						for cr in check_mast_rows:
+							if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
+								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
+								neighbor = str(mast_data['pl_name'][cr])
+								if ' ' in neighbor:
+									neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+								neighbor_rows.append(cr)
+								neighbor_targets.append(neighbor)		
+					except:
+						pass							
 
 		self.neighbors = neighbor_targets
 
@@ -1637,7 +1687,7 @@ class MoonpyLC(object):
 				###
 				try:
 					if (self.telescope.lower() == 'kepler'):
-						if neighbor.startswith('Kepler') or neighbor.startswith('kepler'):
+						if neighbor.lower().startswith('kepler'):
 							neighbor_key = 'k'+str(neighbor[7:])
 						else:
 							### for now this is just a KOI!
@@ -1704,8 +1754,8 @@ class MoonpyLC(object):
 		neighbor_transit_ID = []
 
 		if save_to_file == 'y':
-			lcfile = open(savepath+'/'+self.target+"_lightcurve.tsv", mode='r')
-			lcfile_new = open(savepath+"/"+self.target+"_lc_temp.tsv", mode='w')
+			lcfile = open(savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+			lcfile_new = open(savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
