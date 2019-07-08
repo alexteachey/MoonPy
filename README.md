@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last updated: June 14, 2019. Developed by [Alex Teachey](http://www.alexteachey.com).
+last updated: July 8, 2019. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.*
 
@@ -72,7 +72,7 @@ Proper usage is:
 
 *targetID*: may be a Kepler planet, a KIC star, a KOI, a K2 target, or a planet observed by TESS. If you leave off the prefix you must specify the telescope. Example: "Kepler-1625b", KOI-5084.01, or KIC 4760478. Variations on these (with and without prefix) are (hopefully!) handled to your satisfaction.
 
-*target_type*: May be "kic", "koi", "planet", "toi" or "tic". (for confirmed planets a la Kepler-1625b). The code will attempt to intuit this.
+*target_type*: May be "kic", "koi", "planet", "toi", "tic", or "epic". The code will attempt to intuit this.
 
 *quarters*: acceptable values are "all" or an array of quarters.
 
@@ -97,16 +97,26 @@ Proper usage is:
 *clobber*: if 'y', any light curve file for the target will be overwritten. Sets *load_lc = 'n'*. If neither *load_lc* nor *clobber* are specified and a light curve for this target already exists, the user will be asked to decide whether the file should be clobbered.
 
 
+### ATTRIBUTES
+
+*times*: call *lc_object.times* for an array of arrays, each quarter / sector with its own nested array.
+
+*fluxes*: the *fluxes* attribute is structured just like *times* as an array of arrays, providing the raw fluxes for each quarter/sector.
+
+*errors*: another array of arrays, providing the photometric errors.
+
+**After you have detrended** using the *detrend()* method, you can call the *fluxes_detrend* and *errors_detrend* attributes, which are as before but now provide normalized fluxes and associated errors.
+
 **NOTES:**
 This object is designed to be versatile. You can either
-a) supply a targetID (either a KOI, Kepler planet, KIC, K2 planet, or a planet observed by TESS) and the name of the telescope; or 
+a) supply a targetID -- either a KOI, Kepler planet, KIC, K2 planet or EPIC target, or a planet observed by TESS -- and the name of the telescope; or 
 b) supply coordinates for an object search
 
 If you choose option (a), you may need to make it explicit somehow which telescope you want to use.
 For example, you can either enter a targetID like "Kepler-1625b", "KOI-5084.01", or "KIC4760478", OR
 you may enter "1625b", "5084.01", or "4760478" for the targetID and specify the telescope as "kepler".
 The code will do its best to determine the telescope. It should also accept "Kepler" as well as "kepler",
-and "K2" as well as "k2". TESS support is in the works. If you have already downloaded this light curve, 
+and "K2" as well as "k2". TESS targets may be specified by a TOI or a TIC, or in some cases another established name for the target (e.g. WASP-46 or HATS-. If you have already downloaded this light curve, 
 you may set load_lc='y' to attempt to load a file you have already generated (handy if you've already 
 detrended the light curve and don't want to do it again.)
 
