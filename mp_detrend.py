@@ -77,9 +77,14 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 	import untrendy
 
+	print('BEWARE: Untrendy is failing because of a strange bug within scipy.')
 	if type(mask_idxs) != type(None):
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		f_detrend = untrendy.detrend(unmasked_times, unmasked_fluxes, unmasked_errors)[0]
+		### untrendy throws an error if unmasked_times arent strictly increasing
+		time_diffs = np.diff(unmasked_times)
+		if np.any(time_diffs <= 0):
+			print("TIMES ARE NOT STRICTLY INCREASING!")
+		f_detrend = untrendy.untrend(unmasked_times, unmasked_fluxes, yerr=unmasked_errors)[0]
 		untrendy_interp = interp1d(unmasked_times, f_detrend, bounds_error=False, fill_value='extrapolate')
 		f_detrend = untrendy_interp(times)
 		sigma_detrend = untrendy.untrend(times, fluxes, errors)[1]
@@ -93,17 +98,32 @@ def george_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 	print('Nothing happening right now.')
 
 def medfilt_detrend(times, fluxes, errors, size, telescope=None, mask_idxs=None):
+	if size == None:
+		size = 9 
+
+	print('kernel size = ', size)
 	if type(mask_idxs) != type(None):
+		print('performing median filter with masked points.')
+		### that is, if there are masks for the transits (there should be!)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		flux_trend = median_filter(fluxes, size=size, mode='nearest')
-		medfilt_interp = interp1d(unmasked_times, unmasked_fluxes, bounds_error=False, fill_value='extrapolate')
+		print('len(unmasked_times), len(unmasked_fluxes) = ', len(unmasked_times), len(unmasked_fluxes))
+		try:
+			flux_trend = median_filter(unmasked_fluxes, size=size, mode='nearest')
+			print('utilizing scipy.ndimage.median_filter().')
+		except:
+			flux_trend = medfilt(unmasked_fluxes, kernel_size=size)
+		print('median_filter() failed, utilizing scipy.signal.medfilt().')
+		medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
 		flux_trend = medfilt_interp(times)
 
-	if size == None:
-		size = 9 ### standardize it
-	detrend_errors = errors / fluxes
-	#flux_trend = median_filter(fluxes, size=size, mode='nearest')
-	flux_trend = medfilt(fluxes, kernel=size)
+	else:
+		print('performing median filter without masked points.')
+		try:
+			flux_trend = median_filter(fluxes, size=size, mode='nearest')
+		except:
+			flux_trend = medfilt(fluxes, kernel_size=size)
+
+	detrend_errors = errors / fluxes 
 	detrend_fluxes = fluxes / flux_trend
 
 	return detrend_fluxes, detrend_errors

@@ -168,7 +168,10 @@ class MoonpyLC(object):
 				self.telescope = telescope 
 
 			try:
-				pandafile = pandas.read_csv(savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+				try:
+					pandafile = pandas.read_csv(savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+				except:
+					pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 				if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 					ptimes = np.array(pandafile['BKJD'])
 				elif self.telescope.lower() == 'tess':
@@ -1754,7 +1757,10 @@ class MoonpyLC(object):
 		neighbor_transit_ID = []
 
 		if save_to_file == 'y':
-			lcfile = open(savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+			try:
+				lcfile = open(savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+			except:
+				lcfile = open(savepath+'/'+self.target+'_lightcurve.tsv', mode='r') ### for older files.
 			lcfile_new = open(savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
@@ -1778,7 +1784,8 @@ class MoonpyLC(object):
 			lcfile.close()
 			lcfile_new.close()
 			### rename the file.
-			os.system('mv '+savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
+			#os.system('mv '+savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
+			os.system('mv '+savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
 
 		self.all_transit_times = np.array(neighbor_transit_times)
 		self.all_transit_list = neighbor_transit_list
