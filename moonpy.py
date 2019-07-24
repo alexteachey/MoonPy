@@ -229,6 +229,7 @@ class MoonpyLC(object):
 			### KEPLER HANDLING
 			if telescope.lower() == 'kepler':
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
+				self.NEA_targetname = NEA_targetname
 				try:
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
@@ -242,6 +243,7 @@ class MoonpyLC(object):
 			elif telescope.lower() == 'k2':
 				try:
 					mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
+					self.NEA_targetname = NEA_targetname
 				except:
 					traceback.print_exc()
 				try:
@@ -255,6 +257,7 @@ class MoonpyLC(object):
 			### TESS HANDLING
 			elif telescope.lower() == 'tess':
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.
+				self.NEA_targetname = NEA_targetname
 
 				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
@@ -1151,6 +1154,9 @@ class MoonpyLC(object):
 					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
 					os.system('wget -O '+moonpydir+'/cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
 
+					#os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=koifpp&select=kepid,kepoi_name,fpp_prob&format=ascii" -O "'+moonpydir+'/koi_fpps.txt"')
+
+
 				elif (self.telescope.lower() == 'k2'):
 					os.system('wget "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
 					os.system('wget -O '+moonpydir+'/exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
@@ -1172,7 +1178,7 @@ class MoonpyLC(object):
 				pass
 
 			if row_known == 'n':
-				if str(self.target).lower().startswith('kepler-'):
+				if str(self.target).lower().startswith('kepler'):
 					target_letter = str(self.target)[-1]
 					if ' ' in self.target: ### already in the correct format, with a space between the letter.
 						NEA_targetname = self.target
@@ -1196,6 +1202,7 @@ class MoonpyLC(object):
 					elif len(NEA_targetname) == 4: ### of the form 1.01
 						NEA_targetname = 'K0000'+str(NEA_targetname)
 					mast_rowidx = np.where(mast_data['kepoi_name'] == NEA_targetname)[0]
+					self.NEA_targetname = NEA_targetname
 
 
 				else: ### was observed by Kepler but you don't know it's KOI/KIC or Kepler name:
@@ -1572,21 +1579,25 @@ class MoonpyLC(object):
 
 
 	def find_neighbors(self, is_neighbor='n'):
-		print('calling find_neighbors. is_neighbor = ', is_neighbor)
+		print('is_neighbor = ', is_neighbor)
 		if is_neighbor == 'y':
 			row_known = 'n'
 		else:
 			row_known = 'y'
 		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+			check_mast_rows = np.arange(0,len(mast_data['pl_name']),1)
+			check_exofop_rows = np.arange(0,len(exofop_data['TOI']),1)
 			print('mast_rowidx, exofop_rowidx = ', mast_rowidx, exofop_rowidx)
 		else:
 			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+			check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
 			print('mast_rowidx = ', mast_rowidx)
 
 
 
 		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
+		"""
 		try:
 			if mast_rowidx < 10:
 				check_mast_rows = np.arange(0,mast_rowidx+11,1)
@@ -1594,8 +1605,12 @@ class MoonpyLC(object):
 				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+11,1)
 		except:
 			pass 
+		"""
+
+
 
 		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
+		"""
 		try:
 			if exofop_rowidx < 10:
 				check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
@@ -1603,13 +1618,16 @@ class MoonpyLC(object):
 				check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
 		except:
 			pass
+		"""
+
 
 		neighbor_rows = []
 		neighbor_targets = []
 
 		if self.target.lower().startswith('koi'):
+			print("looking for neighbors in MAST for this KOI.")
 			for cr in check_mast_rows:
-				if (np.array(mast_data['kepoi_name'])[cr][:-1] == NEA_targetname[:-1]) and (cr != mast_rowidx):
+				if (np.array(mast_data['kepoi_name'])[cr][:-1] == self.NEA_targetname[:-1]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
 					neighbor = str(mast_data['kepoi_name'][cr])
 					while neighbor.startswith('K') or neighbor.startswith('0'):
@@ -1619,8 +1637,10 @@ class MoonpyLC(object):
 					neighbor_targets.append(neighbor)
 
 		elif self.target.lower().startswith('kepler'):
+			print("looking for neighbors in MAST for this Kepler target.")
 			for cr in check_mast_rows:
-				if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != mast_rowidx):
+				#if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != mast_rowidx):
+				if (np.array(mast_data['kepler_name'])[cr][7:-2] == self.target[7:-1]) and (cr != mast_rowidx):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
 					neighbor = str(mast_data['kepler_name'][cr])
 					if ' ' in neighbor:
@@ -1629,6 +1649,7 @@ class MoonpyLC(object):
 					neighbor_targets.append(neighbor)
 
 		elif self.target.lower().startswith('k2'):
+			print("looking for neighbors in MAST for this K2 target.")
 			for cr in check_mast_rows:
 				if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
@@ -1641,6 +1662,7 @@ class MoonpyLC(object):
 		else:
 			if (self.telescope.lower() == "tess"):
 				if self.target.lower().startswith("tic"):
+					print("looking for neighbors in exofop for this TIC target.")
 					for cr in check_exofop_rows:
 						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TIC ID'][cr]))
@@ -1651,6 +1673,7 @@ class MoonpyLC(object):
 							neighbor_targets.append('TIC '+str(neighbor))
 
 				elif self.target.lower().startswith('toi'):
+					print('looking for neighbors in exofop for this TOI.')
 					for cr in check_exofop_rows:
 						if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != exofop_rowidx):
 							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TOI'][cr]))
@@ -1662,6 +1685,7 @@ class MoonpyLC(object):
 
 				else:
 					try:
+						print('looking fore neighbors in MAST for this TESS target.')
 						for cr in check_mast_rows:
 							if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
@@ -1795,9 +1819,8 @@ class MoonpyLC(object):
 
 
 
-	def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n'):
+	def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', cnnlc_path=moonpydir+'/cnn_lcs'):
 		### this function will produce an arrayy that's ready to be fed to a CNN for moon finding. 
-		cnnlc_path = moonpydir+'/cnn_lcs'
 		if os.path.exists(cnnlc_path) == False:
 			os.system('mkdir '+cnnlc_path)
 
