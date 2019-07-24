@@ -241,11 +241,11 @@ class MoonpyLC(object):
 
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
-				try:
-					mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
-					self.NEA_targetname = NEA_targetname
-				except:
-					traceback.print_exc()
+				#try:
+				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
+				self.NEA_targetname = NEA_targetname
+				#except:
+				#traceback.print_exc()
 				try:
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
@@ -1239,6 +1239,7 @@ class MoonpyLC(object):
 					else:
 						NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
 					mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
+					exofop_rowidx = np.nan
 
 					print("number of rows matching this description = ", len(mast_rowidx))
 
@@ -1250,8 +1251,8 @@ class MoonpyLC(object):
 					try:
 						exofop_rowidx = np.where(exofop_data['EPIC ID'] == NEA_targetname)[0]
 					except:
-						print('exofop_data.columns = ')
-						print(exofop_data.columns)	
+						print('unable to extract the exofop_rowidx')
+						exofop_rowidx = np.nan 
 
 
 		### TESS HANDLING 
@@ -1334,7 +1335,7 @@ class MoonpyLC(object):
 						exofop_rowidx = int(input('Which is the correct index? ')) 
 
 					elif nfound == 1:
-						pass
+						exofop_rowidx = exofop_rowidxs[0]
 
 					elif nfound == 0:
 						### try aliases!
