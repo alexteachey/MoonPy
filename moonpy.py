@@ -1254,6 +1254,12 @@ class MoonpyLC(object):
 						print('unable to extract the exofop_rowidx')
 						exofop_rowidx = np.nan 
 
+					try:
+						mast_rowidx = np.where(mast_data['epic_name'] == NEA_targetname)[0]
+					except:
+						print('unable to extract the mast_rowidx')
+						mast_rowidx = np.nan
+
 
 		### TESS HANDLING 
 		elif (self.telescope.lower() == 'tess'):
@@ -1587,39 +1593,29 @@ class MoonpyLC(object):
 			row_known = 'y'
 		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-			check_mast_rows = np.arange(0,len(mast_data['pl_name']),1)
-			check_exofop_rows = np.arange(0,len(exofop_data['TOI']),1)
-			print('mast_rowidx, exofop_rowidx = ', mast_rowidx, exofop_rowidx)
-		else:
-			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-			check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
-			print('mast_rowidx = ', mast_rowidx)
-
-
-
-		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
-		"""
-		try:
+			#check_mast_rows = np.arange(0,len(mast_data['pl_name']),1)
+			#check_exofop_rows = np.arange(0,len(exofop_data['TOI']),1)
 			if mast_rowidx < 10:
 				check_mast_rows = np.arange(0,mast_rowidx+11,1)
 			else:
-				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+11,1)
-		except:
-			pass 
-		"""
+				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
 
-
-
-		### NOW IDENTIFY WHETHER THERE ARE ANY PLANETS IN THE VICINITY OF THIS PLANET (rowidx+/-7) with similar names!
-		"""
-		try:
 			if exofop_rowidx < 10:
 				check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
 			else:
 				check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
-		except:
-			pass
-		"""
+			print('mast_rowidx, exofop_rowidx = ', mast_rowidx, exofop_rowidx)
+		
+		else:
+			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+			#check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
+			if mast_rowidx < 10:
+				check_mast_rows = np.arange(0,mast_rowidx+11,1)
+			else:
+				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
+
+			print('mast_rowidx = ', mast_rowidx)
+
 
 
 		neighbor_rows = []
@@ -1627,74 +1623,82 @@ class MoonpyLC(object):
 
 		if self.target.lower().startswith('koi'):
 			print("looking for neighbors in MAST for this KOI.")
+
+
 			for cr in check_mast_rows:
-				if (np.array(mast_data['kepoi_name'])[cr][:-1] == self.NEA_targetname[:-1]) and (cr != mast_rowidx):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
-					neighbor = str(mast_data['kepoi_name'][cr])
-					while neighbor.startswith('K') or neighbor.startswith('0'):
-						neighbor = neighbor[1:]
-					neighbor = 'KOI-'+str(neighbor)
-					neighbor_rows.append(cr)
-					neighbor_targets.append(neighbor)
+				if cr <= len(mast_data['kepoi_name']) - 1:
+					if (np.array(mast_data['kepoi_name'])[cr][:-1] == self.NEA_targetname[:-1]) and (cr != mast_rowidx):
+						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
+						neighbor = str(mast_data['kepoi_name'][cr])
+						while neighbor.startswith('K') or neighbor.startswith('0'):
+							neighbor = neighbor[1:]
+						neighbor = 'KOI-'+str(neighbor)
+						neighbor_rows.append(cr)
+						neighbor_targets.append(neighbor)
+
 
 		elif self.target.lower().startswith('kepler'):
 			print("looking for neighbors in MAST for this Kepler target.")
 			for cr in check_mast_rows:
-				#if (np.array(mast_data['kepler_name'])[cr][7:-2] == NEA_targetname[7:-2]) and (cr != mast_rowidx):
-				if (np.array(mast_data['kepler_name'])[cr][7:-2] == self.target[7:-1]) and (cr != mast_rowidx):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
-					neighbor = str(mast_data['kepler_name'][cr])
-					if ' ' in neighbor:
-						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-					neighbor_rows.append(cr)
-					neighbor_targets.append(neighbor)
+				if cr <= len(mast_data['kepler_name']) - 1:
+					if (np.array(mast_data['kepler_name'])[cr][7:-2] == self.target[7:-1]) and (cr != mast_rowidx):
+						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
+						neighbor = str(mast_data['kepler_name'][cr])
+						if ' ' in neighbor:
+							neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+						neighbor_rows.append(cr)
+						neighbor_targets.append(neighbor)
 
 		elif self.target.lower().startswith('k2'):
 			print("looking for neighbors in MAST for this K2 target.")
 			for cr in check_mast_rows:
-				if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
-					neighbor = str(mast_data['pl_name'][cr])
-					if ' ' in neighbor:
-						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-					neighbor_rows.append(cr)
-					neighbor_targets.append(neighbor)		
+				if cr <= len(mast_data['pl_name']) - 1:
+					if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
+						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
+						neighbor = str(mast_data['pl_name'][cr])
+						if ' ' in neighbor:
+							neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+						neighbor_rows.append(cr)
+						neighbor_targets.append(neighbor)		
 
 		else:
 			if (self.telescope.lower() == "tess"):
 				if self.target.lower().startswith("tic"):
 					print("looking for neighbors in exofop for this TIC target.")
 					for cr in check_exofop_rows:
-						if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
-							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TIC ID'][cr]))
-							neighbor = str(exofop_data['TIC ID'][cr])
-							if ' ' in neighbor:
-								neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-							neighbor_rows.append(cr)
-							neighbor_targets.append('TIC '+str(neighbor))
+						if cr <= len(exofop_data['TIC ID']) - 1:
+							if (str(np.array(exofop_data['TIC ID'])[cr])[3:] == str(NEA_targetname)[3:]) and (cr != exofop_rowidx):
+								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TIC ID'][cr]))
+								neighbor = str(exofop_data['TIC ID'][cr])
+								if ' ' in neighbor:
+									neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+								neighbor_rows.append(cr)
+								neighbor_targets.append('TIC '+str(neighbor))
 
 				elif self.target.lower().startswith('toi'):
 					print('looking for neighbors in exofop for this TOI.')
 					for cr in check_exofop_rows:
-						if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != exofop_rowidx):
-							print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TOI'][cr]))
-							neighbor = str(exofop_data['TOI'][cr])
-							if ' ' in neighbor:
-								neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-							neighbor_rows.append(cr)
-							neighbor_targets.append('TOI-'+str(neighbor))						
+						if cr <= len(exofop_data['TOI']) - 1:
+							if (str(np.array(exofop_data['TOI'])[cr])[:-2] == str(NEA_targetname)[4:-2]) and (cr != exofop_rowidx):
+								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(exofop_data['TOI'][cr]))
+								neighbor = str(exofop_data['TOI'][cr])
+								if ' ' in neighbor:
+									neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+								neighbor_rows.append(cr)
+								neighbor_targets.append('TOI-'+str(neighbor))						
 
 				else:
 					try:
 						print('looking fore neighbors in MAST for this TESS target.')
 						for cr in check_mast_rows:
-							if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
-								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
-								neighbor = str(mast_data['pl_name'][cr])
-								if ' ' in neighbor:
-									neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
-								neighbor_rows.append(cr)
-								neighbor_targets.append(neighbor)		
+							if cr <= len(mast_data['pl_name']) - 1:
+								if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
+									print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
+									neighbor = str(mast_data['pl_name'][cr])
+									if ' ' in neighbor:
+										neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
+									neighbor_rows.append(cr)
+									neighbor_targets.append(neighbor)		
 					except:
 						pass							
 
