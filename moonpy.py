@@ -918,6 +918,9 @@ class MoonpyLC(object):
 		if len(self.quarters > 1):
 			for qidx,quarter in enumerate(self.quarters):
 				quarter_times = self.times[qidx]
+				if len(quarter_times) == 0:
+					print('zero-length quarter detected. Skipping.')
+					continue
 				quarter_transit = 'n'
 				for tau in self.taus:
 					if (tau >= np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
