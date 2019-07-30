@@ -71,7 +71,7 @@ class Moonpy_moon(object):
 		### SATELLITE INPUTS: 
 		if (sat_params == None) and (prompts == 'n'):
 			self.phi_sat = np.random.choice(np.linspace(0,2*np.pi,1000), size=self.nmoons)
-			self.cosi_sat = np.random.choice(np.linspace(-1,3,1000), size=self.nmoons)
+			self.cosi_sat = np.random.choice(np.linspace(0.0,0.0,1000), size=self.nmoons) ### make them all edge on!
 			self.omega_sat = np.random.choice(np.linspace(0,2*np.pi,1000), size=self.nmoons)
 
 			if self.nmoons == 1:
@@ -82,8 +82,8 @@ class Moonpy_moon(object):
 				self.phi_sat, self.cosi_sat, self.omega_sat = self.phi_sat[0], self.cosi_sat[0], self.omega_sat[0]
 			else:
 				self.asp = np.random.choice(np.linspace(5,100,1000), size=self.nmoons)
-				self.msp = np.random.choice(np.logspace(-5,-3,1000), size=self.nmoons)
-				self.rsp = np.random.choice(np.linspace(0.01,0.1,100), size=self.nmoons)
+				self.msp = np.random.choice(np.linspace(0.0,0.0,10), size=self.nmoons)
+				self.rsp = np.random.choice(np.linspace(0.01,0.3,100), size=self.nmoons)
 
 			self.sat_params = {'asp':self.asp, 'phi_sat':self.phi_sat, 'cosi_sat':self.cosi_sat, 'omega_sat':self.omega_sat, 'msp':self.msp, 'rsp':self.rsp}
 
@@ -152,7 +152,7 @@ class Moonpy_moon(object):
 
 
 
-	def gen_transit(self, tau=None, window=None, cadence_minutes=None, prompts='n', ntransits=1, model='M'):
+	def gen_transit(self, tau=None, window=None, cadence_minutes=None, prompts='n', ntransits=1, show_plots='n', ppm=0.0, model='M'):
 		if (tau == None) and (prompts == 'n'):
 			tau = self.tau0
 		elif (tau == None) and (prompts == 'y'):
@@ -224,24 +224,32 @@ class Moonpy_moon(object):
 			### generate a planet only light curve first!
 			planet_only_times, planet_only_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, 1000, 0, 0, 0, 0, 0, model='M', cadence_minutes=cadence_minutes, print_params='y')
 			planet_only_missing_fluxes = 1 - planet_only_fluxes
-			fig, (ax1, ax2) = plt.subplots(2, sharex=True)
 
-			ax1.scatter(planet_only_times, planet_only_fluxes)
-			ax2.scatter(planet_only_times, planet_only_missing_fluxes)
-			plt.show()
+			if show_plots=='y':
+				fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+				ax1.scatter(planet_only_times, planet_only_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
+				ax1.set_ylabel('Flux')
+				ax2.scatter(planet_only_times, planet_only_missing_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
+				ax2.set_ylabel("Missing Flux")
+				plt.show()
 
 			for moon_idx in np.arange(0,self.nmoons,1):
-				moon_and_planet_times, moon_and_planet_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, self.asp[moon_idx], self.phi_sat[moon_idx], self.cosi_sat[moon_idx], self.omega_sat[moon_idx], 0, self.rsp[moon_idx], model="M", cadence_minutes=cadence_minutes, print_params='y')
+				moon_and_planet_times, moon_and_planet_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, self.asp[moon_idx], self.phi_sat[moon_idx], self.cosi_sat[moon_idx], self.omega_sat[moon_idx], self.msp[moon_idx], self.rsp[moon_idx], model="M", cadence_minutes=cadence_minutes, print_params='y')
 				moon_only_fluxes = moon_and_planet_fluxes / planet_only_fluxes
 				moon_only_missing_fluxes = 1 - moon_only_fluxes 
-				fig,(ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-				ax1.scatter(moon_and_planet_times, moon_and_planet_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
-				ax1.set_ylim(np.nanmin(moon_and_planet_fluxes), np.nanmax(moon_and_planet_fluxes))
-				ax2.scatter(moon_and_planet_times, moon_only_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
-				ax2.set_ylim(np.nanmin(moon_only_fluxes), np.nanmax(moon_only_fluxes))
-				ax3.scatter(moon_and_planet_times, moon_only_missing_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
-				ax3.set_ylim(np.nanmin(moon_only_missing_fluxes), np.nanmax(moon_only_missing_fluxes))
-				plt.show()
+
+				if show_plots=='y':
+					fig,(ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+					ax1.scatter(moon_and_planet_times, moon_and_planet_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
+					ax1.set_ylabel('moon+planet')
+					ax1.set_ylim(np.nanmin(moon_and_planet_fluxes), np.nanmax(moon_and_planet_fluxes))
+					ax2.scatter(moon_and_planet_times, moon_only_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
+					ax2.set_ylabel('moon only')
+					ax2.set_ylim(np.nanmin(moon_only_fluxes), np.nanmax(moon_only_fluxes))
+					ax3.scatter(moon_and_planet_times, moon_only_missing_fluxes, facecolor='LightCoral', edgecolor='k', s=10)
+					ax3.set_ylabel('missing moon flux')
+					ax3.set_ylim(np.nanmin(moon_only_missing_fluxes), np.nanmax(moon_only_missing_fluxes))
+					plt.show()
 			
 				if moon_idx == 0:
 					moon_only_flux_stack = moon_only_fluxes
@@ -252,10 +260,16 @@ class Moonpy_moon(object):
 
 			missing_fluxes = planet_only_missing_fluxes + np.nansum(moon_only_missing_flux_stack, axis=0)
 			final_fluxes = 1 - missing_fluxes
-			plt.scatter(planet_only_times, final_fluxes, facecolor='LightCoral', edgecolor='k')
-			plt.xlabel('Time')
-			plt.ylabel('Flux')
-			plt.show()
+
+			if ppm != 0.0:
+				final_fluxes = np.random.normal(loc=final_fluxes, scale=ppm*1e-6)
+
+
+			if show_plots=='y':
+				plt.scatter(planet_only_times, final_fluxes, facecolor='LightCoral', edgecolor='k')
+				plt.xlabel('Time')
+				plt.ylabel('Flux')
+				plt.show()
 
 			output_times = planet_only_times 
 			output_fluxes = final_fluxes 
