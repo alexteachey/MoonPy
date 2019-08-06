@@ -1,6 +1,7 @@
 from __future__ import division
 from pyluna import *
 import matplotlib.pyplot as plt 
+from mp_tools import Roche
 
 
 rhoSun = 1408.0
@@ -152,6 +153,22 @@ class Moonpy_moon(object):
 
 
 
+	def gen_rings(self):
+		### this function will produce a ring system around the planet, by initializing a large number of small moon at the roche limit.
+		nmoons = 1000
+		self.nmoons = nmoons
+
+		self.phi_sat = np.random.choice(np.linspace(0,2*np.pi,1000), size=self.nmoons)
+		#self.cosi_sat = np.random.choice(np.linspace(0.0,0.0,1000), size=self.nmoons) ### make them all edge on!
+		cosi_sat = 0.0 ### change this!
+		self.cosi_sat = np.linspace(cosi_sat, cosi_sat, self.nmoons)
+		self.omega_sat = np.random.choice(np.linspace(0,2*np.pi,1000), size=self.nmoons)
+		self.asp = np.random.choice(np.linspace(2,4,1000), size=self.nmoons)
+		self.msp = np.random.choice(np.linspace(0.0,0.0,10), size=self.nmoons)
+		self.rsp = np.random.choice(np.linspace(0.05,0.1,100), size=self.nmoons)
+
+
+
 	def gen_transit(self, tau=None, window=None, cadence_minutes=None, prompts='n', ntransits=1, show_plots='n', ppm=0.0, model='M'):
 		if (tau == None) and (prompts == 'n'):
 			tau = self.tau0
@@ -278,13 +295,18 @@ class Moonpy_moon(object):
 
 		self.times, self.fluxes = output_times, output_fluxes
 
-	def plot_moon(self):
+	def plot_moon(self, ppm=0.0):
 		try:
 			print(self.times)
 		except:
 			self.gen_transit()
 
-		plt.scatter(self.times, self.fluxes, facecolor='LightCoral', edgecolor='k', s=20)
+		if ppm > 0.0:
+			plot_fluxes = np.random.normal(self.fluxes, scale=ppm*1e-6)
+		else:
+			plot_fluxes = self.fluxes 
+
+		plt.scatter(self.times, plot_fluxes, facecolor='LightCoral', edgecolor='k', s=20)
 		plt.xlabel('Time')
 		plt.ylabel('Flux')
 		plt.show()
