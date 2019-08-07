@@ -65,7 +65,39 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
+		### treat the times, fluxes and errors as a single quarter
+		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
+			self.times, self.fluxes, self.errors = lc_times, lc_fluxes, lc_errors
+			lc_flags = np.linspace(0,0,len(self.times))
+			lc_quarters = np.array([1])
+			self.flags = lc_flags
+			self.quarters = lc_quarters 
+			targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
+			telescope='USER'
+			RA, Dec = 0.0, 0.0
+			is_neighbor='y'
+
+			try:
+				self.period = usr_dict['period']
+				self.tau0 = usr_dict['tau0']
+				self.impact = usr_dict['impact']
+				self.duration_hours = usr_dict['duration_hours']
+				self.rprstar = usr_dict['rprstar']
+				self.sma_AU = usr_dict['sma_AU']
+				self.rp_rearth = usr_dict['rp_rearth']
+			except:
+				print(usr_dict)
+				self.period = float(input('Enter the period: '))
+				self.tau0 = float(input('Enter the tau0: '))
+				self.impact = float(input('Enter the impact parameter: '))
+				self.duration_hours = float(input('Enter the duration of the transit in hours: '))
+				self.rprstar = float(input('Enter the Rp/Rstar: '))
+				self.sma_AU = float(input('Enter the planet sma in AU: '))
+				self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+
+
 		if target_type != None:
 			self.target_type = target_type 
 
@@ -118,6 +150,8 @@ class MoonpyLC(object):
 			targetID = targetID[3:]
 		elif str(targetID).lower().startswith("epic"):
 			targetID = targetID[4:]
+		elif str(targetID).lower().startswith('usr'):
+			pass
 
 		if str(targetID).startswith(' ') or str(targetID).startswith('-'):
 			### isolate just the number!
@@ -138,6 +172,8 @@ class MoonpyLC(object):
 				target_type='planet' ### k2 confirmed planets have names like K2-17b
 			elif (('epic' in self.target.lower())) and ((telescope.lower() =='k2')):
 				target_type = 'epic' 
+			elif telescope.lower() == 'user':
+				target_type = 'usr'
 			else:
 				### when in doubt, try these.
 				if telescope.lower() == 'kepler':
@@ -153,6 +189,10 @@ class MoonpyLC(object):
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
 
+
+
+
+		#### LOADING A LIGHT CURVE THAT'S ALREADY BEEN DOWNLOADED.
 		if load_lc == 'y':
 			if self.target.lower().startswith('k2') or (self.target.lower().startswith('epic')):
 				self.telescope = "k2"
@@ -171,49 +211,58 @@ class MoonpyLC(object):
 				try:
 					pandafile = pandas.read_csv(savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
 				except:
-					pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
-				if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
-					ptimes = np.array(pandafile['BKJD'])
-				elif self.telescope.lower() == 'tess':
 					try:
-						ptimes = np.array(pandafile['BTJD'])
+						pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 					except:
-						ptimes = np.array(pandafile['BKJD']) ### fix for earlier mislabeling of TESS time offsets.
-				pfluxes = np.array(pandafile['fluxes'])
-				perrors = np.array(pandafile['errors'])
-				pquarters = np.array(pandafile['quarter'])
-				pflags = np.array(pandafile['flags'])
+						print("could not load the light curve from file. Will download.")
+						load_lc = 'n'
 				try:
-					pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
-					perrors_detrend = np.array(pandafile['errors_detrended'])
-				except:
-					print("could not load detrended fluxes.")
-					pfluxes_detrend = pfluxes
-					perrors_detrend = perrors 
-
-				unique_quarters = np.unique(pquarters)
-				lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], []
-
-				for uq in unique_quarters:
-					uqidxs = np.where(pquarters == uq)[0]
-					lc_times.append(ptimes[uqidxs])
-					lc_fluxes.append(pfluxes[uqidxs])
-					lc_errors.append(perrors[uqidxs])
-					lc_flags.append(pflags[uqidxs])
-					lc_quarters.append(uq)
+					if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+						ptimes = np.array(pandafile['BKJD'])
+					elif self.telescope.lower() == 'tess':
+						try:
+							ptimes = np.array(pandafile['BTJD'])
+						except:
+							ptimes = np.array(pandafile['BKJD']) ### fix for earlier mislabeling of TESS time offsets.
+					pfluxes = np.array(pandafile['fluxes'])
+					perrors = np.array(pandafile['errors'])
+					pquarters = np.array(pandafile['quarter'])
+					pflags = np.array(pandafile['flags'])
 					try:
-						lc_fluxes_detrend.append(pfluxes_detrend[uqidxs])
-						lc_errors_detrend.append(perrors_detrend[uqidxs])
+						pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
+						perrors_detrend = np.array(pandafile['errors_detrended'])
+					except:
+						print("could not load detrended fluxes.")
+						pfluxes_detrend = pfluxes
+						perrors_detrend = perrors 
+
+					unique_quarters = np.unique(pquarters)
+					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], []
+
+					for uq in unique_quarters:
+						uqidxs = np.where(pquarters == uq)[0]
+						lc_times.append(ptimes[uqidxs])
+						lc_fluxes.append(pfluxes[uqidxs])
+						lc_errors.append(perrors[uqidxs])
+						lc_flags.append(pflags[uqidxs])
+						lc_quarters.append(uq)
+						try:
+							lc_fluxes_detrend.append(pfluxes_detrend[uqidxs])
+							lc_errors_detrend.append(perrors_detrend[uqidxs])
+						except:
+							pass
+		
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
+					self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
+					try:
+						lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
+						self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
 					except:
 						pass
-	
-				lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
-				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
-				try:
-					lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
-					self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
+
 				except:
-					pass
+					print("could not load the light curve from file. Will download.")
+					load_lc = 'n'
 
 			except:
 				traceback.print_exc()
@@ -226,8 +275,18 @@ class MoonpyLC(object):
 		if (load_lc=='n') and (targetID != None) and (telescope != None):
 			### implies you've selected a target you want to download.
 
+
+			### USER-INPUT HANDLING
+			if telescope.lower() == 'user':
+				lc_times, lc_fluxes, lc_errors, lc_flags, lcquarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
+				mast_rowidx = np.nan 
+				mast_data = ascii.read('confirmed_planets.txt')
+				mast_columns = mast_data.columns
+				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
+				exofop_columns = exofop_data.columns
+
 			### KEPLER HANDLING
-			if telescope.lower() == 'kepler':
+			elif telescope.lower() == 'kepler':
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
@@ -302,7 +361,7 @@ class MoonpyLC(object):
 			#self.rowidx = rowidx #### IMPORTANT: only define self.rowidx for your TARGET! not for neighbors!
 			self.mast_rowidx = mast_rowidx
 
-			if self.telescope.lower() != 'kepler':
+			if (self.telescope.lower() != 'kepler') and (self.telescope.lower() != 'user'):
 				self.exofop_rowidx = exofop_rowidx
 			self.telescope = telescope
 			### SIMBAD_QUERY
@@ -323,6 +382,10 @@ class MoonpyLC(object):
 				elif telescope == 'tess':
 					print('calling tess_coord_download().')
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = tess_coord_download(RA, Dec)
+
+				elif telescope.lower() == 'user':
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
+					target_name = targetID 
 			
 			except:
 				telescope = input('Specify the telescope: ')
@@ -335,6 +398,9 @@ class MoonpyLC(object):
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_coord_download(RA, Dec)
 					except:
 						lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
+				elif telescope.lower() == 'user':
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
+					target_name = targetID 
 					
 			self.target = target_name
 
@@ -434,8 +500,10 @@ class MoonpyLC(object):
 			if is_neighbor == 'y':
 				#self.get_properties(locate_neighbor='n')
 				self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
+				traceback.print_exc()
 			elif is_neighbor == 'n':
 				self.find_transit_quarters(locate_neighbor='y') ### ditto above.
+				traceback.print_exc()
 				#self.get_properties(locate_neighbor='y')
 				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
 		except:
@@ -447,29 +515,34 @@ class MoonpyLC(object):
 			print("Try calling self.mystery_solver(tau0, period, duration_hours) to manually input critical variables.")
 			print("Altenatively, try the input again with a different target ID.")
 
+		try:
+			if save_lc == 'y':
+				### write to a file!
+				lcfile = open(savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+				if self.telescope.lower() == 'user':
+					lcfile.write('BJD\tfluxes\terrors\tflags\tquarter\n')
+				elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+					lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
+				elif self.telescope.lower() == 'tess':
+					lcfile.write('BTJD\tfluxes\terrors\tflags\tquarter\n')				
+				if len(self.quarters) > 1:
+					for qidx in np.arange(0,len(self.quarters),1):
+						qtq = lc_quarters[qidx]
+						qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
+						for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
+							lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+				elif len(self.quarters) == 1:
+					if self.times.shape[0] == 1:
+						lc_times, lc_fluxes, lc_errors = lc_times[0], lc_fluxes[0], lc_errors[0]
+					else:
+						pass
 
-		if save_lc == 'y':
-			### write to a file!
-			lcfile = open(savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
-			if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
-				lcfile.write('BKJD\tfluxes\terrors\tflags\tquarter\n')
-			elif self.telescope.lower() == 'tess':
-				lcfile.write('BTJD\tfluxes\terrors\tflags\tquarter\n')				
-			if len(self.quarters) > 1:
-				for qidx in np.arange(0,len(self.quarters),1):
-					qtq = lc_quarters[qidx]
-					qtimes, qfluxes, qerrors, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_flags[qidx]
-					for qt, qf, qe, qfl in zip(qtimes, qfluxes, qerrors, qflags):
-						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
-			elif len(self.quarters) == 1:
-				if self.times.shape[0] == 1:
-					lc_times, lc_fluxes, lc_errors = lc_times[0], lc_fluxes[0], lc_errors[0]
-				else:
-					pass
-
-				for qt, qf, qe, qfl in zip(lc_times, lc_fluxes, lc_errors, lc_flags):
-					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
-			lcfile.close()
+					for qt, qf, qe, qfl in zip(lc_times, lc_fluxes, lc_errors, lc_flags):
+						lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
+				lcfile.close()
+		except:
+			traceback.print_exc()
+			raise Exception('an exception was raised while trying to save the light curve.')
 
 
 
@@ -538,6 +611,7 @@ class MoonpyLC(object):
 					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]
 				except:
 					self.find_transit_quarters()
+					traceback.print_exc()
 					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]		
 								
 				for qtt in quarter_transit_taus:
@@ -635,14 +709,25 @@ class MoonpyLC(object):
 		self.flags_detrend = master_flags_detrend 
 
 		### before you overwrite the flags, compare them.
-		final_flags = []
-		for qidx in np.arange(0,len(self.quarters),1):
-			qfinal_flags = []
 
-			if type(self.flags[0]) == np.int32:
-				self.flags = [self.flags]
-			for sf,sfd in zip(self.flags[qidx], self.flags_detrend[qidx]):
-				qfinal_flags.append(int(np.nanmax((sf,sfd))))
+		if len(self.quarters) == 1:
+			final_flags = []
+			if type(self.flags_detrend) == list:
+				self.flags_detrend = self.flags_detrend[0]
+			for sf, sfd in zip(self.flags, self.flags_detrend):
+				final_flags.append(int(np.nanmax((sf,sfd))))
+
+		else:
+			final_flags = []
+			for qidx in np.arange(0,len(self.quarters),1):
+				qfinal_flags = []
+
+				if type(self.flags[0]) == np.int32:
+					self.flags = [self.flags]
+				if type(self.flags_detrend) == list:
+					self.flags_detrend = self.flags_detrend[0]
+				for sf,sfd in zip(self.flags[qidx], self.flags_detrend[qidx]):
+					qfinal_flags.append(int(np.nanmax((sf,sfd))))
 
 
 			final_flags.append(np.array(qfinal_flags))
@@ -654,8 +739,12 @@ class MoonpyLC(object):
 				lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			elif self.telescope.lower() == 'tess':
 				lcfile.write('BTJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			elif self.telescope.lower() == 'user':
+				lcfile.write('BJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
+
+
 
 			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
@@ -692,20 +781,28 @@ class MoonpyLC(object):
 					if type(qerrors_detrend) == list:
 						qerrors_detrend = qerrors_detrend[0]
 
-				try:
-					if qflags.shape == 1:
-						qflags = qflags[0]
-				except:
-					if type(qflags) == list:
-						qflags = qflags[0]
+				if len(qflags) != len(qerrors_detrend):
+					try:
+						if qflags.shape == 1:
+							qflags = qflags[0]
+					except:
+						if type(qflags) == list:
+							qflags = qflags[0]
 
+				#print("qtimes = ", qtimes)
+				#print('qfluxes = ', qfluxes)
+				#print('qerrors = ', qerrors)
+				#print('qfluxes_detrend = ', qfluxes_detrend)
+				#print('qerrors_detrend = ', qerrors_detrend)
+				#print('qflags = ', qflags)
 
 				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
 					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
 
 			lcfile.close()
 
-		self.get_neighbors(save_to_file='y')
+		if self.telescope.lower() != 'user':
+			self.get_neighbors(save_to_file='y')
 
 		### finally, run get_neighbors() so that the neighbors will be appended to the end of the file.
 
@@ -728,10 +825,18 @@ class MoonpyLC(object):
 		self.initialize_priors(modelcode=modelcode)
 		param_uber_dict = self.param_uber_dict
 
-		if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
-			warnings.warn("light curve has not been detrended. It will be performed now.")
-			### alternatively, just detrend!
-			self.detrend()
+		if self.telescope.lower() == 'user':
+			detrend_option = input('WARNING: lc has not been detrended. Perform now? y/n: ')
+			if detrend_option == 'y':
+				self.detrend()
+			else:
+				self.fluxes_detrend = self.fluxes
+				self.errors_detrend = self.errors 
+		else:
+			if (self.fluxes == self.fluxes_detrend) or (self.errors == self.errors_detrend):
+				warnings.warn("light curve has not been detrended. It will be performed now.")
+				### alternatively, just detrend!
+				self.detrend()
 
 
 		if folded == True:
@@ -748,17 +853,20 @@ class MoonpyLC(object):
 
 		if skip_ntqs == 'y':
 			### only feed in the quarters that include a transit!
-			fit_times, fit_fluxes, fit_errors = [], [], []
-			for qidx in np.arange(0,self.times.shape[0],1):
-				qtimes, qfluxes, qerrors = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx]
-				for stau in self.taus:
-					if (stau >= np.nanmin(qtimes)) and (stau <+ np.nanmax(qtimes)):
-						### transit in this quarter:
-						fit_times.append(qtimes)
-						fit_fluxes.append(qfluxes)
-						fit_errors.append(qerrors)
-						break
-			fit_times, fit_fluxes, fit_errors = np.hstack(np.array(fit_times)), np.hstack(np.array(fit_fluxes)), np.hstack(np.array(fit_errors))
+			if len(self.quarters) == 1:
+				fit_times, fit_fluxes, fit_errors = self.times, self.fluxes_detrend, self.errors_detrend
+			else:
+				fit_times, fit_fluxes, fit_errors = [], [], []
+				for qidx in np.arange(0,self.times.shape[0],1):
+					qtimes, qfluxes, qerrors = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx]
+					for stau in self.taus:
+						if (stau >= np.nanmin(qtimes)) and (stau <+ np.nanmax(qtimes)):
+							### transit in this quarter:
+							fit_times.append(qtimes)
+							fit_fluxes.append(qfluxes)
+							fit_errors.append(qerrors)
+							break
+				fit_times, fit_fluxes, fit_errors = np.hstack(np.array(fit_times)), np.hstack(np.array(fit_fluxes)), np.hstack(np.array(fit_errors))
 
 		else:
 			### using all quarters!
@@ -915,12 +1023,37 @@ class MoonpyLC(object):
 	def find_transit_quarters(self, locate_neighbor='n'):
 		self.get_properties(locate_neighbor=locate_neighbor)
 		quarter_transit_dict = {}
-		if len(self.quarters > 1):
+		print('self.quarters = ', self.quarters)
+		if len(self.quarters) > 1:
+			print('option 1.')
 			for qidx,quarter in enumerate(self.quarters):
+				print('quarter = ', quarter)
+				skip_this_quarter = 'n'
 				quarter_times = self.times[qidx]
-				if len(quarter_times) == 0:
-					print('zero-length quarter detected. Skipping.')
+				### it's ok to do np.array(np.array([1])), doesn't nest them.
+				### the code below throws an error when quarter_times is a float, so convert it to an array!
+				desired_type = type(np.array([1]))
+				if (type(quarter_times) == desired_type) == False:
+					skip_this_quarter = 'y'
 					continue
+
+				if skip_this_quarter == 'y':
+					continue
+
+				if len(quarter_times) < 10: ### 5 hours.
+					print('quarter has less than 10 data points.')
+					continue
+
+				#except:
+				#	print('something goofy with this quarter. Skipping.')
+				#	traceback.print_exc()
+				#	skip_this_quarter = 'y'
+
+				#if skip_this_quarter == 'y':
+				#	continue
+
+				quarter_times = np.array(quarter_times)
+
 				quarter_transit = 'n'
 				for tau in self.taus:
 					if (tau >= np.nanmin(quarter_times)) and (tau <= np.nanmax(quarter_times)):
@@ -928,7 +1061,8 @@ class MoonpyLC(object):
 						quarter_transit = 'y'
 						break
 
-		elif len(self.quarters == 1):
+		elif len(self.quarters) == 1:
+			print('option 2.')
 			quarter_times = self.times
 			quarter_transit = 'n'
 			for tau in self.taus:
@@ -937,9 +1071,9 @@ class MoonpyLC(object):
 					break 
 
 			if quarter_transit == 'n':
-				quarter_transit_dict[quarter] = 'n'
+				quarter_transit_dict[0] = 'n'
 			else:
-				quarter_transit_dict[quarter] = 'y'
+				quarter_transit_dict[0] = 'y'
 				
 		self.quarter_transit_dict = quarter_transit_dict 
 
@@ -959,7 +1093,11 @@ class MoonpyLC(object):
 		try:
 			print(self.RA, self.Dec)
 		except:
-			if (self.telescope.lower() == 'kepler'):
+			if (self.telescope.lower() == 'user'):
+				target_name = targetID
+				target_in_simbad = 'n'
+
+			elif (self.telescope.lower() == 'kepler'):
 				if self.target_type == 'koi':
 					target_name = "KOI-"+str(targetID)
 				elif self.target_type == 'planet':
@@ -1130,7 +1268,10 @@ class MoonpyLC(object):
 			if self.telescope.lower() != "kepler":
 				exofop_rowidx = self.exofop_rowidx
 		try:
-			if (self.telescope.lower() == 'kepler'):
+			if self.telescope.lower() == 'user':
+				download_new = 'n'
+
+			elif (self.telescope.lower() == 'kepler'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumkois.txt')
 				filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
 
@@ -1170,8 +1311,18 @@ class MoonpyLC(object):
 			except:
 				print("ATTEMPT TO DOWNLOAD THE LATEST PLANET CATALOGS FAILED (maybe you're not online?).")
 
+		### USER INPUT HANDLING
+		if self.telescope.lower() == 'user':
+			mast_data = ascii.read('cumkois.txt')
+			mast_columns = mast_data.columns
+			exofop_data = pandas.read_csv('cfop_targets.csv', header=18)
+			exofop_columns = exofop_data.columns
+			row_known = 'y'
+			self.mast_rowidx = np.nan 
+			self.exofop_rowidx = np.nan 
+
 		### KEPLER HANDLING 
-		if (self.telescope.lower() == 'kepler'):
+		elif (self.telescope.lower() == 'kepler'):
 			mast_data = ascii.read('cumkois.txt')
 			mast_columns = mast_data.columns
 			try:
@@ -1369,7 +1520,13 @@ class MoonpyLC(object):
 				pass
 
 		#print('rowidx = ', rowidx)
-		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
+		if self.telescope.lower() == 'user':
+			try:
+				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
+			except:
+				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 			
+
+		elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			try:
 				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
 			except:
@@ -1388,7 +1545,17 @@ class MoonpyLC(object):
 
 	def get_properties(self, locate_neighbor='n'):
 		print("calling 'get_properties()...")
-		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
+		if self.telescope.lower() == 'user':
+			target_period, target_period_uperr, target_period_lowerr = self.period, 0, 0
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = self.tau0, 0, 0
+			target_impact, target_impact_uperr, target_impact_lowerr = self.impact, 0, 0
+			target_duration, target_duration_uperr, target_duration_lowerr = self.duration_hours, 0, 0
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = self.rprstar, 0, 0
+			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = self.sma_AU, 0, 0
+			target_insol, target_insol_uperr, target_insol_lowerr = np.nan, 0, 0
+			target_rp, target_rp_uperr, target_rp_lowerr = self.rp_rearth, 0, 0
+
+		elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			if self.newlc == 'y':
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
 			elif self.newlc == 'n':
@@ -1409,7 +1576,6 @@ class MoonpyLC(object):
 			target_rp, target_rp_uperr, target_rp_lowerr = mast_data['koi_prad'][mast_rowidx], mast_data['koi_prad_err1'][mast_rowidx], mast_data['koi_prad_err2'][mast_rowidx]
 			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][mast_rowidx], mast_data['koi_sma_err1'][mast_rowidx], mast_data['koi_sma_err2'][mast_rowidx]
 			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][mast_rowidx], mast_data['koi_insol_err1'][mast_rowidx], mast_data['koi_insol_err2'][mast_rowidx]
-
 
 		elif (self.telescope.lower() == 'k2'):
 			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
@@ -1546,18 +1712,22 @@ class MoonpyLC(object):
 
 
 	def find_taus(self):
-		print("calling 'find_taus()'.")
-		transit_midtimes = [self.tau0]
-		next_transit = transit_midtimes[-1]+self.period
-		nquarters = len(self.quarters)
-		if nquarters != 1:
-			maxtime = np.nanmax(np.concatenate((self.times)))
-		elif nquarters == 1:
-			maxtime = np.nanmax(self.times)
-		while next_transit < maxtime:
-			transit_midtimes.append(next_transit)
+		try:
+			print("calling 'find_taus()'.")
+			transit_midtimes = [self.tau0]
 			next_transit = transit_midtimes[-1]+self.period
-		self.taus = np.array(transit_midtimes)
+			nquarters = len(self.quarters)
+			if nquarters != 1:
+				maxtime = np.nanmax(np.concatenate((self.times)))
+			elif nquarters == 1:
+				maxtime = np.nanmax(self.times)
+			while next_transit < maxtime:
+				transit_midtimes.append(next_transit)
+				next_transit = transit_midtimes[-1]+self.period
+			self.taus = np.array(transit_midtimes)
+		except:
+			traceback.print_exc()
+			raise Exception('an exception was raised while calling find_taus().')
 
 
 	def mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neighbor_period=None, neighbor_duration_hours=None, neighbor_name='None'):
@@ -1594,7 +1764,11 @@ class MoonpyLC(object):
 			row_known = 'n'
 		else:
 			row_known = 'y'
-		if self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
+
+		if self.telescope.lower() == 'user':
+			pass 
+
+		elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
 			#check_mast_rows = np.arange(0,len(mast_data['pl_name']),1)
 			#check_exofop_rows = np.arange(0,len(exofop_data['TOI']),1)
@@ -1624,9 +1798,11 @@ class MoonpyLC(object):
 		neighbor_rows = []
 		neighbor_targets = []
 
-		if self.target.lower().startswith('koi'):
-			print("looking for neighbors in MAST for this KOI.")
+		if self.target.lower().startswith('usr'):
+			pass
 
+		elif self.target.lower().startswith('koi'):
+			print("looking for neighbors in MAST for this KOI.")
 
 			for cr in check_mast_rows:
 				if cr <= len(mast_data['kepoi_name']) - 1:
@@ -1711,6 +1887,9 @@ class MoonpyLC(object):
 
 	def get_neighbors(self, clobber_lc='y', save_to_file='y'):
 		### this function will download grab all the information about your target's neighbors.
+		if self.telescope.lower() == 'user':
+			neighbor_dict = {}
+
 		try:
 			print(self.neighbor_dict.keys())
 			neighbor_dict = self.neighbor_dict
