@@ -203,13 +203,22 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 	for pidx, parlab in enumerate(mc_param_labels):
 		emcee_param_dict[parlab] = params[pidx]
 	"""
-	for pidx, parlab in enumerate(mc_variable_labels):
-		emcee_var_param_dict[parlab] = params[pidx]
+	try:
+		for pidx, parlab in enumerate(mc_variable_labels):
+			emcee_var_param_dict[parlab] = params[pidx]
 
-	for pidx, parlab in enumerate(mc_fixed_labels):
-		emcee_fixed_param_dict[parlab] = mc_param_dict[parlab][1] ### fixed value!
+		for pidx, parlab in enumerate(mc_fixed_labels):
+			emcee_fixed_param_dict[parlab] = mc_param_dict[parlab][1] ### fixed value!
 
-	LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, model=mc_model, add_noise='n', show_plots='n')
+		LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, model=mc_model, add_noise='n', show_plots='n')
+	except:
+		print('params = ', params)
+		print(' ')
+		print("emcee_var_param_dict: ", emcee_var_param_dict)
+		print(' ')
+		print('emcee_fixed_param_dict: ', emcee_fixed_param_dict)
+		raise Exception('there was a critical failure of some kind.')
+
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
@@ -316,7 +325,7 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 		data_errors.append(e)
 
 
-	outputdir = 'MultiNest_fits'
+	outputdir = 'emcee_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
 	outputdir = outputdir+'/'+str(modelcode)
@@ -397,9 +406,13 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 	#	raise Exception('you opted not to continue.')
 
 	if modelcode == 'LUNA':
+		print('running the sampler with LUNA.')
+		print('nwalkers = ', nwalkers)
+		print("ndim = ", ndim)
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_LUNA, args=(data_times, data_fluxes, data_errors))
 
 	elif modelcode == "batman":
+		print('running the sampler with batman.')
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_batman, args=(data_times, data_fluxes, data_errors))
 
 	### run the sampler 
