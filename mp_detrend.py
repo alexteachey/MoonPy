@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 
 
+
 def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
 	if type(mask_idxs) != type(None):
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
@@ -94,8 +95,26 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 
 def george_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 	import george
+	from george.kernels import ExpSquaredKernel
 
-	print('Nothing happening right now.')
+	unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+
+	kernel = ExpSquaredKernel(1.0)
+	gp = george.GP(kernel)
+	gp.compute(unmasked_times, unmasked_errors) ### pre-compute the factorization of the matrix
+
+	### compute the log likelihood
+	print(gp.lnlikelihood(unmasked_fluxes))
+
+	### now interpolate
+	gp_mu, gp_cov = gp.predict(fluxes, times)
+	gp_std = np.sqrt(np.diag(gp_cov))
+	flux_detrend = fluxes / gp_mu 
+	errors_detrend = errors / fluxes 
+
+	return flux_detrend, errors_detrend
+
+
 
 def medfilt_detrend(times, fluxes, errors, size, telescope=None, mask_idxs=None):
 	if size == None:
