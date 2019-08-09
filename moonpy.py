@@ -76,6 +76,7 @@ class MoonpyLC(object):
 			self.quarters = lc_quarters 
 			targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
 			telescope='USER'
+			self.telescope = telescope
 			RA, Dec = 0.0, 0.0
 			is_neighbor='y'
 
@@ -96,6 +97,26 @@ class MoonpyLC(object):
 				self.rprstar = float(input('Enter the Rp/Rstar: '))
 				self.sma_AU = float(input('Enter the planet sma in AU: '))
 				self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+
+		if type(targetID) != type(None):
+			if targetID.lower().startswith('usr'):
+				try:
+					self.period = usr_dict['period']
+					self.tau0 = usr_dict['tau0']
+					self.impact = usr_dict['impact']
+					self.duration_hours = usr_dict['duration_hours']
+					self.rprstar = usr_dict['rprstar']
+					self.sma_AU = usr_dict['sma_AU']
+					self.rp_rearth = usr_dict['rp_rearth']
+				except:
+					print(usr_dict)
+					self.period = float(input('Enter the period: '))
+					self.tau0 = float(input('Enter the tau0: '))
+					self.impact = float(input('Enter the impact parameter: '))
+					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.sma_AU = float(input('Enter the planet sma in AU: '))
+					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))			
 
 
 		if target_type != None:
@@ -194,7 +215,9 @@ class MoonpyLC(object):
 
 		#### LOADING A LIGHT CURVE THAT'S ALREADY BEEN DOWNLOADED.
 		if load_lc == 'y':
-			if self.target.lower().startswith('k2') or (self.target.lower().startswith('epic')):
+			if self.target.lower().startswith('usr'):
+				self.telescope='user'
+			elif self.target.lower().startswith('k2') or (self.target.lower().startswith('epic')):
 				self.telescope = "k2"
 			elif self.target.lower().startswith('kepler') or self.target.lower().startswith('kic') or self.target.lower().startswith('koi'):
 				self.telescope = "kepler"
@@ -217,7 +240,9 @@ class MoonpyLC(object):
 						print("could not load the light curve from file. Will download.")
 						load_lc = 'n'
 				try:
-					if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+					if self.telescope.lower() == 'user':
+						ptimes = np.array(pandafile['BJD'])
+					elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 						ptimes = np.array(pandafile['BKJD'])
 					elif self.telescope.lower() == 'tess':
 						try:
@@ -572,14 +597,14 @@ class MoonpyLC(object):
 			skip_quarter = 'n'
 			print('quarter = ', self.quarters[qidx])
 			if nquarters != 1:
-				dtimes, dfluxes, derrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+				dtimes, dfluxes, derrors, dflags = self.times[qidx], self.fluxes[qidx], self.errors[qidx], self.flags[qidx]
 			elif nquarters == 1:
-				dtimes, dfluxes, derrors = self.times, self.fluxes, self.errors
+				dtimes, dfluxes, derrors, dflags = self.times, self.fluxes, self.errors, self.flags
 			print('dtimes.shape = ', dtimes.shape)
 			print('dtimes.shape[0] = ', dtimes.shape[0])
 			if dtimes.shape[0] == 0:
 				exceptions_raised = 'y'
-				fluxes_detrend, errors_detrend = dfluxes, derrors 
+				fluxes_detrend, errors_detrend = dfluxes, derrors
 				flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
 				master_detrend.append(np.array(fluxes_detrend))
 				master_error_detrend.append(np.array(errors_detrend))
@@ -592,8 +617,7 @@ class MoonpyLC(object):
 
 
 			dtimesort = np.argsort(dtimes)
-			dtimes, dfluxes, derrors = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort]
-
+			dtimes, dfluxes, derrors, dflags = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort], dflags[dtimesort]
 
 			for ndt,dt in enumerate(dtimes):
 				try:
@@ -640,13 +664,14 @@ class MoonpyLC(object):
 					print("transit midtimes this quarter: ", quarter_transit_taus)
 					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
 					mask_transit_idxs = np.concatenate((mask_transit_idxs))
-					print("transit in this quarter.")
+					if len(quarter_transit_taus) > 0:
+						print("transit in this quarter.")
 				except:
 					mask_transit_idxs = np.array([])
 					print('no transits in this quarter.')
 					if skip_ntqs == 'y':
 						### skip this quarter! there are no transits present.
-						fluxes_detrend, errors_detrend = dfluxes, derrors
+						fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
 						skip_quarter = 'y'
 
 
@@ -667,22 +692,25 @@ class MoonpyLC(object):
 						within cofiam.py.
 						"""
 						fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
-						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
 					elif dmeth == 'untrendy':
 						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
 						fluxes_detrend, errors_detrend = untrendy_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
-						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
 					elif dmeth == 'george':
-						print("GEORGE ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
 						fluxes_detrend, errors_detrend = george_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
-						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
 					elif dmeth == 'medfilt':
 						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
 						fluxes_detrend, errors_detrend = medfilt_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, size=kernel, mask_idxs=mask_transit_idxs)
-						flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
 				except:
 					traceback.print_exc()
@@ -711,27 +739,21 @@ class MoonpyLC(object):
 		### before you overwrite the flags, compare them.
 
 		if len(self.quarters) == 1:
-			final_flags = []
-			if type(self.flags_detrend) == list:
-				self.flags_detrend = self.flags_detrend[0]
-			for sf, sfd in zip(self.flags, self.flags_detrend):
-				final_flags.append(int(np.nanmax((sf,sfd))))
+			#final_flags = []
+			#if type(self.flags_detrend) == list:
+			#	self.flags_detrend = self.flags_detrend[0]
+			#for sf, sfd in zip(self.flags, self.flags_detrend):
+			#	final_flags.append(int(np.nanmax((sf,sfd))))
+			final_flags = np.nanmax((self.flags, self.flags_detrend), axis=0)
 
 		else:
 			final_flags = []
 			for qidx in np.arange(0,len(self.quarters),1):
-				qfinal_flags = []
-
-				if type(self.flags[0]) == np.int32:
-					self.flags = [self.flags]
-				if type(self.flags_detrend) == list:
-					self.flags_detrend = self.flags_detrend[0]
-				for sf,sfd in zip(self.flags[qidx], self.flags_detrend[qidx]):
-					qfinal_flags.append(int(np.nanmax((sf,sfd))))
-
-
-			final_flags.append(np.array(qfinal_flags))
-		self.flags_detrend = final_flags
+				print('qidx = ', qidx)
+				qfinal_flags = np.nanmax((self.flags[qidx], self.flags_detrend[qidx]), axis=0)
+				print("qfinal_flags.shape = ", qfinal_flags.shape)
+				final_flags.append(np.array(qfinal_flags))
+			self.flags_detrend = final_flags
 
 		if save_lc == 'y':
 			lcfile = open(savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
@@ -742,9 +764,10 @@ class MoonpyLC(object):
 			elif self.telescope.lower() == 'user':
 				lcfile.write('BJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
+			self.fluxes_detrend = np.array(self.fluxes_detrend)
+			self.errors_detrend = np.array(self.errors_detrend)
+			self.flags_detrend = np.array(self.flags_detrend)
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
-
-
 
 			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
@@ -821,7 +844,8 @@ class MoonpyLC(object):
 		if modelcode == "LUNA":
 			folded = False ### you should not be fitting a moon model to a folded light curve!
 
-		self.get_properties(locate_neighbor='n')
+		if self.telescope.lower() != 'user':
+			self.get_properties(locate_neighbor='n')
 		self.initialize_priors(modelcode=modelcode)
 		param_uber_dict = self.param_uber_dict
 
