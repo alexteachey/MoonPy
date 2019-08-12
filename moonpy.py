@@ -653,20 +653,28 @@ class MoonpyLC(object):
 						pass
 
 				if mask_neighbors == 'y':
-					neighbor_transit_idxs = []
-					for ntt in self.all_transit_times:
-						if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
-							neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
-					mask_transit_idxs.append(neighbor_transit_idxs)
-
+					if len(self.neighbors) > 0:
+						neighbor_transit_idxs = []
+						for ntt in self.all_transit_times:
+							if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
+								neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
+						mask_transit_idxs.append(neighbor_transit_idxs)
 
 				try:
 					print("transit midtimes this quarter: ", quarter_transit_taus)
 					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
-					mask_transit_idxs = np.concatenate((mask_transit_idxs))
+					if len(quarter_transit_taus) > 1:
+						mask_transit_idxs = np.concatenate((mask_transit_idxs))
+					else:
+						mask_transit_idxs = np.array(mask_transit_idxs)
+
+					mask_transit_idxs = np.unique(mask_transit_idxs)
+
+					print('mask_transit_idxs = ', mask_transit_idxs)	
 					if len(quarter_transit_taus) > 0:
 						print("transit in this quarter.")
 				except:
+					traceback.print_exc()
 					mask_transit_idxs = np.array([])
 					print('no transits in this quarter.')
 					if skip_ntqs == 'y':
@@ -726,9 +734,14 @@ class MoonpyLC(object):
 				assert np.all(derrors != errors_detrend)
 
 
-			master_detrend.append(np.array(fluxes_detrend))
-			master_error_detrend.append(np.array(errors_detrend))
-			master_flags_detrend.append(np.array(flags_detrend))
+			if len(self.quarters) > 1:
+				master_detrend.append(np.array(fluxes_detrend))
+				master_error_detrend.append(np.array(errors_detrend))
+				master_flags_detrend.append(np.array(flags_detrend))
+			elif len(self.quarters) == 1:
+				master_detrend = np.array(fluxes_detrend)
+				master_error_detrend = np.array(errors_detrend)
+				master_flags_detrend = np.array(flags_detrend)
 
 
 		### this is the first initialization of the detrended fluxes.
