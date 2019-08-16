@@ -324,6 +324,8 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 
 		sector_prefixes, sector_suffixes = {}, {}
 
+		### these can be found at archive.stsci.edu/tess/bulk_downloads/bulk_downloads_ffi-tp-lc-dv.html,
+		### in the tesscurl_sector_NN_lc.sh files.
 		sector_prefixes[1], sector_suffixes[1] = 'tess2018206045859-s0001-', '-0120-s_lc.fits'
 		sector_prefixes[2], sector_suffixes[2] = 'tess2018234235059-s002-', '-0121-s_lc.fits'
 		sector_prefixes[3], sector_suffixes[3] = 'tess2018263035959-s0003-', '-0123-s_lc.fits'
@@ -335,8 +337,11 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		sector_prefixes[9], sector_suffixes[9] = 'tess2019058134432-s0009-', '-0139-s_lc.fits'
 		sector_prefixes[10], sector_suffixes[10] = 'tess2019085135100-s0010-', '-0140-s_lc.fits'
 		sector_prefixes[11], sector_suffixes[11] = 'tess2019112060037-s0011-', '-0143-s_lc.fits'
+		sector_prefixes[12], sector_suffixes[12] = 'tess2019140104343-s0012-', '-0144-s_lc.fits'
+		sector_prefixes[13], sector_suffixes[13] = 'tess2019169103026-s0013-', '-0146-s_lc.fits'
+		nsectors = 13
 
-		for sector in np.arange(1,12,1):
+		for sector in np.arange(1,nsectors+1,1):
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			os.system('curl -C - -L -o '+moonpydir+'/TESS_lcs/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 			print('downloading the light curve for '+str(targID)+' in sector ', sector)
