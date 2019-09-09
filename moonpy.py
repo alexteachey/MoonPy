@@ -1228,7 +1228,7 @@ class MoonpyLC(object):
 			first_tau = self.taus[ftidx]
 
 		fold_times = ((((np.hstack(self.times) - first_tau - 0.5*self.period) % self.period) / self.period)) ### yields the remainder!
-
+		fold_times = fold_times - 0.5
 
 		if detrended == 'y':
 			fold_fluxes = np.hstack(self.fluxes_detrend)
@@ -2277,9 +2277,15 @@ class MoonpyLC(object):
 				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 		#plt.xlabel('BKJD')
 		if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
-			plt.xlabel('BKJD')
+			if folded=='y':
+				plt.xlabel('Phase')
+			else:
+				plt.xlabel('BKJD')
 		elif (self.telescope.lower() == 'tess'):
-			plt.xlabel('BTJD')
+			if folded=='y':
+				plt.xlabel('Phase')
+			else:
+				plt.xlabel('BTJD')
 		plt.ylabel('Flux')
 		try:
 			plt.title(str(self.target))
