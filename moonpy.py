@@ -1313,18 +1313,19 @@ class MoonpyLC(object):
 				download_new = 'n'
 
 			elif (self.telescope.lower() == 'kepler'):
-				filecreated_time1 = os.path.getctime(moonpydir+'/cumkois.txt')
-				filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
+				filecreated_time = os.path.getctime(moonpydir+'/cumkois.txt')
+				#filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
 
 			elif (self.telescope.lower() == 'k2'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumk2ois.txt')
 				filecreated_time2 = os.path.getctime(moonpydir+'/exofop_targets.csv')
+				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
 
 			elif (self.telescope.lower() == 'tess'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/exofop_toilists.pipe')
 				filecreated_time2 = os.path.getctime(moonpydir+'/confirmed_planets.txt')
+				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
 
-			filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
 			current_time = time.time()
 			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
 				download_new = 'y'
