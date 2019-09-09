@@ -1216,23 +1216,19 @@ class MoonpyLC(object):
 		### this method will phase fold your light curve. 
 		### first tau in the time series:
 		try:
-			first_tau = self.tau0
+			#first_tau = self.tau0
+			first_tau = self.taus[0]
 		except:
 			self.get_properties()
-			first_tau = self.tau0
+			first_tau = self.taus[0]
 
 		ftidx = 0
 		while first_tau < np.nanmin(np.hstack(self.times)):
 			ftidx += 1
 			first_tau = self.taus[ftidx]
 
+		fold_times = ((((np.hstack(self.times) - first_tau - 0.5*self.period) % self.period) / self.period)) ### yields the remainder!
 
-		fold_times = np.hstack(self.times) - np.nanmin(np.hstack(self.times)) - (0.5*self.period)
-		#fold_times = np.hstack(self.times) - first_tau - (0.5*self.period)
-		fold_times = fold_times % self.period
-		fold_first_tau = (first_tau - np.nanmin(np.hstack(self.times)) - (0.5*self.period)) % self.period
-		print ('fold_first_tau = ', fold_first_tau)
-		
 
 		if detrended == 'y':
 			fold_fluxes = np.hstack(self.fluxes_detrend)
@@ -1241,15 +1237,10 @@ class MoonpyLC(object):
 			fold_fluxes = np.hstack(self.fluxes)
 			fold_errors = np.hstack(self.errors)
 
-		#fold_sort = np.argsort(fold_times)
-		#fold_fluxes = np.hstack(self.fluxes_detrend)[fold_sort]
-		#fold_errors = np.hstack(self.errors_detrend)[fold_sort]
-		#fold_times = fold_times[fold_sort]
-
 		self.fold_times = fold_times
 		self.fold_fluxes = fold_fluxes
 		self.fold_errors = fold_errors
-		self.fold_tau = fold_first_tau
+		#self.fold_tau = fold_first_tau
 
 
 
@@ -1768,6 +1759,11 @@ class MoonpyLC(object):
 		try:
 			print("calling 'find_taus()'.")
 			transit_midtimes = [self.tau0]
+			while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
+				### the transit_midtime you just added isn't the first transit!
+				transit_midtimes.append(transit_midtimes[-1] - self.period)
+			transit_midtimes = np.sort(transit_midtimes).tolist()
+
 			next_transit = transit_midtimes[-1]+self.period
 			nquarters = len(self.quarters)
 			if nquarters != 1:
