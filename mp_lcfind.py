@@ -339,7 +339,9 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		sector_prefixes[11], sector_suffixes[11] = 'tess2019112060037-s0011-', '-0143-s_lc.fits'
 		sector_prefixes[12], sector_suffixes[12] = 'tess2019140104343-s0012-', '-0144-s_lc.fits'
 		sector_prefixes[13], sector_suffixes[13] = 'tess2019169103026-s0013-', '-0146-s_lc.fits'
-		nsectors = 13
+		sector_prefixes[14], sector_suffixes[14] = 'tess2019198215352-s0014-', '-0150-s_lc.fits'
+		sector_prefixes[15], sector_suffixes[15] = 'tess2019226182529-s0015-', -'0151-s_lc.fits'
+		nsectors = 15
 
 		for sector in np.arange(1,nsectors+1,1):
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
