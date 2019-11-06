@@ -65,18 +65,26 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
 		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
+			print('using USER-SUPPLIED VALUES.')
+			### if you've supplied times, fluxes, and errors 
 			self.times, self.fluxes, self.errors = lc_times, lc_fluxes, lc_errors
-			lc_flags = np.linspace(0,0,len(self.times))
-			lc_quarters = np.array([1])
+			
+			if type(lc_flags) == None:
+				lc_flags = np.linspace(0,0,len(self.times))
+			if type(lc_quarters) == None:
+				lc_quarters = np.array([1])
+
 			self.flags = lc_flags
 			self.quarters = lc_quarters 
+
 			targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
 			telescope='USER'
 			self.telescope = telescope
+
 			RA, Dec = 0.0, 0.0
 			is_neighbor='y'
 
@@ -98,7 +106,10 @@ class MoonpyLC(object):
 				self.sma_AU = float(input('Enter the planet sma in AU: '))
 				self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
 
+
+		
 		if type(targetID) != type(None):
+			### targetID has been supplied
 			if targetID.lower().startswith('usr'):
 				try:
 					self.period = usr_dict['period']
@@ -118,8 +129,7 @@ class MoonpyLC(object):
 					self.sma_AU = float(input('Enter the planet sma in AU: '))
 					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))			
 
-
-		if target_type != None:
+		if type(target_type) != type(None):
 			self.target_type = target_type 
 
 		if telescope == None: # if user hasn't specified, figure it out!
@@ -143,6 +153,7 @@ class MoonpyLC(object):
 				clobber = input('light curve already exists. Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
+
 		elif (load_lc == 'n') and (clobber == 'n'):
 			load_lc = 'y'
 		elif (load_lc == 'n') and (clobber == 'y'):
@@ -297,9 +308,8 @@ class MoonpyLC(object):
 
 
 		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
-		if (load_lc=='n') and (targetID != None) and (telescope != None):
+		if (load_lc=='n') and (type(targetID) != type(None)) and (type(telescope) != type(None)):
 			### implies you've selected a target you want to download.
-
 
 			### USER-INPUT HANDLING
 			if telescope.lower() == 'user':
@@ -312,16 +322,20 @@ class MoonpyLC(object):
 
 			### KEPLER HANDLING
 			elif telescope.lower() == 'kepler':
+				print('downloading via kplr...')
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try:
 						### maybe it needs the full name!
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
+						if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
 					except:
 						traceback.print_exc()
+				print('downloaded.')
 
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
@@ -331,10 +345,12 @@ class MoonpyLC(object):
 				#except:
 				#traceback.print_exc()
 				try:
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try: ### maybe it just wants the number.
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+						if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 					except:
 						traceback.print_exc()
 
@@ -399,10 +415,11 @@ class MoonpyLC(object):
 
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
-		elif (load_lc == 'n') and (RA != None) and (Dec != None): 
+		elif (load_lc == 'n') and (type(RA) != type(None)) and (type(Dec) != type(None)): 
 			try:	
 				if (telescope.lower() == 'kepler') or (telescope.lower() =='k2'):
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
+					if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				
 				elif telescope == 'tess':
 					print('calling tess_coord_download().')
@@ -416,7 +433,8 @@ class MoonpyLC(object):
 				telescope = input('Specify the telescope: ')
 				self.telescope = telescope 
 				if (telescope.lower() == 'kepler') or (telescope.lower() =='k2'):
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
+					if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, target_name = kplr_coord_download(RA, Dec, coord_format=coord_format, quarters=quarters, search_radius=search_radius, lc_format=lc_format, sc=sc)
 				elif telescope == 'tess':
 					try:
 						print('calling tess_coord_download().')
@@ -439,7 +457,7 @@ class MoonpyLC(object):
 				lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
 
 
-
+		print ('load_lc = ', load_lc)
 
 		### BELOW THIS LINE IS HANDLING FOR EVERY DIFFERENT WAY YOU MIGHT HAVE LOADED THE LIGHT CURVE ABOVE.
 		if load_lc == 'y':
@@ -1328,7 +1346,7 @@ class MoonpyLC(object):
 			### download a new version!
 			try:
 				if (self.telescope.lower() == 'kepler'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
+					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,ra,dec&order=kepoi_name&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
 					os.system('wget --tries=1 '+moonpydir+'/cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
 
 					### TRY THIS IN THE COMMAND LINE.
