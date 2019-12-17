@@ -22,6 +22,7 @@ from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
 #from pyluna import run_LUNA, prepare_files
 from pyluna import prepare_files
+from mp_tpf_examiner import *
 
 
 #from matplotlib import rc
@@ -507,6 +508,19 @@ class MoonpyLC(object):
 
 
 			### sort the times here!
+			"""
+			print('len(lc_quarters) = ', len(lc_quarters))
+			print('lc_times = ', lc_times)
+			print ('lc_times.shape = ', lc_times.shape)
+			print('lc_fluxes.shape = ', lc_fluxes.shape)
+			print('lc_errors.shape = ', lc_errors.shape)
+			print('lc_fluxes_detrend.shape = ', lc_fluxes_detrend.shape)
+			print('lc_errors_detrend.shape = ', lc_errors_detrend.shape)
+			print('lc_flags.shape = ', lc_flags.shape)
+			print(" ")
+			print(" ")
+			"""
+
 			if len(lc_quarters) > 1:
 				timesort = np.argsort(lc_times[qidx])
 
@@ -515,11 +529,11 @@ class MoonpyLC(object):
 				if lc_errors_detrend.shape == 0:
 					lc_errors_detrend = lc_errors 
 				lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = lc_times[qidx][timesort], lc_fluxes[qidx][timesort], lc_errors[qidx][timesort], lc_fluxes_detrend[qidx][timesort], lc_errors_detrend[qidx][timesort], lc_flags[qidx][timesort]
-			
+
 			elif len(lc_quarters) == 1:
 				try:
-					timesort = np.argsort(lc_times)
-					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = lc_times[timesort], lc_fluxes[timesort], lc_errors[timesort], lc_fluxes_detrend[timesort], lc_errors_detrend[timesort], lc_flags[timesort]
+					timesort = np.argsort(np.array(lc_times))
+					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times)[timesort], np.array(lc_fluxes)[timesort], np.array(lc_errors)[timesort], np.array(lc_fluxes_detrend)[timesort], np.array(lc_errors_detrend)[timesort], np.array(lc_flags)[timesort]
 				except:
 					try: ### in some cases the data is loaded as nested lists.
 						timesort = timesort[0]
@@ -539,9 +553,9 @@ class MoonpyLC(object):
 
 		### calculate which quarters have transits!
 		try:
-			#self.find_transit_quarters()
+			self.find_transit_quarters()
 			if is_neighbor == 'y':
-				#self.get_properties(locate_neighbor='n')
+				self.get_properties(locate_neighbor='n')
 				self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
 				traceback.print_exc()
 			elif is_neighbor == 'n':
@@ -588,9 +602,15 @@ class MoonpyLC(object):
 			raise Exception('an exception was raised while trying to save the light curve.')
 
 
-
-
-
+	### try this at the end
+	try:
+		self.get_properties()
+	except:
+		print('could not get_properties().')
+	try:
+		self.find_transit_quarters()
+	except:
+		print('could not find_transit_quarters().')
 
 
 	### DETRENDING!
@@ -603,10 +623,10 @@ class MoonpyLC(object):
 		### optional values for method are "cofiam", "untrendy", "medfilt"
 		### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
 
-		try:
-			self.duration_hours ### tests whether you've called get_properties yet.
-		except:
-			self.get_properties(locate_neighbor='n')
+		#try:
+		#	self.duration_hours ### tests whether you've called get_properties yet.
+		#except:
+		#	self.get_properties(locate_neighbor='n')
 
 		master_detrend, master_error_detrend, master_flags_detrend = [], [], []
 
@@ -1033,14 +1053,23 @@ class MoonpyLC(object):
 
 
 
-	def genLS(self, show_plot = 'y'):
+	def genLS(self, show_plot = 'y', LSquarters=None):
 		### this function generates a Lomb-Scargle Periodogram!
 		LSperiods = []
 		LSpowers = []
 		LSfaps = []
 		nquarters = len(self.quarters)
 
+		if type(LSquarters) == type(None):
+			LSquarters = self.quarters
+
+		#for qidx in np.arange(0,nquarters,1):
 		for qidx in np.arange(0,nquarters,1):
+			this_quarter = self.quarters[qidx]
+			if this_quarter not in LSquarters: ### use this in case you've only specified select quarters.
+				continue
+
+			print("processing LS for ", this_quarter)
 			if nquarters != 1:
 				qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
 			else:
@@ -1051,10 +1080,13 @@ class MoonpyLC(object):
 			qls = LombScargle(qtimes, qfluxes, qerrors)
 			qfreq, qpower = qls.autopower(minimum_frequency=minfreq, maximum_frequency=maxfreq)
 			qperiods = 1/qfreq
-			qfap = qls.false_alarm_probability(qpower.max())
+			qfap = qls.false_alarm_probability(qpower.max(), method='bootstrap')
+			probabilities = [0.1, 0.05, 0.01]
+			quarter_FALs = qls.false_alarm_level(probabilities)
 
 			if show_plot == 'y':
-				plt.plot(qperiods[::-1], qpower[::-1])
+				plt.plot(qperiods[::-1], qpower[::-1], c='C'+str(qidx))
+				plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])), c='C'+str(qidx))
 
 			LSperiods.append(qperiods)
 			LSpowers.append(qpower)
@@ -1140,6 +1172,14 @@ class MoonpyLC(object):
 			target_alias = alias_search_results[alidx][0]
 			target_aliases.append(target_alias)
 		self.aliases = np.array(target_aliases)
+
+
+
+
+	def examine_TPF(self):
+		tpf_examiner(self.target, self.quarters, find_alias='y')
+
+
 
 
 
@@ -1353,7 +1393,7 @@ class MoonpyLC(object):
 					#wget --tries=5 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"
 
 				elif (self.telescope.lower() == 'k2'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
+					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
 					os.system('wget --tries=1 '+moonpydir+'/exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
 
 					### TRY THIS IN THE COMMAND LINE:
@@ -1362,7 +1402,7 @@ class MoonpyLC(object):
 					#wget --tries=5 exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"
 
 				elif (self.telescope.lower() == 'tess'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
+					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
 					os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
 			
 					### TRY THIS ON THE COMMAND LINE:
@@ -1622,11 +1662,15 @@ class MoonpyLC(object):
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
 			elif self.newlc == 'n':
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n')
+
+			print('mast_rowidx = ', mast_rowidx)
+			print('exofop_rowidx = ', exofop_rowidx)
 		else:
 			if self.newlc == 'y':
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
 			elif self.newlc == 'n': 
-				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n')				
+				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n')	
+			print('mast_rowidx = ', mast_rowidx)
 
 		### now with the rowidx we can access the other properties we want!
 		if (self.telescope.lower() == 'kepler'):
@@ -1676,7 +1720,11 @@ class MoonpyLC(object):
 				pass
 
 		### update properties!
-		self.period = float(target_period)
+		try:
+			self.period = float(target_period)
+		except:
+			print('target_period = ', target_period)
+			raise Exception('a problem was encountered converting target_period to a float.')
 		try:
 			self.period_err = (float(target_period_lowerr), float(target_period_uperr))
 		except:
@@ -2078,7 +2126,7 @@ class MoonpyLC(object):
 
 
 
-	def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', cnnlc_path=moonpydir+'/cnn_lcs'):
+	def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', extra_path_info=None, cnnlc_path=moonpydir+'/cnn_lcs'):
 		### this function will produce an arrayy that's ready to be fed to a CNN for moon finding. 
 		if os.path.exists(cnnlc_path) == False:
 			os.system('mkdir '+cnnlc_path)
@@ -2136,7 +2184,10 @@ class MoonpyLC(object):
 			else:
 				cnn_stack = np.vstack((cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend))
 
-			localpath = cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy'
+			if type(extra_path_info) == type(None):
+				localpath = cnnlc_path+'/'+self.target+"_transit"+str(taunum)+'_cnnstack.npy'
+			elif type(extra_path_info) != type(None):
+				localpath = cnnlc_path+'/'+self.target+'_transit'+str(taunum)+'_'+extra_path_info+'_cnnstack.npy'
 			localpath_list.append(localpath)
 
 			np.save(localpath, cnn_stack)

@@ -16,6 +16,10 @@ destination_dir = '/Users/hal9000/Documents/Software/MoonPy/TPFs'
 
 def find_kic(targetname):
 	target_aliases = []
+	if targetname.startswith('Kepler') and (targetname[-1] in ['a','b','c','d','e','f','g','h','i','j']):
+		targetname = targetname[:-1]
+	elif targetname.startswith('KOI') and targetname[-3] == '.':
+		targetname = targetname[:-3]
 	alias_search_results = Simbad.query_objectids(targetname)
 	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
 		target_alias = alias_search_results[alidx][0]
@@ -61,8 +65,11 @@ def lookup_epochs(quarter, cadence):
 
 
 
-def tpf_downloader(kic, quarters, cadence='long', clobber='n'): 
-
+def tpf_downloader(target, quarters, cadence='long', clobber='n'): 
+	if target.startswith('KIC') == False:
+		kic = find_kic(target)
+	else:
+		kic = target 
 
 	### quarters can be a single quarter or a list.
 
@@ -71,7 +78,7 @@ def tpf_downloader(kic, quarters, cadence='long', clobber='n'):
 	if (type(quarters) == str) or (type(quarters) == float):
 		quarters = [str(quarters)]
 	else:
-		pass
+		pass 
 
 	for quarterval in quarters:
 		quarter = str(quarterval)
@@ -136,7 +143,7 @@ def tpf_downloader(kic, quarters, cadence='long', clobber='n'):
 			if len(quarter_codes) == 1:
 				file_dict[quarter] = fits_file_path 
 			else:
-				file_dict[quarter+'_'+nquarter_code] = fits_file_path 
+				file_dict[quarter+'_'+str(nquarter_code)] = fits_file_path 
 
 	return file_dict 
 
@@ -145,12 +152,13 @@ def tpf_downloader(kic, quarters, cadence='long', clobber='n'):
 
 
 
-def tpf_examiner(kic, quarters, find_alias='n', time_lims=None, cadence='long', clobber='n', detrend='y', mask_times=None, mask_idxs=None):
-	if find_alias == 'y':
-		try:
-			kic = find_kic(kic)
-		except:
-			print('could not identify a KIC alias.')
+def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long', clobber='n', detrend='y', mask_times=None, mask_idxs=None):
+	
+	if target.startswith('KIC') == False:
+		kic = find_kic(target)
+		print ('found a KIC number: ', kic)
+	else:
+		kic = target 
 
 	#### kic is flexible... can be with or without 'KIC'
 	### quarters may be a single value or a list.
@@ -165,7 +173,11 @@ def tpf_examiner(kic, quarters, find_alias='n', time_lims=None, cadence='long', 
 
 		tpf_path = tpf_file_dict[tpf_file_key]
 
-		tpf = pyfits.open(tpf_path)
+		try:
+			tpf = pyfits.open(tpf_path)
+		except:
+			traceback.print_exc()
+			continue
 
 		times = tpf[1].data['TIME']
 		qflags = tpf[1].data['QUALITY']
@@ -242,8 +254,11 @@ def tpf_examiner(kic, quarters, find_alias='n', time_lims=None, cadence='long', 
 		plt.show()
 		"""
 
-
-
+		try:
+			del aperture_flux_stack
+			del aperture_error_stack
+		except:
+			pass 
 
 		for nwtidx, wtidx in enumerate(window_time_idxs):
 			#print ('wtidx = ', wtidx)
@@ -291,12 +306,14 @@ def tpf_examiner(kic, quarters, find_alias='n', time_lims=None, cadence='long', 
 				aperture_flux_ycentroids.append(aperture_flux_centy)
 
 				### make the aperture flux stack
-				if nwtidx == 0:
-					aperture_flux_stack = aperture_fluxes
-					aperture_error_stack = aperture_flux_errs
-				else:
+				try:
 					aperture_flux_stack = np.vstack((aperture_flux_stack, aperture_fluxes))
 					aperture_error_stack = np.vstack((aperture_error_stack, aperture_flux_errs))
+
+				except:
+					aperture_flux_stack = aperture_fluxes
+					aperture_error_stack = aperture_flux_errs
+
 
 
 				### 1-D arrays
