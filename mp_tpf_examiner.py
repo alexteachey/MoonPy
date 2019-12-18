@@ -355,7 +355,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 			random_color = 'C'+str(i)
 
 
-
 			### for testing purposes, through a median filter on there!
 			if type(Tdur) != type(None):
 				### use the transit duration to calculate the size of the kernel... let it be three times the duration!
@@ -368,7 +367,7 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 			
 			#### need to do better than the median filter! but let's move on for now.
 			pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_medfilt)
-			pixel_lc_snrs = pixel_lc_residuals / pixel_errors  ### this is a light curve basically!
+			pixel_lc_snrs = np.abs(pixel_lc_residuals / pixel_errors)  ### this is a light curve basically!
 
 			try:
 				aperture_residual_stack = np.vstack((aperture_residual_stack, pixel_lc_residuals))
@@ -395,13 +394,53 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		plt.show()
 
 		### NEEDS MODIFICATION
-		"""
-		aperture_snr_centx = np.nansum(aperture_pixel_idxs[0]*pixel_lc_snrs) / np.nansum(pixel_lc_snrs)
-		aperture_snr_centy = np.nansum(aperture_pixel_idxs[1]*pixel_lc_snrs) / np.nansum(pixel_lc_snrs)
+		### aperture_snr_stack will be a stack of with #rows = #aperture pixels and #cols = #of observations
+		aperture_snr_xcentroids = []
+		aperture_snr_ycentroids = []
 
-		aperture_flux_xcentroids.append(aperture_flux_centx)
-		aperture_flux_ycentroids.append(aperture_flux_centy)
-		"""
+		for i in np.arange(0,len(window_times),1):
+			aperture_snr_centx = np.nansum(aperture_pixel_idxs[0]*aperture_snr_stack.T[i]) / np.nansum(aperture_snr_stack.T[i])
+			aperture_snr_centy = np.nansum(aperture_pixel_idxs[1]*aperture_snr_stack.T[i]) / np.nansum(aperture_snr_stack.T[i])
+			
+			aperture_snr_xcentroids.append(aperture_snr_centx)
+			aperture_snr_ycentroids.append(aperture_snr_centy)
+
+		aperture_snr_xcentroids = np.array(aperture_snr_xcentroids)
+		aperture_snr_ycentroids = np.array(aperture_snr_ycentroids)
+
+		#aperture_snr_xcentroids = np.nansum(aperture_pixel_idxs[0]*aperture_snr_stack.T) / np.nansum(aperture_snr_stack.T)
+		#aperture_snr_ycentroids = np.nansum(aperture_pixel_idxs[1]*aperture_snr_stack.T) / np.nansum(aperture_snr_stack.T)
+
+		print("aperture_snr_stack.shape = ", aperture_snr_stack.shape)
+		print('aperture_snr_xcentroids.shape = ', aperture_snr_xcentroids.shape)
+
+		#aperture_snr_xcentroids.append(aperture_flux_centx)
+		#aperture_snr_ycentroids.append(aperture_flux_centy)
+		
+
+		### let's examine aperture flux centroids and snr centroids to see if we're on the right track
+		fig, (ax1, ax2) = plt.subplots(2)
+		ax1.set_title('Quarter '+str(tpf_file_key))
+		ax1.scatter(aperture_flux_xcentroids, aperture_flux_ycentroids, c=window_times)
+		ax1.set_xlabel('aperture flux centx')
+		ax1.set_ylabel('aperture flux centy')	
+		ax2.scatter(aperture_snr_xcentroids, aperture_snr_ycentroids, c=window_times)
+		ax2.set_xlabel('aperture SNR centx')
+		ax2.set_ylabel('aperture SNR centy')
+		plt.show()
+
+
+		#### better way to plot this... look at the centroid deviation as a function of time
+		fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+		ax1.set_title('Quarter '+str(tpf_file_key))
+		ax1.scatter(window_times, np.abs(aperture_flux_xcentroids - aperture_snr_xcentroids), s=10, c='LightCoral')
+		ax1.set_ylabel('|flux xcent - SNR xcent|')
+		ax2.scatter(window_times, np.abs(aperture_flux_ycentroids - aperture_snr_ycentroids), s=10, c='DodgerBlue')
+		ax2.set_ylabel('|flux ycent - SNR ycent|')
+		ax2.set_xlabel('BKJD')
+		plt.show()
+
+
 
 
 		if detrend == 'y':
@@ -438,12 +477,12 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		ax1.scatter(all_flux_xcentroids, all_flux_ycentroids, c=window_times, s=10)
 		#ax1.colorbar('BKJD')
 		#ax1.set_xlabel('x-centroid')
-		ax1.set_ylabel('y-centroid')
+		ax1.set_ylabel('active y-centroid')
 		ax2.scatter(aperture_flux_xcentroids, aperture_flux_ycentroids, c=window_times, s=10)
 		#ax2.colorbar('BKJD')
 		#plt.colorbar(label="BKJD")
 		ax2.set_xlabel('x-centroid')
-		ax2.set_ylabel('y-centroid')
+		ax2.set_ylabel('aperture y-centroid')
 		plt.show()
 
 
