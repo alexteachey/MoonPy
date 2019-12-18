@@ -1194,8 +1194,10 @@ class MoonpyLC(object):
 
 
 
-	def examine_TPF(self):
-		tpf_examiner(self.target, self.quarters, find_alias='y')
+	def examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None):
+		if type(quarters) == type(None):
+			quarters = self.quarters 
+		tpf_examiner(self.target, quarters=quarters, Tdur=self.duration_days, time_lims=time_lims, detrend=detrend, mask_idxs=mask_idxs, find_alias='y')
 
 
 
