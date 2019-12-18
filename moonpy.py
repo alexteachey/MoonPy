@@ -1053,9 +1053,10 @@ class MoonpyLC(object):
 
 
 
-	def genLS(self, show_plot = 'y', LSquarters=None):
+	def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 		### this function generates a Lomb-Scargle Periodogram!
 		LSperiods = []
+		LSmaxpower_periods = []
 		LSpowers = []
 		LSfaps = []
 		nquarters = len(self.quarters)
@@ -1080,17 +1081,28 @@ class MoonpyLC(object):
 			qls = LombScargle(qtimes, qfluxes, qerrors)
 			qfreq, qpower = qls.autopower(minimum_frequency=minfreq, maximum_frequency=maxfreq)
 			qperiods = 1/qfreq
-			qfap = qls.false_alarm_probability(qpower.max(), method='bootstrap')
-			probabilities = [0.1, 0.05, 0.01]
-			quarter_FALs = qls.false_alarm_level(probabilities)
+			if compute_fap == 'y':
+				qfap = qls.false_alarm_probability(qpower.max(), method='bootstrap')
+				probabilities = [0.1, 0.05, 0.01]
+				quarter_FALs = qls.false_alarm_level(probabilities)
 
 			if show_plot == 'y':
-				plt.plot(qperiods[::-1], qpower[::-1], c='C'+str(qidx))
-				plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])), c='C'+str(qidx))
+				#try:
+				random_color = np.random.rand(3)
+				plt.plot(qperiods[::-1], qpower[::-1], c=random_color)
+				if compute_fap == 'y':
+					plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])), c=random_color)
+				#except:
+				#	plt.plot(qperiods[::-1], qpower[::-1])
+				#	if compute_fap == 'y':
+				#		plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])))
 
 			LSperiods.append(qperiods)
+			max_power_period = qperiods[np.nanargmax(qpower)]
+			LSmaxpower_periods.append(max_power_period)
 			LSpowers.append(qpower)
-			LSfaps.append(qfap)
+			if compute_fap == 'y':
+				LSfaps.append(qfap)
 
 		if show_plot == 'y':
 			plt.xscale('log')
@@ -1101,6 +1113,12 @@ class MoonpyLC(object):
 			plt.show()
 
 		LSperiods, LSpowers, LSfaps = np.array(LSperiods), np.array(LSpowers), np.array(LSfaps)
+
+		print('LS max power periods = ', LSmaxpower_periods)
+		LSperiod_median = np.nanmedian(LSmaxpower_periods)
+		LSperiod_std = np.nanstd(LSmaxpower_periods)
+		print('median(LS max power periods) = ', LSperiod_median)
+		print('std(LS max power periods) = ', LSperiod_std)
 
 		self.LSperiods = LSperiods
 		self.LSpowers = LSpowers 
