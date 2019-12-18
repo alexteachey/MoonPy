@@ -32,6 +32,109 @@ def find_kic(targetname):
 
 
 
+def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
+	### seg window is in days... can_should be substitute by some multiple of the transit duration
+	### overlap is also in days... one quarter 
+
+	seg_except = 'n'
+
+	### first determine how long each segment should be
+	#data_per_seg = int(len(times) / nsegs)
+
+	### ^ this will be the length of each segment
+	### then the start of the next segment will be subtract of the overlap for the next starting point
+
+	### for testing purposes, scatter plot the full quarter
+	plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
+
+	seg = 0
+	while seg_except == 'n':
+		if seg == 0:
+			starting_idx = 0
+		else:
+			last_starting_idx = starting_idx 
+			last_starting_time = times[last_starting_idx]
+			starting_idx = np.nanargmin(np.abs(times - (last_starting_time + stagger)))
+
+			if (starting_idx == last_starting_idx):
+				if starting_idx > (len(times) - 100):
+					seg_except = 'y'
+					break 
+				else:
+					starting_idx = starting_idx + 1
+
+		starting_time = times[starting_idx]
+		ending_idx = np.nanargmin(np.abs(times - (starting_time+seg_window)))
+		ending_time = times[ending_idx]
+
+		#print('starting_idx, ending_idx = ', starting_idx, ending_idx)
+		try:
+			seg_times, seg_fluxes = times[starting_idx:ending_idx], fluxes[starting_idx:ending_idx]
+			#print('len(seg_times), len(seg_fluxes) = ', len(seg_times), len(seg_fluxes))
+
+			### fit a 3rd order polynomial to the segment times and fluxes
+			seg_polyfit = np.polyfit(seg_times, seg_fluxes, 4) ### coefficients
+			seg_polyfunc = np.poly1d(seg_polyfit) 
+			seg_polycurve = seg_polyfunc(seg_times)
+
+			plt.plot(seg_times, seg_polycurve)
+
+			if seg == 0:
+				uber_seg_times = seg_times
+				uber_seg_fits = seg_polycurve
+			else:
+				uber_seg_times = np.concatenate((uber_seg_times, seg_times))
+				uber_seg_fits = np.concatenate((uber_seg_fits, seg_polycurve))
+
+
+
+			seg += 1
+			print('starting, ending idxs = ', starting_idx, ending_idx)
+			print('seg = ', seg)
+
+		except:
+			traceback.print_exc()
+			seg_except = 'y'
+			break
+
+
+	plt.title('local polynomial fits')
+	plt.show()
+
+	#### now let's try to take avg, median, std at each timestep
+	final_times = []
+	final_avg_fits = []
+	final_median_fits = []
+	final_fit_stds = []
+
+	for ntime, timestep in enumerate(times):
+		### finding the matching idxs
+		time_match_idxs = np.where(uber_seg_times == timestep)[0]
+		flux_matches = uber_seg_fits[time_match_idxs]
+
+		final_times.append(timestep)
+		final_avg_fits.append(np.nanmean(flux_matches))
+		final_median_fits.append(np.nanmedian(flux_matches))
+		final_fit_stds.append(np.nanstd(flux_matches))
+
+	final_times = np.array(final_times)
+	final_avg_fits = np.array(final_avg_fits)
+	final_median_fits = np.array(final_median_fits)
+	final_fit_stds = np.array(final_fit_stds)
+
+	plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
+	plt.plot(final_times, final_avg_fits, c='LightCoral', label='avg')
+	plt.plot(final_times, final_median_fits, c='DodgerBlue', label='median')
+	plt.show()
+
+
+
+
+
+
+
+
+
 
 def quadsum(vals):
 	return np.sqrt(np.nansum(vals**2))
@@ -340,9 +443,16 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		plt.show()
 
 
+		### testing the polynomial fit
+		print('running the multiple / local polynomial fit.')
+		multi_polyfit(window_times, aperture_flux_lc)
+
+
+
 		### plot the flux stack -- each individual aperture pixel gets its own light curve!
 		fig, (ax1, ax2) = plt.subplots(2, sharex=True)
 		for i in np.arange(0,aperture_flux_stack.shape[1], 1):
+
 			### identify the pixel value here:
 			ypix, xpix = aperture_pixel_idxs[0][i], aperture_pixel_idxs[1][i] 
 
