@@ -7,6 +7,7 @@ import os
 from matplotlib import animation 
 from mp_detrend import *
 from astroquery.simbad import Simbad 
+from scipy.signal import medfilt 
 
 
 destination_dir = '/Users/hal9000/Documents/Software/MoonPy/TPFs'
@@ -152,7 +153,7 @@ def tpf_downloader(target, quarters, cadence='long', clobber='n'):
 
 
 
-def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long', clobber='n', detrend='y', mask_times=None, mask_idxs=None):
+def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, cadence='long', clobber='n', detrend='y', mask_times=None, mask_idxs=None):
 	
 	if target.startswith('KIC') == False:
 		kic = find_kic(target)
@@ -187,13 +188,15 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 		time_correlation = tpf[1].data['TIMECORR']
 		cosmic_rays = tpf[1].data['COSMIC_RAYS']
 
-		if type(mask_times) != type(None):
-			#### find the indices of these times
+		if (type(mask_times) != type(None)) and (type(mask_idxs) == type(None)):
+			### implies you have supplied times but not mask_idxs! (if you have supplied mask_idxs, that's preferrable).
+			#### find the indices of these times -- not very sophisticated.
 			mask_idxs = np.where((times >= np.nanmin(mask_times)) & (times <= np.nanmax(mask_times)))[0]
 
 		aperture = tpf[2].data ### 0 means not collected, 1 means collected but not part of the aperture, 3 means in the aperture.
 
 		all_active_pixel_idxs = np.where(aperture >= 1)
+		active_non_aperture_idxs = np.where(aperture == 1)
 		aperture_pixel_idxs = np.where(aperture == 3)
 
 		### zero in on the interesting times
@@ -208,55 +211,24 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 		all_flux_CR_lc = []
 		all_flux_xcentroids = []
 		all_flux_ycentroids = []
+		all_snr_xcentroids = []
+		all_snr_ycentroids = []
 
 		aperture_flux_lc = []
 		aperture_flux_error_lc = []
 		aperture_flux_CR_lc = []
 		aperture_flux_xcentroids = []
 		aperture_flux_ycentroids = []
+		aperture_snr_xcentroids = []
+		aperture_snr_ycentroids = []
 
 		timecorrs = []
 		quality_flags = []
 
-
-		### try to animate here!
-		"""
-		nframes = len(window_time_idxs)
-		fps = 10
-
-		#fig = plt.figure(figsize = fluxes[0].shape)
-		fig = plt.figure()
-		all_frames = fluxes[window_time_idxs]
-		a = all_frames[0]
-		ims = []
-
-		for wtidx in window_time_idxs:
-			im = plt.imshow(np.nan_to_num(fluxes[wtidx]), animated=True)
-			ims.append([im])
-
-		ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True)
-		plt.show()
-		"""	
-
-		"""
-		im = plt.imshow(a, interpolation='none', vmin=np.nanmin(fluxes), vmax=np.nanmax(fluxes))
-		im.scatter(all_active_pixel_idxs[1], all_active_pixel_idxs[0], c='k', marker='*', s=10)
-		im.scatter(aperture_pixel_idxs[1], aperture_pixel_idxs[0], c='r', marker='X', s=15)
-
-		def animate_func(i):
-			im.set_array(all_frames[i], origin='lower')
-			#im.scatter(all_active_pixel_idxs[1], all_active_pixel_idxs[0], c='k', marker='*', s=10)
-			#im.scatter(aperture_pixel_idxs[1], aperture_pixel_idxs[0], c='r', marker='X', s=15)
-			#im.set_title('BKJD = '+str(window_times[i]))
-			return [im] 
-
-		anim = animation.FuncAnimation(fig, animate_func, frames=nframes, interval=1000/fps, blit=True)
-		plt.show()
-		"""
-
 		try:
 			del aperture_flux_stack
 			del aperture_error_stack
+			del aperture_residual_stack
 		except:
 			pass 
 
@@ -293,14 +265,14 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 
 
 				#### COMPUTE THE X AND Y CENTROIDS!
-				all_flux_centx = np.nansum(all_active_pixel_idxs[0]*fluxes[wtidx][all_active_pixel_idxs]) / np.nansum(fluxes[wtidx][all_active_pixel_idxs])
-				all_flux_centy = np.nansum(all_active_pixel_idxs[1]*fluxes[wtidx][all_active_pixel_idxs]) / np.nansum(fluxes[wtidx][all_active_pixel_idxs])
+				all_flux_centx = np.nansum(all_active_pixel_idxs[0]*all_fluxes) / np.nansum(all_fluxes)
+				all_flux_centy = np.nansum(all_active_pixel_idxs[1]*all_fluxes) / np.nansum(all_fluxes)
 
 				all_flux_xcentroids.append(all_flux_centx)
 				all_flux_ycentroids.append(all_flux_centy)
 
-				aperture_flux_centx = np.nansum(aperture_pixel_idxs[0]*fluxes[wtidx][aperture_pixel_idxs]) / np.nansum(fluxes[wtidx][aperture_pixel_idxs])
-				aperture_flux_centy = np.nansum(aperture_pixel_idxs[1]*fluxes[wtidx][aperture_pixel_idxs]) / np.nansum(fluxes[wtidx][aperture_pixel_idxs])
+				aperture_flux_centx = np.nansum(aperture_pixel_idxs[0]*aperture_fluxes) / np.nansum(aperture_fluxes)
+				aperture_flux_centy = np.nansum(aperture_pixel_idxs[1]*aperture_fluxes) / np.nansum(aperture_fluxes)
 
 				aperture_flux_xcentroids.append(aperture_flux_centx)
 				aperture_flux_ycentroids.append(aperture_flux_centy)
@@ -354,26 +326,22 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 
 		### pixel fluxes
 		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
-		ax1.scatter(window_times, all_flux_lc, s=10, color='LightCoral', zorder=1, label='all pixels')
-		#ax1.errorbar(window_times, all_flux_lc, yerr=all_flux_error_lc, fmt='none', ecolor='k', zorder=0)
-		#ax1.set_title('all recorded pixels')
-		ax1.set_title('Quarter '+tpf_file_key)
+		ax1.scatter(window_times, aperture_flux_lc, s=10, color='DodgerBlue', zorder=1, label='aperture')
 		ax1.legend()
-		#plt.legend()
+		ax1.set_title('Quarter '+tpf_file_key)
 
-		ax2.scatter(window_times, aperture_flux_lc, s=10, color='DodgerBlue', zorder=1, label='aperture')
-		#ax2.errorbar(window_times, aperture_flux_lc, yerr=aperture_flux_error_lc, fmt='none', ecolor='k', zorder=0)
-		#ax2.set_title('aperture pixels')
+		ax2.scatter(window_times, all_minus_aperture_flux_lc, color='SeaGreen', s=10, label='active non-aperture')
 		ax2.legend()
 
-		ax3.scatter(window_times, all_minus_aperture_flux_lc, color='SeaGreen', s=10, label='all - aperture')
-		#ax3.set_title('all - aperture')
-		ax3.set_xlabel('BKJD')
+		ax3.scatter(window_times, all_flux_lc, s=10, color='LightCoral', zorder=1, label='all pixels')
 		ax3.legend()
+		ax3.set_xlabel('BKJD')
+
 		plt.show()
 
 
-		### plot the flux stack
+		### plot the flux stack -- each individual aperture pixel gets its own light curve!
+		fig, (ax1, ax2) = plt.subplots(2, sharex=True)
 		for i in np.arange(0,aperture_flux_stack.shape[1], 1):
 			### identify the pixel value here:
 			ypix, xpix = aperture_pixel_idxs[0][i], aperture_pixel_idxs[1][i] 
@@ -382,14 +350,58 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 			### normalize the pixel light curve.
 			#normed_pixel_lc = (aperture_flux_stack.T[i] - np.nanmin(aperture_flux_stack.T[i])) / (np.nanmax(aperture_flux_stack.T[i]) - np.nanmin(aperture_flux_stack.T[i]))
 			normed_pixel_lc = aperture_flux_stack.T[i] - np.nanmedian(aperture_flux_stack.T[i])
+			pixel_errors = aperture_error_stack.T[i] 
 
-			plt.plot(window_times, normed_pixel_lc, label='x,y = '+str(xpix)+','+str(ypix))
+			random_color = 'C'+str(i)
 
-		plt.title('Quarter '+str(tpf_file_key))
-		plt.legend(loc=0)
-		plt.xlabel("BKJD")
-		plt.ylabel('Normalized Pixel Flux')
+
+
+			### for testing purposes, through a median filter on there!
+			if type(Tdur) != type(None):
+				### use the transit duration to calculate the size of the kernel... let it be three times the duration!
+				Tdur_npoints = int(Tdur*48)
+				if Tdur_npoints % 2 == 0:
+					Tdur_npoints += 1 ### has to be odd!
+				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=3*Tdur_npoints)
+			else:
+				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=25)
+			
+			#### need to do better than the median filter! but let's move on for now.
+			pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_medfilt)
+			pixel_lc_snrs = pixel_lc_residuals / pixel_errors  ### this is a light curve basically!
+
+			try:
+				aperture_residual_stack = np.vstack((aperture_residual_stack, pixel_lc_residuals))
+				aperture_residual_error_stack = np.vstack((aperture_residual_error_stack, pixel_errors))
+				aperture_snr_stack = np.vstack((aperture_snr_stack, pixel_lc_snrs))
+
+			except:
+				aperture_residual_stack = pixel_lc_residuals 
+				aperture_residual_error_stack = pixel_errors 
+				aperture_snr_stack = pixel_lc_snrs 
+
+
+
+			#### PLOT IT
+			ax1.plot(window_times, normed_pixel_lc, label='x,y = '+str(xpix)+','+str(ypix), c=random_color) ### normed pixel light curve
+			ax1.plot(window_times, pixel_lc_medfilt, c='k') ### median filter running through it. Need something more sophisticated!
+			ax2.plot(window_times, pixel_lc_snrs, c=random_color) ### SNRs
+
+		ax1.set_title('Quarter '+str(tpf_file_key))
+		ax1.legend(loc=0)
+		ax1.set_ylabel('Normalized Pixel Flux')
+		ax2.set_xlabel("BKJD")
+		ax2.set_ylabel('SNR')
 		plt.show()
+
+		### NEEDS MODIFICATION
+		"""
+		aperture_snr_centx = np.nansum(aperture_pixel_idxs[0]*pixel_lc_snrs) / np.nansum(pixel_lc_snrs)
+		aperture_snr_centy = np.nansum(aperture_pixel_idxs[1]*pixel_lc_snrs) / np.nansum(pixel_lc_snrs)
+
+		aperture_flux_xcentroids.append(aperture_flux_centx)
+		aperture_flux_ycentroids.append(aperture_flux_centy)
+		"""
 
 
 		if detrend == 'y':
@@ -406,6 +418,19 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 		plt.xlabel("BKJD")
 		plt.ylabel('Pixel Detrending')
 		plt.show()			
+
+
+		### try to compute the SNR centroid! 
+		"""
+		Here's the idea... compute the trend line (I'm thinking median filter, David suggests a local polynomial, but that's more 
+		time consuming).  At each time step, look at the depth -- that is, divergence from the median!
+		then compute that centroid using depth / sigma.
+		"""
+
+
+
+
+
 
 
 
@@ -447,22 +472,23 @@ def tpf_examiner(target, quarters, find_alias='n', time_lims=None, cadence='long
 		#### examine cosmic rays
 		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
 		ax1.set_title('Quarter '+str(tpf_file_key))
-		ax1.plot(window_times, all_flux_CR_lc, color='LightCoral', label='all CRs')
+		ax1.plot(window_times, aperture_flux_CR_lc, color='DodgerBlue', label='aperture CRs')
 		ax1.legend()
-		ax2.plot(window_times, aperture_flux_CR_lc, color='DodgerBlue', label='aperture CRs')
+		ax2.plot(window_times, all_minus_aperture_CR_lc, color='SeaGreen', label='active non-aperture CRs')
 		ax2.legend()
-		ax3.plot(window_times, all_minus_aperture_CR_lc, color='SeaGreen', label='all CRs - aperture CRs')
+		ax3.plot(window_times, all_flux_CR_lc, color='LightCoral', label='all CRs')
 		ax3.legend()
 		ax3.set_xlabel('BKJD')
 		plt.show()
 
 		#### examine the quality flagsd
-
+		"""
 		plt.title('Quarter '+str(tpf_file_key))
 		plt.plot(window_times, quality_flags, c='LightCoral')
 		plt.xlabel('BKJD')
 		plt.ylabel('Quality')
 		plt.show()
+		"""
 
 
 		### examine time correlation
