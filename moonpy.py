@@ -1123,6 +1123,8 @@ class MoonpyLC(object):
 		self.LSperiods = LSperiods
 		self.LSpowers = LSpowers 
 		self.LSfaps = LSfaps
+		self.LSmaxperiods = LSmaxpower_periods 
+
 
 
 	def find_transit_quarters(self, locate_neighbor='n'):
@@ -1703,6 +1705,11 @@ class MoonpyLC(object):
 			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][mast_rowidx], mast_data['koi_sma_err1'][mast_rowidx], mast_data['koi_sma_err2'][mast_rowidx]
 			target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][mast_rowidx], mast_data['koi_insol_err1'][mast_rowidx], mast_data['koi_insol_err2'][mast_rowidx]
 			target_ldm1, target_ldm2 = mast_data['koi_ldm_coeff1'][mast_rowidx], mast_data['koi_ldm_coeff2'][mast_rowidx]
+			target_eccen, target_eccen_uperr, target_eccen_lowerr = mast_data['koi_eccen'][mast_rowidx], mast_data['koi_eccen_err1'][mast_rowidx], mast_data['koi_eccen_err2'][mast_rowidx]
+			target_longp, target_longp_uperr, target_longp_lowerr = mast_data['koi_longp'][mast_rowidx], mast_data['koi_longp_err1'][mast_rowidx], mast_data['koi_longp_err2'][mast_rowidx]
+			target_incl, target_incl_uperr, target_incl_lowerr = mast_data['koi_incl'][mast_rowidx], mast_data['koi_incl_err1'][mast_rowidx], mast_data['koi_incl_err2'][mast_rowidx]	
+
+
 
 		elif (self.telescope.lower() == 'k2'):
 			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
@@ -1814,6 +1821,27 @@ class MoonpyLC(object):
 			self.Teq_err = (float(target_Teq_lowerr), float(target_Teq_uperr))
 		except:
 			pass
+
+
+		try:
+			self.eccen = float(target_eccen) ### equilibrium temperature of the planet
+			self.eccen_err = (float(target_eccen_lowerr), float(target_eccen_uperr))
+		except:
+			pass
+
+		try:
+			self.longp = float(target_longp) ### equilibrium temperature of the planet
+			self.longp_err = (float(target_longp_lowerr), float(target_longp_uperr))
+		except:
+			pass
+
+
+		try:
+			self.incl = float(target_incl) ### equilibrium temperature of the planet
+			self.incl_err = (float(target_incl_lowerr), float(target_incl_uperr))
+		except:
+			pass
+
 
 
 		if np.isfinite(target_duration):
