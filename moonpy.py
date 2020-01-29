@@ -2332,7 +2332,7 @@ class MoonpyLC(object):
 	###############################
 
 
-	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n'):
+	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native'):
 		### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -2367,9 +2367,17 @@ class MoonpyLC(object):
 
 
 		if folded == 'n':
-			plt.scatter(stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			if time_format == 'native':
+				plot_stitched_times = stitched_times
+			elif time_format == 'bjd':
+				if self.telescope == 'kepler':
+					plot_stitched_times = stitched_times + 2454833
+				elif self.telescope == 'tess':
+					plot_stitched_times = stitched_times + 2457000
+
+			plt.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			if show_errors == 'y':
-				plt.errorbar(stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+				plt.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
 			if show_neighbors == 'y':
 				### this will highlight all the other transits for the neighbors (if any)
@@ -2385,7 +2393,7 @@ class MoonpyLC(object):
 						neighbor_transit_idxs.append(ntidxs)
 					neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 					#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
-					plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x')					
+					plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x')					
 
 
 		elif folded == 'y':
