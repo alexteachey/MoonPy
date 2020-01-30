@@ -2332,7 +2332,7 @@ class MoonpyLC(object):
 	###############################
 
 
-	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native'):
+	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y'):
 		### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -2393,7 +2393,20 @@ class MoonpyLC(object):
 						neighbor_transit_idxs.append(ntidxs)
 					neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 					#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
-					plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x')					
+					plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+			
+
+				### PLOT THE TARGET TRANSITS TOO!
+				target_taus = self.taus 
+				target_dur = self.duration_days
+				target_transit_idxs = []
+				for tt in target_taus:
+					ttidxs = np.where((stitched_times >= (tt - 0.5*target_dur)) & (stitched_times <= (tt + 0.5*target_dur)))[0]
+					target_transit_idxs.append(ttidxs)
+				target_transit_idxs = np.hstack(target_transit_idxs)
+				plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+
+			plt.legend()					
 
 
 		elif folded == 'y':
@@ -2421,7 +2434,11 @@ class MoonpyLC(object):
 			plt.title(str(self.target))
 		except:
 			pass
-		plt.show()
+
+		if pltshow == 'y':	
+			plt.show()
+		else:
+			pass
 
 
 
