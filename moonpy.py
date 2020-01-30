@@ -2072,15 +2072,15 @@ class MoonpyLC(object):
 				try:
 					if (self.telescope.lower() == 'kepler'):
 						if neighbor.lower().startswith('kepler'):
-							neighbor_key = 'k'+str(neighbor[7:])
+							neighbor_key = 'K'+str(neighbor[7:])
 						else:
 							### for now this is just a KOI!
 							neighbor_key = neighbor
 							while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
 								neighbor_key = neighbor_key[1:]
-							neighbor_key = 'k'+str(neighbor_key)
+							neighbor_key = 'K'+str(neighbor_key)
 					elif (self.telescope.lower() == 'k2'):
-						neighbor_key = 'k2_'+str(neighbor_key[3:])
+						neighbor_key = 'K2_'+str(neighbor_key[3:])
 
 					elif (self.telescope.lower() == 'tess'):
 						neighbor_key = neighbor 
