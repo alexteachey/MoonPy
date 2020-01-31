@@ -23,6 +23,7 @@ from cofiam import max_order
 #from pyluna import run_LUNA, prepare_files
 from pyluna import prepare_files
 from mp_tpf_examiner import *
+from scipy.interpolate import interp1d 
 
 
 #from matplotlib import rc
@@ -71,6 +72,7 @@ class MoonpyLC(object):
 		### treat the times, fluxes and errors as a single quarter
 		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
 			print('using USER-SUPPLIED VALUES.')
+			user_supplied = 'y'
 			### if you've supplied times, fluxes, and errors 
 			self.times, self.fluxes, self.errors = lc_times, lc_fluxes, lc_errors
 			
@@ -106,9 +108,14 @@ class MoonpyLC(object):
 				self.rprstar = float(input('Enter the Rp/Rstar: '))
 				self.sma_AU = float(input('Enter the planet sma in AU: '))
 				self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+		else:
+			user_supplied = 'n'
 
 
-		
+		if targetID.lower().startswith('usr'):
+			user_supplied = 'y'
+
+
 		if type(targetID) != type(None):
 			### targetID has been supplied
 			if targetID.lower().startswith('usr'):
@@ -327,13 +334,20 @@ class MoonpyLC(object):
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
-					if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+					#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+					if user_supplied == 'n':
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					print('lc_quarters = ', lc_quarters)
+
 				except:
 					try:
 						### maybe it needs the full name!
-						if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+						#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
+						if user_supplied == 'n':
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
+					
+						print('lc_quarters = ', lc_quarters)
+
 					except:
 						traceback.print_exc()
 				print('downloaded.')
@@ -615,7 +629,7 @@ class MoonpyLC(object):
 
 	### DETRENDING!
 
-	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30):
+	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30, use_mazeh='y'):
 		exceptions_raised = 'n'
 
 		if mask_neighbors == 'y':
@@ -669,12 +683,76 @@ class MoonpyLC(object):
 			if mask_transits == 'y':
 				### find out which transit midtimes, if any, are in this quarter
 				mask_transit_idxs = []
+
+				if use_mazeh == 'y':
+					### taus should be calculated based on the Mazeh table.
+					mazeh = pandas.read_csv('Table3_O-C.csv')
+					maz_koi = np.array(mazeh['KOI'])
+					maz_epoch = np.array(mazeh['n'])
+					maz_reftime = np.array(mazeh['ref_time'])
+					maz_OCmin = np.array(mazeh['O-C_min'])
+
+					### find the indices of the target!
+					target_idxs = np.where(self.target[4:] == maz_koi)[0]
+
+					if len(target_idxs) == 0:
+						self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
+
+					else:
+						target_epochs = []
+						target_reftimes = []
+						target_OCmins = []
+						target_OCdays = []
+						for tidx in target_idxs:
+							try:
+								tepoch = int(maz_epoch[tidx])
+								treftime = float(maz_reftime[tidx])
+								tOCmin = float(maz_OCmin[tidx])
+								tOCday = tOCmin / (60 * 24)
+							except:
+								continue 
+
+							target_epochs.append(tepoch)
+							target_reftimes.append(treftime)
+							target_OCmins.append(tOCmin)
+							target_OCdays.append(tOCday)
+
+						target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
+
+						### interpolate OCmins! to grab missing transit times.
+						all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs), 1)
+						all_target_reftimes = []
+						all_target_OCmins = []
+						all_target_OCdays = []
+
+						OCmin_interp = interp1d(target_epochs, target_OCmins, kind='quadratic', bounds_error=False, fill_value='extrapolate')
+						reftime_interp = interp1d(target_epochs, target_reftimes, kind='linear', bounds_error=False, fill_value='extrapolate')
+
+						for ate in all_target_epochs:
+							if ate not in target_epochs:
+								### interpolate them!
+								all_target_reftime = reftime_interp(ate)
+								all_target_reftimes.append(all_target_reftime)
+								all_target_OCmin = OCmin_interp(ate)
+								all_target_OCmins.append(all_target_OCmin)
+								all_target_OCdays.append(all_target_OCmin / (60 * 24))
+
+						all_target_reftimes, all_target_OCmins, all_target_OCdays = np.array(all_target_reftimes), np.array(all_target_OCmins), np.array(all_target_OCdays)
+
+						### FINALLY, calculate the taus!
+						mazeh_taus = all_target_reftimes + all_target_OCdays 
+						self.mask_taus = mazeh_taus 
+
+
+				elif use_mazeh == 'n':
+					self.mask_taus = self.taus 
+
 				try:
-					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]
+					quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
 				except:
 					self.find_transit_quarters()
 					traceback.print_exc()
-					quarter_transit_taus = self.taus[((self.taus > np.nanmin(dtimes)) & (self.taus < np.nanmax(dtimes)))]		
+					quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]		
 								
 				for qtt in quarter_transit_taus:
 					in_transit_idxs = np.where((dtimes >= qtt - self.duration_days) & (dtimes <= qtt + self.duration_days))[0]
