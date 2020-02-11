@@ -1370,7 +1370,7 @@ class MoonpyLC(object):
 				
 
 
-	def fold(self, detrended='y'):
+	def fold(self, detrended='y', phase_offset=0.0):
 		### this method will phase fold your light curve. 
 		### first tau in the time series:
 		try:
@@ -1385,7 +1385,7 @@ class MoonpyLC(object):
 			ftidx += 1
 			first_tau = self.taus[ftidx]
 
-		fold_times = ((((np.hstack(self.times) - first_tau - 0.5*self.period) % self.period) / self.period)) ### yields the remainder!
+		fold_times = ((((np.hstack(self.times) - first_tau - 0.5*self.period - phase_offset*self.period) % self.period) / self.period)) ### yields the remainder!
 		fold_times = fold_times - 0.5
 
 		if detrended == 'y':
@@ -2410,7 +2410,7 @@ class MoonpyLC(object):
 	###############################
 
 
-	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y'):
+	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y', phase_offset=0.0):
 		### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -2489,10 +2489,10 @@ class MoonpyLC(object):
 
 		elif folded == 'y':
 			try:
-				self.fold(detrended=detrended)
+				self.fold(detrended=detrended, phase_offset=phase_offset)
 			except:
 				self.get_properties(locate_neighbor='n')
-				self.fold()
+				self.fold(phase_offset=phase_offset)
 			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			if show_errors == 'y':
 				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
