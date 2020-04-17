@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mp_tools import Roche
 
 
+
 rhoSun = 1408.0
 rhoJup = 1326.2
 rhoNep = 1638.0
@@ -169,33 +170,43 @@ class Moonpy_moon(object):
 
 
 
-	def gen_transit(self, tau=None, window=None, cadence_minutes=None, prompts='n', ntransits=1, show_plots='n', ppm=0.0, model='M'):
-		if (tau == None) and (prompts == 'n'):
-			tau = self.tau0
-		elif (tau == None) and (prompts == 'y'):
-			tau = float(input('What is the reference time for the transit? (tau0 = '+str(self.tau0)+'): '))
+	def gen_transit(self, times=None, tau=None, window=None, cadence_minutes=None, prompts='n', ntransits=1, show_plots='n', ppm=0.0, model='M'):
+		if type(times) == type(None):
+			if (tau == None) and (prompts == 'n'):
+				tau = self.tau0
+			elif (tau == None) and (prompts == 'y'):
+				tau = float(input('What is the reference time for the transit? (tau0 = '+str(self.tau0)+'): '))
 
-		if (window == None) and (prompts == 'n'):
-			window = 5
-		elif (window == None) and (prompts == 'y'):
-			window = float(input('What is the time window on either side of the transit? [days]: '))
+			if (window == None) and (prompts == 'n'):
+				window = 5
+			elif (window == None) and (prompts == 'y'):
+				window = float(input('What is the time window on either side of the transit? [days]: '))
 
-		if (cadence_minutes == None) and (prompts == 'n'):
-			cadence_minutes = 29.42 ### native Kepler cadence
-		elif (cadence_minutes == None) and (prompts == 'y'):
-			cadence_minutes = float(input('What is the cadence? [minutes]: '))
+			if (cadence_minutes == None) and (prompts == 'n'):
+				cadence_minutes = 29.42 ### native Kepler cadence
+			elif (cadence_minutes == None) and (prompts == 'y'):
+				cadence_minutes = float(input('What is the cadence? [minutes]: '))
 
+			### generate a single transit centered around some tau
+			cadence_days = cadence_minutes / (60 * 24)
+			if ntransits == 1:
+				all_times = np.arange(tau - window, tau + window + cadence_days, cadence_days)
+			else:
+				all_times = []
+				for transitnum in np.arange(0,ntransits,1):
+					tmid = tau+(self.Pplan*transitnum)
+					all_times.append(np.arange(tmid-window, tmid+window+cadence_days, cadence_days))
+				all_times = np.hstack(all_times)
 
-		### generate a single transit centered around some tau
-		cadence_days = cadence_minutes / (60 * 24)
-		if ntransits == 1:
-			all_times = np.arange(tau - window, tau + window + cadence_days, cadence_days)
 		else:
-			all_times = []
-			for transitnum in np.arange(0,ntransits,1):
-				tmid = tau+(self.Pplan*transitnum)
-				all_times.append(np.arange(tmid-window, tmid+window+cadence_days, cadence_days))
-			all_times = np.hstack(all_times)
+			if (tau == None) and (prompts == 'n'):
+				tau = self.tau0
+			elif (tau == None) and (prompts == 'y'):
+				tau = float(input('What is the reference time for the transit? (tau0 = '+str(self.tau0)+'): '))
+
+			window = np.nanmax((self.tau0-np.nanmin(times), np.nanmax(times) - self.tau0))
+			all_times = times 
+
 
 		if model == "M":
 			nparamorig = 14
@@ -235,11 +246,12 @@ class Moonpy_moon(object):
 		prepare_files(all_times, ntaus, nparam, nparamorig)
 
 		if self.nmoons == 1:
-			output_times, output_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, self.asp, self.phi_sat, self.cosi_sat, self.omega_sat, self.msp, self.rsp, model="M", cadence_minutes=cadence_minutes, print_params='y')
-		
+			output_times, output_fluxes = run_LUNA(all_times=all_times, RpRstar=self.rprstar, rhostar=self.rhostar, bplan=self.bplan, Pplan=self.Pplan, tau0=self.tau0, q1=self.q1, q2=self.q2, rhoplan=self.rhoplan, sat_sma=self.asp, sat_phase=self.phi_sat, sat_inc=self.cosi_sat, sat_omega=self.omega_sat, MsatMp=self.msp, RsatRp=self.rsp, model="M", cadence_minutes=cadence_minutes, print_params='y')
+			#all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp
+
 		else:
 			### generate a planet only light curve first!
-			planet_only_times, planet_only_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, 1000, 0, 0, 0, 0, 0, model='M', cadence_minutes=cadence_minutes, print_params='y')
+			planet_only_times, planet_only_fluxes = run_LUNA(all_times=all_times, RpRstar=self.rprstar, rhostar=self.rhostar, bplan=self.bplan, Pplan=self.Pplan, tau0=self.tau0, q1=self.q1, q2=self.q2, rhoplan=self.rhoplan, sat_sma=1000, sat_phase=0, sat_inc=0, sat_omega=0, MsatMp=0, RsatRp=0, model='M', cadence_minutes=cadence_minutes, print_params='y')
 			planet_only_missing_fluxes = 1 - planet_only_fluxes
 
 			if show_plots=='y':
@@ -251,7 +263,7 @@ class Moonpy_moon(object):
 				plt.show()
 
 			for moon_idx in np.arange(0,self.nmoons,1):
-				moon_and_planet_times, moon_and_planet_fluxes = run_LUNA(all_times, self.rprstar, self.rhostar, self.bplan, self.Pplan, self.tau0, self.q1, self.q2, self.rhoplan, self.asp[moon_idx], self.phi_sat[moon_idx], self.cosi_sat[moon_idx], self.omega_sat[moon_idx], self.msp[moon_idx], self.rsp[moon_idx], model="M", cadence_minutes=cadence_minutes, print_params='y')
+				moon_and_planet_times, moon_and_planet_fluxes = run_LUNA(all_times=all_times, RpRstar=self.rprstar, rhostar=self.rhostar, bplan=self.bplan, Pplan=self.Pplan, tau0=self.tau0, q1=self.q1, q2=self.q2, rhoplan=self.rhoplan, sat_sma=self.asp[moon_idx], sat_phase=self.phi_sat[moon_idx], sat_inc=self.cosi_sat[moon_idx], sat_omega=self.omega_sat[moon_idx], MsatMp=self.msp[moon_idx], RsatRp=self.rsp[moon_idx], model="M", cadence_minutes=cadence_minutes, print_params='y')
 				moon_only_fluxes = moon_and_planet_fluxes / planet_only_fluxes
 				moon_only_missing_fluxes = 1 - moon_only_fluxes 
 
@@ -291,7 +303,6 @@ class Moonpy_moon(object):
 			output_times = planet_only_times 
 			output_fluxes = final_fluxes 
 			### verify this is working as intended
-
 
 		self.times, self.fluxes = output_times, output_fluxes
 
