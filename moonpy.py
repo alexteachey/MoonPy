@@ -632,6 +632,9 @@ class MoonpyLC(object):
 	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, max_degree=30, use_mazeh='y'):
 		exceptions_raised = 'n'
 
+		if self.telescope.lower() != 'kepler':
+			use_mazeh == 'n' ### mazeh is only for Kepler targets!
+
 		if mask_neighbors == 'y':
 			mask_transits = 'y' 
 		### optional values for method are "cofiam", "untrendy", "medfilt"
@@ -1458,26 +1461,36 @@ class MoonpyLC(object):
 			if self.telescope.lower() != "kepler":
 				exofop_rowidx = self.exofop_rowidx
 		try:
+
+			current_time = time.time()
+
 			if self.telescope.lower() == 'user':
 				download_new = 'n'
 
 			elif (self.telescope.lower() == 'kepler'):
 				filecreated_time = os.path.getctime(moonpydir+'/cumkois.txt')
+				print('cumkois.txt was created '+str((current_time - filecreated_time)/3600)+' hours ago.')
 				#filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
 
 			elif (self.telescope.lower() == 'k2'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/cumk2ois.txt')
+				print('cumk2ois.txt was created '+str((current_time - filecreated_time1)/3600)+' hours ago.')
 				filecreated_time2 = os.path.getctime(moonpydir+'/exofop_targets.csv')
+				print('exofop_targets.csv was created '+str((current_time - filecreated_time2)/3600)+' hours ago.')
 				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
 
 			elif (self.telescope.lower() == 'tess'):
 				filecreated_time1 = os.path.getctime(moonpydir+'/exofop_toilists.pipe')
+				print('exofop_toilists.pipe was created '+str((current_time - filecreated_time1)/3600)+' hours ago.')
 				filecreated_time2 = os.path.getctime(moonpydir+'/confirmed_planets.txt')
+				print('confirmed_planets.txt was created '+str((current_time - filecreated_time2)/3600)+' hours ago.')
 				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
+				print('filecreated_time = ', filecreated_time)
 
-			current_time = time.time()
+
 			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
 				download_new = 'y'
+				print('downloading new planet list(s)...')
 		except:
 			download_new = 'y'
 
@@ -1503,8 +1516,12 @@ class MoonpyLC(object):
 
 				elif (self.telescope.lower() == 'tess'):
 					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
-					os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"')
-			
+					print('created confirmed_planets.txt')
+					#os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"') ### THIS LAST BIT IS GIVING IT A WEIRD FILENAME!
+					os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/exofop_toilists.pipe"')
+					print('created exofop_toilists.pipe')
+
+
 					### TRY THIS ON THE COMMAND LINE:
 					#wget --tries=5 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "confirmed_planets.txt"
 					
@@ -1733,6 +1750,7 @@ class MoonpyLC(object):
 				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
 			except:
 				return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 
+
 		elif self.telescope.lower() == 'kepler':
 			try:
 				return mast_rowidx, mast_data, NEA_targetname
@@ -1810,7 +1828,7 @@ class MoonpyLC(object):
 				target_duration, target_duration_uperr, target_duration_lowerr = np.array(exofop_data['Duration (hours)'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx]
 				target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.sqrt(1e-6*np.array(exofop_data['Depth (ppm)'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx])
 				target_rp, target_rp_uperr, target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx]
-				target_tau0 = np.nan
+				target_tau0, target_tau0_uperr, target_tau0_lowerr = np.array(exofop_data['Epoch (BJD)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
 
 			elif np.isfinite(self.mast_rowidx) == True:
 				print('search for target parameters in the mast database.')
@@ -2410,7 +2428,7 @@ class MoonpyLC(object):
 	###############################
 
 
-	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y', phase_offset=0.0):
+	def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 		### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 		try:
 			plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -2493,9 +2511,30 @@ class MoonpyLC(object):
 			except:
 				self.get_properties(locate_neighbor='n')
 				self.fold(phase_offset=phase_offset)
-			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-			if show_errors == 'y':
-				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+
+			if binned == 'n':	
+				plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				if show_errors == 'y':
+					plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+			elif binned == 'y':
+				fold_bin_step = 0.0005
+				fold_bins = np.arange(np.nanmin(self.fold_times), np.nanmax(self.fold_times), fold_bin_step)
+				fold_bin_fluxes = []
+				fold_bin_errors = []
+				for fb in fold_bins:
+					fb_idxs = np.where((self.fold_times >= fb- fold_bin_step/2) & (self.fold_times < fb + fold_bin_step/2))[0]
+					fold_bin_fluxes.append(np.nanmedian(self.fold_fluxes[fb_idxs]))
+					fold_bin_errors.append(np.nanstd(self.fold_fluxes[fb_idxs])/np.sqrt(len(fb_idxs)))
+
+				fold_bin_fluxes, fold_bin_errors = np.array(fold_bin_fluxes), np.array(fold_bin_errors)
+
+				plt.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
+				plt.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
+				#plt.errorbar(fold_bins, fold_bin_fluxes, yerr=fold_bin_errors, ecolor='k', zorder=0, fmt='none')
+
+
 		#plt.xlabel('BKJD')
 		if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
 			if folded=='y':
