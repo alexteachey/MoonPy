@@ -301,10 +301,18 @@ class MoonpyLC(object):
 						except:
 							pass
 		
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object), np.array(lc_quarters, dtype=object)
+					if len(lc_quarters) > 1:
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object), np.array(lc_quarters, dtype=object)
+					else:
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
 					self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
+
 					try:
-						lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend, dtype=object), np.array(lc_errors_detrend, dtype=object)
+						if len(lc_quarters) > 1:
+							lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend, dtype=object), np.array(lc_errors_detrend, dtype=object)
+						else:
+							lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
+
 						self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
 					except:
 						pass
@@ -320,6 +328,9 @@ class MoonpyLC(object):
 
 
 
+
+
+
 		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
 		if (load_lc=='n') and (type(targetID) != type(None)) and (type(telescope) != type(None)):
 			### implies you've selected a target you want to download.
@@ -332,6 +343,9 @@ class MoonpyLC(object):
 				mast_columns = mast_data.columns
 				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
 				exofop_columns = exofop_data.columns
+
+
+
 
 			### KEPLER HANDLING
 			elif telescope.lower() == 'kepler':
@@ -357,22 +371,39 @@ class MoonpyLC(object):
 						traceback.print_exc()
 				print('downloaded.')
 
+
+
+
+
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
 				#try:
 				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
 				self.NEA_targetname = NEA_targetname
+
+				print('mast_rowidx = ', mast_rowidx)
+				print('exofop_rowidx = ', exofop_rowidx)
+				print('NEA_targetname = ', NEA_targetname)
+
 				#except:
 				#traceback.print_exc()
 				try:
-					if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					print('first try statement...')
+					#if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try: ### maybe it just wants the number.
+						print('second try statement...')
 						if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 					except:
 						traceback.print_exc()
+
+				print('k2 lc_quarters = ', lc_quarters)
+
+
+
+
 
 			### TESS HANDLING
 			elif telescope.lower() == 'tess':
@@ -483,14 +514,14 @@ class MoonpyLC(object):
 		if load_lc == 'y':
 			pass ### you've already turned them into arrays.
 		else:
-			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags)
+			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object)
 		
 		nquarters = len(lc_quarters)
 		#for qidx,quarters in enumerate(lc_quarters):
 		for qidx in np.arange(0,nquarters,1):
 			### remove NaNs
 			#if nquarters != 1:
-			nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
+			nan_idxs = np.where(np.isfinite(np.array(lc_fluxes, dtype=np.float64)[qidx]) == False)[0]
 			#elif nquarters == 1:
 			#	nan_idxs = np.where(np.isfinite(lc_fluxes) == False)[0]
 
@@ -806,7 +837,7 @@ class MoonpyLC(object):
 						fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
 						skip_quarter = 'y'
 
-				mask_transit_idxs = np.array(mask_transit_idxs, dtype=object)		
+				mask_transit_idxs = np.array(mask_transit_idxs, dtype=np.int8)		
 
 
 			elif mask_transits == 'n':
@@ -825,7 +856,11 @@ class MoonpyLC(object):
 						You can specify "max_degree" below, or calculate it using the max_order function
 						within cofiam.py.
 						"""
-						fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						try:
+							fluxes_detrend, errors_detrend = cofiam_detrend(dtimes, dfluxes, derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						except:
+							fluxes_detrend, errors_detrend = cofiam_detrend(np.array(dtimes, type=np.float64), np.array(dfluxes, type=np.float64), np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
 
@@ -1467,81 +1502,86 @@ class MoonpyLC(object):
 			mast_rowidx = self.mast_rowidx
 			if self.telescope.lower() != "kepler":
 				exofop_rowidx = self.exofop_rowidx
-		try:
-
-			current_time = time.time()
-
-			if self.telescope.lower() == 'user':
-				download_new = 'n'
-
-			elif (self.telescope.lower() == 'kepler'):
-				filecreated_time = os.path.getctime(moonpydir+'/cumkois.txt')
-				print('cumkois.txt was created '+str((current_time - filecreated_time)/3600)+' hours ago.')
-				#filecreated_time2 = os.path.getctime(moonpydir+'/cfop_targets.csv')
-
-			elif (self.telescope.lower() == 'k2'):
-				filecreated_time1 = os.path.getctime(moonpydir+'/cumk2ois.txt')
-				print('cumk2ois.txt was created '+str((current_time - filecreated_time1)/3600)+' hours ago.')
-				filecreated_time2 = os.path.getctime(moonpydir+'/exofop_targets.csv')
-				print('exofop_targets.csv was created '+str((current_time - filecreated_time2)/3600)+' hours ago.')
-				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
-
-			elif (self.telescope.lower() == 'tess'):
-				filecreated_time1 = os.path.getctime(moonpydir+'/exofop_toilists.pipe')
-				print('exofop_toilists.pipe was created '+str((current_time - filecreated_time1)/3600)+' hours ago.')
-				filecreated_time2 = os.path.getctime(moonpydir+'/confirmed_planets.txt')
-				print('confirmed_planets.txt was created '+str((current_time - filecreated_time2)/3600)+' hours ago.')
-				filecreated_time = np.nanmin((filecreated_time1, filecreated_time2))
-				print('filecreated_time = ', filecreated_time)
 
 
-			if (current_time - filecreated_time) > 86400: ### the file is more than a day old.
-				download_new = 'y'
-				print('downloading new planet list(s)...')
-		except:
-			download_new = 'y'
+		#### NEW CODE -- stolen from "planet_list_and_data_retriever.py"
+		### check the file created times:
+		kep_mast_address = moonpydir+'/cumkois_mast.txt'
+		if os.path.exists(kep_mast_address):
+			kep_mast_fct = os.path.getctime(kep_mast_address) ### file created time
+		else:
+			kep_mast_fct = 0
+		kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
+		if os.path.exists(kep_fop_address):
+			kep_fop_fct = os.path.getctime(kep_fop_address) ### file created time
+		else:
+			kep_fop_fct = 0
+
+		k2_mast_address = moonpydir+'/cumk2ois_mast.txt'
+		if os.path.exists(kep_mast_address):
+			k2_mast_fct = os.path.getctime(kep_mast_address) ### file created time
+		else:
+			k2_mast_fct = 0
+		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
+		if os.path.exists(k2_fop_address):
+			k2_fop_fct = os.path.getctime(kep_fop_address) ### file created time
+		else:
+			k2_fop_fct = 0
+
+		tess_mast_address = moonpydir+'/mast_cumtois.txt'
+		if os.path.exists(tess_mast_address):
+			tess_mast_fct = os.path.getctime(tess_mast_address) ### file created time
+		else:
+			tess_mast_fct = 0
+		tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
+		if os.path.exists(tess_fop_address):
+			tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
+		else:
+			tess_fop_fct = 0
 
 
-		if download_new == 'y':
-			### download a new version!
-			try:
-				if (self.telescope.lower() == 'kepler'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,ra,dec&order=kepoi_name&format=ascii" -O "'+moonpydir+'/cumkois.txt"')
-					os.system('wget --tries=1 '+moonpydir+'/cfop_targets.csv "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi"')
+		current_time = time.time()
 
-					### TRY THIS IN THE COMMAND LINE.
-					#wget --tries=5 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_prad,koi_prad_err1,koi_prad_err2,ra,dec&order=dec&format=ascii" -O "cumkois.txt"
+		#### KEPLER HANDLING
+		if current_time - kep_mast_fct > 86400: ### one day old
+			print("DOWNLOADING Kepler MAST file...")
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
 
-				elif (self.telescope.lower() == 'k2'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+moonpydir+'/cumk2ois.txt"')
-					os.system('wget --tries=1 '+moonpydir+'/exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"')
+			print(" ")
+		if current_time - kep_fop_fct > 86400:
+			print("DOWNLOADING Kepler ExoFOP file...")
+			os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
 
-					### TRY THIS IN THE COMMAND LINE:
-					#wget --tries=5 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=dec&format=ascii" -O "cumk2ois.txt"
-					
-					#wget --tries=5 exofop_targets.csv "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target"
+			print(' ')
 
-				elif (self.telescope.lower() == 'tess'):
-					os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+moonpydir+'/confirmed_planets.txt"')
-					print('created confirmed_planets.txt')
-					#os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"') ### THIS LAST BIT IS GIVING IT A WEIRD FILENAME!
-					os.system('wget --tries=1 '+moonpydir+'/exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/exofop_toilists.pipe"')
-					print('created exofop_toilists.pipe')
+		#### K2 HANDLING
+		if current_time - k2_mast_fct > 86400:
+			print('DOWNLOADING K2 MAST file...')
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+k2_mast_address+'"')
+			print(' ')
+		if current_time - k2_fop_fct > 86400:	
+			print("DOWNLOADING K2 ExoFOP file...")
+			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
+			#os.system('wget --tries=1 '+k2_fop_address+' "https://exofop.ipac.caltech.edu/k2/download_summary_csv/php?camp=All&sort=target"')
+			print(' ')
 
 
-					### TRY THIS ON THE COMMAND LINE:
-					#wget --tries=5 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=dec&format=ascii" -O "confirmed_planets.txt"
-					
-					#wget --tries=5 exofop_toilists.pipe "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=pipe"
-			
-			except:
-				print("ATTEMPT TO DOWNLOAD THE LATEST PLANET CATALOGS FAILED (maybe you're not online?).")
+		#### TESS HANDLING
+		if current_time - tess_mast_fct > 86400:
+			print('DOWNLOADING TESS MAST file...')
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+tess_mast_address+'"')			
+			print(' ')
+		if current_time - tess_fop_fct > 86400:
+			print('DOWNLOADING TESS ExoFOP file...')
+			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
+			print(' ')
+
 
 		### USER INPUT HANDLING
 		if self.telescope.lower() == 'user':
-			mast_data = ascii.read('cumkois.txt')
+			mast_data = ascii.read(kep_mast_address)
 			mast_columns = mast_data.columns
-			exofop_data = pandas.read_csv('cfop_targets.csv', header=18)
+			exofop_data = pandas.read_csv(kep_fop_address, header=18)
 			exofop_columns = exofop_data.columns
 			row_known = 'y'
 			self.mast_rowidx = np.nan 
@@ -1549,10 +1589,10 @@ class MoonpyLC(object):
 
 		### KEPLER HANDLING 
 		elif (self.telescope.lower() == 'kepler'):
-			mast_data = ascii.read('cumkois.txt')
+			mast_data = ascii.read(kep_mast_address)
 			mast_columns = mast_data.columns
 			try:
-				exofop_data = pandas.read_csv('cfop_targets.csv', header=18)
+				exofop_data = pandas.read_csv(kep_fop_address, header=18)
 				exofop_columns = exofop_data.columns
 			except:
 				pass
@@ -1586,7 +1626,7 @@ class MoonpyLC(object):
 
 
 				else: ### was observed by Kepler but you don't know it's KOI/KIC or Kepler name:
-					mast_data = ascii.read('confirmed_planets.txt') ### overwrite before! won't be found in cumkois!
+					mast_data = ascii.read(kep_mast_address) ### overwrite before! won't be found in cumkois!
 					try:
 						float(self.target[-1]) ### if this works, query the mast_data['pl_hostname'] because you end with a number!
 						NEA_taretname = self.target 
@@ -1606,10 +1646,15 @@ class MoonpyLC(object):
 
 		### K2 HANDLING 
 		elif (self.telescope.lower() == 'k2'):
-			mast_data = ascii.read('cumk2ois.txt')
+			mast_data = ascii.read(k2_mast_address)
 			mast_columns = mast_data.columns
-			exofop_data = pandas.read_csv('exofop_targets.csv', header=10)
-			exofop_columns = exofop_data.columns
+			try:
+				exofop_data = pandas.read_csv(k2_fop_address, header=10)
+				exofop_columns = exofop_data.columns
+			except:
+				exofop_data = None
+				exofop_columns = np.array([])
+				print('K2 ExoFOP file not loadable. Possibly corrupted. ')
 
 			if row_known == 'n':
 				if str(self.target).startswith('K2-'):
@@ -1620,6 +1665,8 @@ class MoonpyLC(object):
 						NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
 					mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
 					exofop_rowidx = np.nan
+					print('mast_rowidx = ', mast_rowidx)
+					print('exofop_rowidx = ', exofop_rowidx) 
 
 					print("number of rows matching this description = ", len(mast_rowidx))
 
@@ -1643,9 +1690,9 @@ class MoonpyLC(object):
 
 		### TESS HANDLING 
 		elif (self.telescope.lower() == 'tess'):
-			mast_data = ascii.read('confirmed_planets.txt')
+			mast_data = ascii.read(tess_mast_address)
 			mast_columns = mast_data.columns
-			exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
+			exofop_data = pandas.read_csv(tess_fop_address)
 			exofop_columns = exofop_data.columns
 
 			if row_known == 'n':
@@ -1859,17 +1906,29 @@ class MoonpyLC(object):
 			self.period_err = (float(target_period_lowerr), float(target_period_uperr))
 		except:
 			self.period_err = (np.nan, np.nan)
-		if (self.telescope.lower() == 'tess') and (float(target_tau0) > 2454833):
+
+
+		if (self.telescope.lower() == 'k2') and (float(target_tau0) > 2454833):
+			try:
+				self.tau0 = float(target_tau0) - 2454833 #### convert to BKJD
+			except:
+				self.tau0 = np.nan
+
+
+		elif (self.telescope.lower() == 'tess') and (float(target_tau0) > 2454833):
 			try:
 				self.tau0 = float(target_tau0) - 2457000 ### native TESS offset value
 			except:
 				self.tau0 = np.nan
+		
 		else:
 			self.tau0 = float(target_tau0)
 		try:
 			self.tau0_err = (float(target_tau0_lowerr), float(target_tau0_uperr))
 		except:
 			self.tau0_err = (np.nan, np.nan)
+
+
 
 		if np.isfinite(target_impact):
 			self.impact = float(target_impact)
@@ -1981,7 +2040,11 @@ class MoonpyLC(object):
 		try:
 			print("calling 'find_taus()'.")
 			transit_midtimes = [self.tau0]
+			#continue_query = input('Do you wish to continue? y/n: ')
+			#if continue_query != 'y':
+			#	raise Exception('you opted not to continue.')
 			while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
+				print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
 				### the transit_midtime you just added isn't the first transit!
 				transit_midtimes.append(transit_midtimes[-1] - self.period)
 			transit_midtimes = np.sort(transit_midtimes).tolist()

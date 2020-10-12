@@ -76,7 +76,10 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 	### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values
 	### at those locations in the time series, and to keep flux_detrend and errors_detrend the same length as the original time series.
 	cofiam_interp = interp1d(unmasked_times, best_model, bounds_error=False, fill_value='extrapolate')
-	best_model = cofiam_interp(times)
+	try:
+		best_model = cofiam_interp(times)
+	except:
+		best_model = cofiam_interp(np.array(times, dtype=np.float64))
 
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model
