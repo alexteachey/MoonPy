@@ -802,6 +802,29 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 
 		### these can be found at archive.stsci.edu/tess/bulk_downloads/bulk_downloads_ffi-tp-lc-dv.html,
 		### in the tesscurl_sector_NN_lc.sh files.
+
+		nsectors = 30
+		for sector in np.arange(1,nsectors,1):
+			### get the curl script... then extract the prefixes and suffixes from the first line.
+			try:
+				sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
+				os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+				curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
+				first_line = curltxt.readline()
+				second_line = curltxt.readline()
+				sector_prefix = second_line[16:40]
+				sector_suffix = second_line[56:71] 
+				### now read the first line of that 
+				sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
+				print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
+				#nsectors += 1
+			except:
+				traceback.print_exc()
+				break
+		print('nsectors = ', nsectors)
+
+
+		"""
 		sector_prefixes[1], sector_suffixes[1] = 'tess2018206045859-s0001-', '-0120-s_lc.fits'
 		sector_prefixes[2], sector_suffixes[2] = 'tess2018234235059-s002-', '-0121-s_lc.fits'
 		sector_prefixes[3], sector_suffixes[3] = 'tess2018263035959-s0003-', '-0123-s_lc.fits'
@@ -817,7 +840,9 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		sector_prefixes[13], sector_suffixes[13] = 'tess2019169103026-s0013-', '-0146-s_lc.fits'
 		sector_prefixes[14], sector_suffixes[14] = 'tess2019198215352-s0014-', '-0150-s_lc.fits'
 		sector_prefixes[15], sector_suffixes[15] = 'tess2019226182529-s0015-', '-0151-s_lc.fits'
-		nsectors = 15
+		sector
+		nsectors = 28
+		"""
 
 		for sector in np.arange(1,nsectors+1,1):
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
