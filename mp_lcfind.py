@@ -132,7 +132,7 @@ def kepler_URL_generator(KIC):
 	else:
 		os.system('mkdir '+download_directory)
 
-	wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
+	wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R --reject tar --accept fits 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
 
 	return final_URL, wget_command, download_directory
 
