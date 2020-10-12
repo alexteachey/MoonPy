@@ -7,15 +7,24 @@ from scipy.interpolate import interp1d
 from cofiam import cofiam_iterative, max_order
 import traceback
 import matplotlib.pyplot as plt 
+import pyximport 
 
 
 
 
 def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
+	print("len(mask_idxs) = ", len(mask_idxs))
+	print('len(times) = ', len(times))
+
 	if type(mask_idxs) != type(None):
-		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-	else:
-		unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
+
+		if len(mask_idxs) > 0:
+			mask_idxs = np.array(mask_idxs, dtype=np.int8)
+			print('type(mask_idxs) = ', type(mask_idxs))
+			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+		else:
+			print('mask_idxs = ', mask_idxs)
+			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 	if remove_outliers == 'y':
 		outlier_idxs = []
@@ -58,6 +67,8 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 	else:
 		try:
 			best_model, best_degree, best_DW, max_degree = cofiam_iterative(unmasked_times, unmasked_fluxes, max_degree=max_degree)
+			print(' ')
+			print(' ')
 		except:
 			traceback.print_exc()
 			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
@@ -80,6 +91,11 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 
 	print('BEWARE: Untrendy is failing because of a strange bug within scipy.')
 	if type(mask_idxs) != type(None):
+		mask_idxs = np.array(mask_idxs, dtype=np.int8)
+		print(' ')
+		print(type(mask_idxs))
+		print(' ')
+
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		### untrendy throws an error if unmasked_times arent strictly increasing
 		time_diffs = np.diff(unmasked_times)

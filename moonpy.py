@@ -70,6 +70,8 @@ class MoonpyLC(object):
 	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
+		original_target_input = targetID ### keep this around! sometimes you want it!
+
 		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
 			print('using USER-SUPPLIED VALUES.')
 			user_supplied = 'y'
@@ -158,9 +160,12 @@ class MoonpyLC(object):
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
 			if os.path.exists(savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv'):
-				clobber = input('light curve already exists. Clobber? y/n: ')
+				print(savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
+				clobber = input('Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
+				else:
+					print('loading '+savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')
 
 		elif (load_lc == 'n') and (clobber == 'n'):
 			load_lc = 'y'
@@ -296,10 +301,10 @@ class MoonpyLC(object):
 						except:
 							pass
 		
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object), np.array(lc_quarters, dtype=object)
 					self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
 					try:
-						lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
+						lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend, dtype=object), np.array(lc_errors_detrend, dtype=object)
 						self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
 					except:
 						pass
@@ -336,7 +341,7 @@ class MoonpyLC(object):
 				try:
 					#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 					if user_supplied == 'n':
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 					print('lc_quarters = ', lc_quarters)
 
 				except:
@@ -801,6 +806,8 @@ class MoonpyLC(object):
 						fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
 						skip_quarter = 'y'
 
+				mask_transit_idxs = np.array(mask_transit_idxs, dtype=object)		
+
 
 			elif mask_transits == 'n':
 				mask_transit_idxs = None 
@@ -841,7 +848,7 @@ class MoonpyLC(object):
 
 				except:
 					traceback.print_exc()
-					print('Detrending failed for this quarter. All points have likely been screened.')
+					print('DETRENDING FAILED FOR THIS QUARTER.')
 					fluxes_detrend, errors_detrend = dfluxes, derrors 
 					flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
 					exceptions_raised = 'y'
@@ -896,9 +903,9 @@ class MoonpyLC(object):
 			elif self.telescope.lower() == 'user':
 				lcfile.write('BJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			### overwrite the existing file!
-			self.fluxes_detrend = np.array(self.fluxes_detrend)
-			self.errors_detrend = np.array(self.errors_detrend)
-			self.flags_detrend = np.array(self.flags_detrend)
+			self.fluxes_detrend = np.array(self.fluxes_detrend, dtype=object)
+			self.errors_detrend = np.array(self.errors_detrend, dtype=object)
+			self.flags_detrend = np.array(self.flags_detrend, dtype=object)
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
 
 			if len(self.quarters) > 1:
