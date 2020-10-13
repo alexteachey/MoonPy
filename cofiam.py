@@ -1,6 +1,8 @@
 from __future__ import division
 import numpy as np
-from numba import jit
+#from numba.core.decorators import jit
+#from numba import float64, i8, jit
+from numba.core.decorators import jit
 
 """
 we need to solve the problem
@@ -46,7 +48,10 @@ def DurbinWatson(residuals):
 
 
 ### Special thanks to Michael Hippke for speeding this function up by orders of magnitude!
-@jit(fastmath=True, nopython=True, cache=True)
+#@jit(fastmath=True, nopython=True, cache=True)
+#@jit
+#@jit((float64[:], i8))
+@jit(debug=True)
 def cofiam_matrix_gen(times, degree):
 	baseline = np.nanmax(times) - np.nanmin(times)
 	rows = len(times)
