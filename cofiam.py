@@ -51,7 +51,7 @@ def DurbinWatson(residuals):
 #@jit(fastmath=True, nopython=True, cache=True)
 #@jit
 #@jit((float64[:], i8))
-@jit(debug=True)
+@jit(debug=True, fastmath=True, nopython=True, cache=True)
 def cofiam_matrix_gen(times, degree):
 	baseline = np.nanmax(times) - np.nanmin(times)
 	rows = len(times)
