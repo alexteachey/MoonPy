@@ -7,7 +7,7 @@ from scipy.interpolate import interp1d
 from cofiam import cofiam_iterative, max_order
 import traceback
 import matplotlib.pyplot as plt 
-import pyximport 
+#import pyximport 
 
 
 
@@ -35,7 +35,7 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		outlier_idxs = np.array(outlier_idxs)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
 
-	if (telescope == 'tess') or (telescope == 'TESS') or (telescope == 'Tess'):
+	if telescope.lower() == 'tess':
 		### you need to detrend the two halves separately!
 		deltats = []
 		for nut, ut in enumerate(unmasked_times):
@@ -54,8 +54,8 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
 		try:
-			best_model1, best_degree1, best_DW1, max_degree1 = cofiam_iterative(unmasked_times[first_half_idxs], unmasked_fluxes[first_half_idxs], max_degree=max_degree)		
-			best_model2, best_degree2, best_DW2, max_degree2 = cofiam_iterative(unmasked_times[second_half_idxs], unmasked_fluxes[second_half_idxs], max_degree=max_degree)
+			best_model1, best_degree1, best_DW1, max_degree1 = cofiam_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			best_model2, best_degree2, best_DW2, max_degree2 = cofiam_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
 			best_model = np.concatenate((best_model1, best_model2))
 			best_degree = np.nanmean((best_degree1, best_degree2))
 			best_DW = np.nanmean((best_DW1, best_DW2))
@@ -66,7 +66,7 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 	else:
 		try:
-			best_model, best_degree, best_DW, max_degree = cofiam_iterative(unmasked_times, unmasked_fluxes, max_degree=max_degree)
+			best_model, best_degree, best_DW, max_degree = cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree))
 			print(' ')
 			print(' ')
 		except:

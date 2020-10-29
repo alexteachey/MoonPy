@@ -269,8 +269,7 @@ def k2_fits_download(target_name):
 
 
 
-def kepler_unpack_fits(target_name):
-
+def kepler_unpack_fits(target_name, sc=False):
 	#### first thing you have to do is make sure the damn thing exists!
 	KIC_directory = kepler_URL_generator(find_KIC_alias(target_name))[2] 
 	try:
@@ -282,8 +281,23 @@ def kepler_unpack_fits(target_name):
 		kic_quarters_dict = {}
 
 		KIC_fits_files = []
+
+		### if sc=True, you need to check whether there is a slc version!
+		### if sc=False, reject slcs!
+		reject_wrong_cadence_files = []
+
+		for i,ki in enumerate(KIC_directory_files):
+			for j,kj in enumerate(KIC_directory_files):
+				if (i != j) and (ki[:-8] == kj[:-8]) and (ki[-8:] == 'slc.fits') and (kj[-8:] == 'llc.fits'):
+					if sc == True:
+						reject_wrong_cadence_files.append(kj)
+					else:
+						reject_wrong_cadence_files.append(ki)
+
+
 		for Kdf in KIC_directory_files:
-			if '.fits' in Kdf:
+
+			if ('.fits' in Kdf) and (Kdf not in reject_wrong_cadence_files):
 				KIC_fits_files.append(Kdf)
 
 				kdf_path = KIC_directory+'/'+Kdf	
@@ -383,7 +397,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 	if telescope.lower() == 'kepler':
 		kepler_fits_download(targID)
 		try:
-			kepler_lc_dictionary = kepler_unpack_fits(targID)
+			kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
 		except:
 			print('first except triggered.')
 			time.sleep(10)
@@ -391,7 +405,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 				print('lc may not have been downloaded. Attempting to download...')
 				kepler_fits_download(targID)
 				### after it's been downloaded, you can try to unpack again.
-				kepler_lc_dictionary = kepler_unpack_fits(targID)
+				kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
 			except:
 				print('second except triggered.')
 				time.sleep(10)
@@ -481,135 +495,6 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters 
 
 
-
-
-
-
-"""
-def kplr_target_download_DEPRECATED(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
-	#import kplr
-	#import k2plr
-	#print("nothing happening right now.")
-	if (telescope == 'kepler') or (telescope=="Kepler"):
-		client = kplr.API()
-	elif (telescope == 'k2') or (telescope == "K2"):
-		client = k2plr.API()
-
-	kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = [], [], [], [], [], [], []
-
-	if targtype == 'koi':
-		kplr_obj = client.koi(targID)
-		lcs = kplr_obj.get_light_curves(short_cadence=sc)
-
-	elif targtype == 'planet':
-		kplr_obj = client.planet(str(targID))
-		lcs = kplr_obj.get_light_curves(short_cadence=sc)
-
-	elif targtype == 'kic':
-		kplr_obj = client.star(targID)
-		lcs = kplr_obj.get_light_curves(short_cadence=sc)
-
-	elif targtype == 'epic':
-		lcs = []
-		if (telescope == 'k2') or (telescope == 'K2'):
-			### attempt to download the fits file using it's EPIC ID.
-			campaigns = ['c0', 'c1', 'c102', 'c111', 'c12', 'c13', 'c14', 'c15', 'c16', 'c17', 'c18', 'c19', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8']
-			for campaign in campaigns:
-				if targID.startswith("EPIC"):
-					epictarg = targID[4:]
-					if epictarg.startswith(' '):
-						epictarg = epictarg[1:]
-					epic_prefix = epictarg[:4] ### first four numbers
-					epic_suffix = epictarg[-5:] ### last five numbers
-					epic_suffix_prefix = epic_suffix[:2] ### first two numbers of last five numbers
-					lc_URL = 'https://archive.stsci.edu/missions/k2/lightcurves/'+campaign+'/'+epic_prefix+'00000/'+epic_suffix_prefix+'000/ktwo'+epictarg+'-'+campaign+'_llc.fits'
-					lcdownload_name = 'EPIC'+epictarg+'_'+campaign+'_llc.fits'
-					print('attempting to download '+targID+' from campaign '+campaign)
-					if os.path.exists(moonpydir+'/k2_lcs'):
-						pass
-					else:
-						os.system('mkdir '+moonpydir+'/k2_lcs')
-					os.system('wget -O '+moonpydir+'/k2_lcs/'+lcdownload_name+' '+lc_URL)
-					lcs.append(moonpydir+'/k2_lcs/'+lcdownload_name)
-
-	for lc in lcs:
-		if targtype != 'epic':
-			with lc.open() as f:
-				hdu_header = f[0].header 
-				hdu_data = f[1].data 
-
-				obj_ra, obj_dec = hdu_header['RA_OBJ'], hdu_header['DEC_OBJ']
-				quarter = hdu_header['QUARTER']
-
-				kobj_times.append(hdu_data['time'])
-				
-				kobj_sap_fluxes.append(hdu_data['sap_flux'])
-				kobj_sap_errors.append(hdu_data['sap_flux_err'])
-				kobj_pdc_fluxes.append(hdu_data['pdcsap_flux'])
-				kobj_pdc_errors.append(hdu_data['pdcsap_flux_err'])
-				kobj_flags.append(hdu_data['sap_quality'])
-				kobj_quarters.append(quarter)
-
-		elif targtype == 'epic':
-			try:
-				f = pyfits.open(lc)
-			except: ### likely means the fits file is empty (it's still generated even if the target was not observed).
-				continue
-			hdu_header = f[0].header 
-			hdu_data = f[1].data 
-
-			obj_ra, obj_dec = hdu_header['RA_OBJ'], hdu_header['DEC_OBJ']
-			quarter = hdu_header['CAMPAIGN']
-
-			kobj_times.append(hdu_data['time'])
-			
-			kobj_sap_fluxes.append(hdu_data['sap_flux'])
-			kobj_sap_errors.append(hdu_data['sap_flux_err'])
-			kobj_pdc_fluxes.append(hdu_data['pdcsap_flux'])
-			kobj_pdc_errors.append(hdu_data['pdcsap_flux_err'])
-			kobj_flags.append(hdu_data['sap_quality'])
-			kobj_quarters.append(quarter)
-
-			### remove those light curves after you've downloaded them!
-			os.system('rm -f '+lc)
-
-			
-
-	kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = np.array(kobj_times), np.array(kobj_sap_fluxes), np.array(kobj_sap_errors), np.array(kobj_pdc_fluxes), np.array(kobj_pdc_errors), np.array(kobj_flags), np.array(kobj_quarters)
-
-	### sort them
-	quarter_sort = np.argsort(kobj_quarters)
-
-	kobj_times = kobj_times[quarter_sort]
-	kobj_sap_fluxes, kobj_sap_errors = kobj_sap_fluxes[quarter_sort], kobj_sap_errors[quarter_sort]
-	kobj_pdc_fluxes, kobj_pdc_errors = kobj_pdc_fluxes[quarter_sort], kobj_pdc_errors[quarter_sort]
-	kobj_flags = kobj_flags[quarter_sort]
-	kobj_quarters = kobj_quarters[quarter_sort]
-
-	if quarters != 'all':
-		### grab just the quarters you want
-		final_quarter_idxs = []
-		for nquart,quart in enumerate(kobj_quarters):
-			if quart in quarters:
-				final_quarter_idxs.append(nquart)
-		final_quarter_idxs = np.array(final_quarter_idxs)
-
-		kobj_times = kobj_times[final_quarter_idxs]
-		kobj_sap_fluxes, kobj_sap_errors = kobj_sap_fluxes[final_quarter_idxs], kobj_sap_errors[final_quarter_idxs]
-		kobj_pdc_fluxes, kobj_pdc_errors = kobj_pdc_fluxes[final_quarter_idxs], kobj_pdc_errors[final_quarter_idxs]
-		kobj_flags = kobj_flags[final_quarter_idxs]
-		kobj_quarters = kobj_quarters[final_quarter_idxs]
-
-
-	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
-	if lc_format == 'pdc':
-		return kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters
-	elif lc_format == 'sap':
-		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters 
-	elif lc_format == 'both':
-		return kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters 
-
-"""
 
 
 

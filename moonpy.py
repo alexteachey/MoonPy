@@ -67,7 +67,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', is_neighbor='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', clobber=None):
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
 		original_target_input = targetID ### keep this around! sometimes you want it!
@@ -355,7 +355,11 @@ class MoonpyLC(object):
 				try:
 					#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 					if user_supplied == 'n':
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+						if download == 'y':
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+						elif download == 'n':
+							print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
 					print('lc_quarters = ', lc_quarters)
 
 				except:
@@ -363,8 +367,12 @@ class MoonpyLC(object):
 						### maybe it needs the full name!
 						#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 						if user_supplied == 'n':
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
-					
+							if download == 'y':
+								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
+							elif download == 'n':
+								print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
+								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
+
 						print('lc_quarters = ', lc_quarters)
 
 					except:
@@ -521,7 +529,10 @@ class MoonpyLC(object):
 		for qidx in np.arange(0,nquarters,1):
 			### remove NaNs
 			#if nquarters != 1:
-			nan_idxs = np.where(np.isfinite(np.array(lc_fluxes, dtype=np.float64)[qidx]) == False)[0]
+			try:
+				nan_idxs = np.where(np.isfinite(np.array(lc_fluxes, dtype=np.float64)[qidx]) == False)[0]
+			except:
+				nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
 			#elif nquarters == 1:
 			#	nan_idxs = np.where(np.isfinite(lc_fluxes) == False)[0]
 
@@ -724,6 +735,7 @@ class MoonpyLC(object):
 				mask_transit_idxs = []
 
 				if use_mazeh == 'y':
+					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
 					mazeh = pandas.read_csv('Table3_O-C.csv')
 					maz_koi = np.array(mazeh['KOI'])
@@ -2119,13 +2131,22 @@ class MoonpyLC(object):
 		
 		else:
 			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-			#check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
-			if mast_rowidx < 10:
-				check_mast_rows = np.arange(0,mast_rowidx+11,1)
-			else:
-				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
+			print('mast_rowidx, NEA_targetname = ', mast_rowidx, NEA_targetname)
 
-			print('mast_rowidx = ', mast_rowidx)
+			if len(mast_rowidx) == 0:
+				### means this object is not in the cumulative KOI list.
+				print('It appears this object is not in the cumulative KOI list.')
+				print('checking all '+str(len(mast_data['kepoi_name']))+' MAST rows...')
+				#### you're going to need to check all mast rows!
+				check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
+			else:
+				#check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
+				if mast_rowidx < 10:
+					check_mast_rows = np.arange(0,mast_rowidx+11,1)
+				else:
+					check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
+
+				print('mast_rowidx = ', mast_rowidx)
 
 
 
@@ -2140,7 +2161,9 @@ class MoonpyLC(object):
 
 			for cr in check_mast_rows:
 				if cr <= len(mast_data['kepoi_name']) - 1:
-					if (np.array(mast_data['kepoi_name'])[cr][:-1] == self.NEA_targetname[:-1]) and (cr != mast_rowidx):
+					target_term = self.NEA_targetname[:-1]
+					search_term = np.array(mast_data['kepoi_name'])[cr][:-1]
+					if (search_term == target_term) and (cr != mast_rowidx):
 						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
 						neighbor = str(mast_data['kepoi_name'][cr])
 						while neighbor.startswith('K') or neighbor.startswith('0'):
@@ -2154,7 +2177,9 @@ class MoonpyLC(object):
 			print("looking for neighbors in MAST for this Kepler target.")
 			for cr in check_mast_rows:
 				if cr <= len(mast_data['kepler_name']) - 1:
-					if (np.array(mast_data['kepler_name'])[cr][7:-2] == self.target[7:-1]) and (cr != mast_rowidx):
+					target_term = self.target[7:-1]
+					search_term = np.array(mast_data['kepler_name'])[cr][7:-2]
+					if ((len(mast_rowidx) == 0) and (search_term == target_term)) or ((search_term == target_term) and (cr != mast_rowidx)):
 						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
 						neighbor = str(mast_data['kepler_name'][cr])
 						if ' ' in neighbor:
@@ -2166,7 +2191,9 @@ class MoonpyLC(object):
 			print("looking for neighbors in MAST for this K2 target.")
 			for cr in check_mast_rows:
 				if cr <= len(mast_data['pl_name']) - 1:
-					if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
+					target_term = NEA_targetname[3:-2]
+					search_term = np.array(mast_data['pl_name'])[cr][3:-2]
+					if (search_term == target_term) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
 						print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
 						neighbor = str(mast_data['pl_name'][cr])
 						if ' ' in neighbor:
@@ -2255,7 +2282,7 @@ class MoonpyLC(object):
 					### for now, just delete them after downloading... should come up with a better solution.
 					print('calling MoonpyLC for neighbor: ', neighbor)
 
-					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, clobber='n')
+					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, download='y', clobber='n')
 				except:
 					traceback.print_exc()
 					print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
