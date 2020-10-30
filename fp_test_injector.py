@@ -145,11 +145,11 @@ if run_individual_system == 'y':
 	### HARD CODING kepler-150f in for now
 	single_system = input('What is the name of the system? ')
 	kois = np.array([single_system])
+	
 	if single_system.lower().startswith('koi') == False:
 		iskoi = 'n'
 	else:
 		iskoi = 'y'
-
 
 
 #np.random.shuffle(kois)
@@ -159,44 +159,105 @@ for nkoi, koi in enumerate(kois):
 	try:
 		print(koi)
 
+		neighbor_kepois = []
+		neighbor_idxs = []
+
 		if iskoi == 'y':
+			### IT'S A KOI, SO YOU SHOULD BE ABLE TO FIND IT IN THE CUMULATIVE KOI DIRECTORY.
+
 			#planet_number = koi[4:koi.find('.')] ### isolates the number by itself.
 			kepoi_by_itself = kepois[nkoi][:kepois[nkoi].find('.')] ### this will be something like "K000001" for KOI-1.01.
 		
+			### see whether there are neighbors:
+			for kepoi_idx in np.arange(-5,6,1):
+				try:
+					if (kepoi_by_itself in kepois[nkoi+kepoi_idx]) and (kepoi_idx != 0): ### if, for example, K000001.02 exists.
+						neighbor_kepoi = kepois[nkoi+kepoi_idx]
+						neighbor_kepois.append(neighbor_kepoi)
+						neighbor_idxs.append(nkoi+kepoi_idx)
+				except:
+					#print('neighbor finding failed (not necessarily bad).')
+					continue
+			neighbor_idxs = np.array(neighbor_idxs)
 
-		### see whether there are neighbors:
-		neighbor_kepois = []
-		neighbor_idxs = []
-		for kepoi_idx in np.arange(-5,6,1):
-			try:
-				if (kepoi_by_itself in kepois[nkoi+kepoi_idx]) and (kepoi_idx != 0): ### if, for example, K000001.02 exists.
-					neighbor_kepoi = kepois[nkoi+kepoi_idx]
-					neighbor_kepois.append(neighbor_kepoi)
-					neighbor_idxs.append(nkoi+kepoi_idx)
-			except:
-				#print('neighbor finding failed (not necessarily bad).')
-				continue
-		neighbor_idxs = np.array(neighbor_idxs)
+			### grab all the koi params!
+			koi_period = periods[nkoi]
+			koi_disposition = dispositions[nkoi]
+			koi_sma = smas[nkoi]
+			koi_tau0 = tau0s[nkoi]
+			koi_impact = impacts[nkoi]
+			koi_duration_hours = durations_hours[nkoi]
+			koi_duration_days = durations_days[nkoi]
+			koi_eccen = eccens[nkoi]
+			koi_longp = longps[nkoi]
+			koi_inc = incs[nkoi]
+			koi_rprstar = rprstars[nkoi]
+			koi_rp_rearth = rp_rearths[nkoi]
+			koi_lda1 = lda1s[nkoi]
+			koi_lda2 = lda2s[nkoi]
+			koi_q1, koi_q2 = u1u2_to_q1q2(koi_lda1, koi_lda2)
+			koi_rp_meters = rp_meters[nkoi]
+			koi_rstar_meters = rstar_meters[nkoi]
+			koi_a_over_rstar = a_over_rstars[nkoi]
 
-		### grab all the koi params!
-		koi_period = periods[nkoi]
-		koi_disposition = dispositions[nkoi]
-		koi_sma = smas[nkoi]
-		koi_tau0 = tau0s[nkoi]
-		koi_impact = impacts[nkoi]
-		koi_duration_hours = durations_hours[nkoi]
-		koi_duration_days = durations_days[nkoi]
-		koi_eccen = eccens[nkoi]
-		koi_longp = longps[nkoi]
-		koi_inc = incs[nkoi]
-		koi_rprstar = rprstars[nkoi]
-		koi_rp_rearth = rp_rearths[nkoi]
-		koi_lda1 = lda1s[nkoi]
-		koi_lda2 = lda2s[nkoi]
-		koi_q1, koi_q2 = u1u2_to_q1q2(koi_lda1, koi_lda2)
-		koi_rp_meters = rp_meters[nkoi]
-		koi_rstar_meters = rstar_meters[nkoi]
-		koi_a_over_rstar = a_over_rstars[nkoi]
+
+		elif iskoi == 'n':
+			#### WON'T FIND IT IN CUMKOIS -- YOU NEED TO DO SOME SHIT WITH MOONPY!
+			### gonna need to find the target with MoonPy!
+			single_systemLC = MoonpyLC(targetID=single_system, clobber='y')
+			### hard coding Kepler-150f for now.
+			print('BE ADVISED YOU ARE CURRENTLY RUNNING A HARD-CODED KEPLER-150f SYSTEM! REWRITE THE CODE!')
+			time.sleep(5)
+			### run mystery_solver 
+			single_systemLC.mystery_solver(tau0=509.0224063972128, period=637.229018870069581, duration_hours=16.3587)
+			### find its neighbors with MoonPy
+			single_systemLC.find_neighbors() ### will find all the neighbors
+			### actually grab the neighbors as MoonPy LCs
+			single_systemLC.get_neighbors()
+			### now will all these neighbors, you can call them up individually, and get their 
+			neighbor_koi_aliases = []
+			for neighborkey in single_systemLC.neighbor_dict.keys():
+				neighbor_aliases = single_systemLC.neighbor_dict[neighborkey].aliases
+				for na in neighbor_aliases:
+					if na.lower().startswith('koi'):
+						neighbor_koi_aliases.append(na)
+						break
+			print('KOI neighbors: ', neighbor_koi_aliases)
+			for koin in neighbor_koi_aliases:
+				### search for '0'+koin[4:]
+				for nidx in np.arange(0,len(kepois),1):
+					if '0'+str(koin[4:]) in kepois[nidx]:
+						neighbor_kepois.append(kepois[nidx])
+						neighbor_idxs.append(nidx)
+						break
+
+			print('neighbor_kepois = ', neighbor_kepois)
+				
+
+			#### ESTABLISH THIS SHIT
+			koi_period = single_systemLC.period
+			koi_impact = 0
+			koi_duration_days = single_systemLC.duration_days 
+			koi_duration_hours = single_systemLC.duration_hours
+			koi_eccen = 0
+			koi_longp = 0 ### doesn't matter for e = 0
+			koi_inc = 90 	
+			koi_disposition = 'CONFIRMED'
+
+			koi_sma = 1.24 ### AU
+			koi_sma_meters = koi_sma * au.value
+			koi_tau0 = single_systemLC.tau0
+
+			single_systemLC.rp_rearth = 3.64
+			koi_rp_rearth = single_systemLC.rp_rearth
+			koi_lda1 = lda1s[neighbor_idxs[0]] ### steal from neighbor planet
+			koi_lda2 = lda2s[neighbor_idxs[0]]
+			koi_q1, koi_q2 = u1u2_to_q1q2(koi_lda1, koi_lda2)
+			koi_rp_meters = koi_rp_rearth * R_earth.value
+			koi_rstar_meters = rstar_meters[neighbor_idxs[0]] ### steal from neighbor planet
+			koi_rprstar = koi_rp_meters / koi_rstar_meters 
+			koi_a_over_rstar = koi_sma_meters / koi_rstar_meters
+
 
 		print('period = ', koi_period)
 		print('impact = ', koi_impact)
@@ -204,6 +265,7 @@ for nkoi, koi in enumerate(kois):
 		print('e = ', koi_eccen)
 		print('longp = ', koi_longp)
 		print('inclination = ', koi_inc)
+
 
 		#if float(koi_period) < 10:
 		if (float(koi_period) < 5) or (float(koi_period) >= 10):
@@ -242,7 +304,6 @@ for nkoi, koi in enumerate(kois):
 			neighbor_a_over_rstars = a_over_rstars[neighbor_idxs]
 
 
-
 		### FOR TESTING PURPOSES!
 		#if (mplc.rprstar)**2 < 0.05:
 		#	continue
@@ -254,8 +315,11 @@ for nkoi, koi in enumerate(kois):
 		except:
 			try:
 				print('loading lc through moonpy.')
-				mplc = MoonpyLC(targetID=koi, clobber='y')
-				mplc.get_neighbors(clobber_lc='y') ### produces a light curve file, with all transits, for every planet, ALREADY FLAGGED!
+				if iskoi == 'y':
+					mplc = MoonpyLC(targetID=koi, clobber='y')
+					mplc.get_neighbors(clobber_lc='y') ### produces a light curve file, with all transits, for every planet, ALREADY FLAGGED!
+				elif iskoi == 'n':
+					mplc = single_systemLC ### you've already done find_neighbors and get_neighbors!!!
 				koi_lcfile = open(koi_lcfilename, mode='r')
 			except:
 				print('something went wrong getting this light curve through MoonPy.')
@@ -274,8 +338,11 @@ for nkoi, koi in enumerate(kois):
 					already_detrended = 'y'
 				else:
 					#raise Exception('something weird with this file.')
-					mplc = MoonpyLC(targetID=koi, clobber='y')
-					mplc.get_neighbors(clobber_lc='y') ### produces a light curve file, with all transits, for every planet, ALREADY FLAGGED!		
+					if iskoi == 'y':
+						mplc = MoonpyLC(targetID=koi, clobber='y')
+						mplc.get_neighbors(clobber_lc='y') ### produces a light curve file, with all transits, for every planet, ALREADY FLAGGED!
+					else:
+					single_systemLC = mplc		
 			koi_lcfile.close()
 			break
 
