@@ -12,7 +12,8 @@ import traceback
 
 moonpydir = os.getcwd()
 
-central_data_dir = '/data/tethys/Documents/Central_Data/'
+#central_data_dir = '/data/tethys/Documents/Central_Data/'
+central_data_dir = '/Users/hal9000/Documents/Central_Data/'
 
 
 #### THIS IS A MAJOR REWORKING OF THE ORIGINAL mp_lcfind.py (eventually mp_lcfind_deprecated.py).
@@ -233,8 +234,10 @@ def kepler_fits_download(target_name):
 	### first extract the KIC number
 	try:
 		KIC_name = find_KIC_alias(target_name)
+		print('KIC alias = ', KIC_name)
 
 		KIC_URL, KIC_wget, KIC_download_dir = kepler_URL_generator(KIC_name)
+		#print("KIC wget = ", KIC_wget)
 
 		print('wgetting KIC light curves...')
 		os.system(KIC_wget)
@@ -276,6 +279,7 @@ def kepler_unpack_fits(target_name, sc=False):
 		#### use kepler_fits_download() to grab the KIC_download_dir and unpack these fits.
 		#KIC_directory = kepler_fits_download(target_name, download=download)
 		KIC_directory_files = os.listdir(KIC_directory)
+		print("KIC_directory_files = '", KIC_directory_files)
 
 		### start a dictionary with quarters, times, fluxes, errors, flags
 		kic_quarters_dict = {}
@@ -290,12 +294,15 @@ def kepler_unpack_fits(target_name, sc=False):
 			for j,kj in enumerate(KIC_directory_files):
 				if (i != j) and (ki[:-8] == kj[:-8]) and (ki[-8:] == 'slc.fits') and (kj[-8:] == 'llc.fits'):
 					if sc == True:
+						print('cadence reject: ', kj)
 						reject_wrong_cadence_files.append(kj)
 					else:
+						print('cadence reject: ', ki)
 						reject_wrong_cadence_files.append(ki)
 
 
 		for Kdf in KIC_directory_files:
+			print('reading ', Kdf)
 
 			if ('.fits' in Kdf) and (Kdf not in reject_wrong_cadence_files):
 				KIC_fits_files.append(Kdf)
