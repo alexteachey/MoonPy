@@ -2376,6 +2376,7 @@ class MoonpyLC(object):
 
 		for taunum,tau in enumerate(self.taus):
 			cnn_min, cnn_max = tau-window, tau+window
+			print('cnn_min, cnn_max = ', cnn_min, cnn_max)
 			cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
 			### grab the times, fluxes, and errors
 			cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes)[cnn_idxs], np.hstack(self.errors)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]

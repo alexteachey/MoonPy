@@ -12,8 +12,8 @@ import traceback
 
 moonpydir = os.getcwd()
 
-#central_data_dir = '/data/tethys/Documents/Central_Data/'
-central_data_dir = '/Users/hal9000/Documents/Central_Data/'
+central_data_dir = '/data/tethys/Documents/Central_Data/'
+#central_data_dir = '/Users/hal9000/Documents/Central_Data/'
 
 
 #### THIS IS A MAJOR REWORKING OF THE ORIGINAL mp_lcfind.py (eventually mp_lcfind_deprecated.py).
@@ -696,11 +696,16 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		### in the tesscurl_sector_NN_lc.sh files.
 
 		nsectors = 30
+		nactual_sectors = 0
 		for sector in np.arange(1,nsectors,1):
 			### get the curl script... then extract the prefixes and suffixes from the first line.
 			try:
-				sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
-				os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+				if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
+					pass
+				else:
+					sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
+					os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+
 				curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
 				first_line = curltxt.readline()
 				second_line = curltxt.readline()
@@ -708,11 +713,13 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 				sector_suffix = second_line[56:71] 
 				### now read the first line of that 
 				sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
-				print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
-				#nsectors += 1
+				if len(sector_prefix) > 0:
+					print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
+					nactual_sectors += 1
 			except:
 				traceback.print_exc()
 				break
+		nsectors = nactual_sectors
 		print('nsectors = ', nsectors)
 
 
