@@ -33,6 +33,15 @@ from scipy.interpolate import interp1d
 
 #moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 moonpydir = os.getcwd()
+
+if moonpydir.startswith('/data/tethys'):
+	central_data_dir = '/data/tethys/Documents/Central_Data/'
+elif moonpydir.startswith('/home/cal'):
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+elif moonpydir.startswith('/Users/hal9000'):
+	central_data_dir = '/Users/hal9000/Documents/Central_Data'
+
+"""
 savepath = moonpydir+'/saved_lcs'
 print("light curve savepath = ", savepath)
 if os.path.exists(savepath):
@@ -40,6 +49,7 @@ if os.path.exists(savepath):
 else:
 	print("did not exist. generating...")
 	os.system('mkdir '+savepath)
+"""
 
 """
 This is the MoonPy master script! To open, you should only have to type 'import moonpy'
@@ -152,9 +162,32 @@ class MoonpyLC(object):
 			else:
 				telescope = input('Please specify the telescope: ')
 
+
 		self.telescope = telescope 
 		target_name = targetID ### maybe redundant but possibly helpful.
 		self.target = target_name ### preserves the full name of the target, not just the number. 
+
+
+		#### SPECIFY THE SAVEPATH FOR THE LIGHT CURVE -- NEW HANDLING (NOV 2020) SAVES THEM OUTSIDE THE MOONPY DIRECTORY, IN CENTRAL_DATA.
+		#download_directory = central_data_dir+'Kepler_lightcurves/KIC'+str(query_format_number)
+		#savepath = central_data_dir+'/'
+		if self.telescope.lower() == 'kepler':
+			savepath = kepler_URL_generator(find_KIC_alias(targetID))[2] 
+			#savepath = central_data_dir+'/Kepler_lightcurves/'+targetID
+		elif self.telescope.lower() == 'k2':
+			#savepath = central_data_dir+'/K2_lightcurves/'+targetID
+			savepath = k2_URL_generator(find_EPIC_alias(targetID))[2]
+		elif self.telescope.lower() == 'tess':
+			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
+
+		if os.path.exists(savepath):
+			pass
+		else:
+			os.system('mkdir '+savepath)	
+
+
+
+
 
 
 		if (load_lc == 'n') and (clobber == None):
@@ -661,6 +694,12 @@ class MoonpyLC(object):
 		except:
 			traceback.print_exc()
 			raise Exception('an exception was raised while trying to save the light curve.')
+
+
+
+
+
+
 
 
 	### try this at the end

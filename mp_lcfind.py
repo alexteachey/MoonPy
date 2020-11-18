@@ -700,10 +700,11 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		### these can be found at archive.stsci.edu/tess/bulk_downloads/bulk_downloads_ffi-tp-lc-dv.html,
 		### in the tesscurl_sector_NN_lc.sh files.
 
-		nsectors = 30
+		nsectors = 99
 		nactual_sectors = 0
 		for sector in np.arange(1,nsectors,1):
 			### get the curl script... then extract the prefixes and suffixes from the first line.
+
 			try:
 				if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
 					pass
@@ -721,6 +722,8 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 				if len(sector_prefix) > 0:
 					print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
 					nactual_sectors += 1
+				else:
+					break
 			except:
 				traceback.print_exc()
 				break
@@ -749,8 +752,15 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 		"""
 
 		for sector in np.arange(1,nsectors+1,1):
+
+			download_directory = central_data_dir+'TESS_lightcurves/TIC'+str(ticnum)
+			if os.path.exists(download_directory):
+				pass
+			else:
+				os.system('mkdir '+download_directory)
+
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
-			os.system('curl -C - -L -o '+moonpydir+'/TESS_lcs/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
+			os.system('curl -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 			print('downloading the light curve for '+str(targID)+' in sector ', sector)
 
 			try:
