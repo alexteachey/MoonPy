@@ -12,7 +12,12 @@ import traceback
 
 moonpydir = os.getcwd()
 
-central_data_dir = '/data/tethys/Documents/Central_Data/'
+if moonpydir.startswith('/data/tethys'):
+	central_data_dir = '/data/tethys/Documents/Central_Data/'
+elif moonpydir.startswith('/home/cal'):
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+elif moonpydir.startswith('/Users/hal9000'):
+	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 #central_data_dir = '/Users/hal9000/Documents/Central_Data/'
 
 
