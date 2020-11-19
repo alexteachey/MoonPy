@@ -185,20 +185,21 @@ class MoonpyLC(object):
 		else:
 			os.system('mkdir '+savepath)	
 
-
+		### make it an attribute
+		self.savepath = savepath
 
 
 
 
 		if (load_lc == 'n') and (clobber == None):
 			### check to see if a file already exists!
-			if os.path.exists(savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv'):
-				print(savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
+			if os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv'):
+				print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
 				clobber = input('Clobber? y/n: ')
 				if clobber == 'n':
 					load_lc = 'y'
 				else:
-					print('loading '+savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')
+					print('loading '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')
 
 		elif (load_lc == 'n') and (clobber == 'n'):
 			load_lc = 'y'
@@ -289,10 +290,10 @@ class MoonpyLC(object):
 
 			try:
 				try:
-					pandafile = pandas.read_csv(savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+					pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
 				except:
 					try:
-						pandafile = pandas.read_csv(savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
+						pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 					except:
 						print("could not load the light curve from file. Will download.")
 						load_lc = 'n'
@@ -669,7 +670,7 @@ class MoonpyLC(object):
 		try:
 			if save_lc == 'y':
 				### write to a file!
-				lcfile = open(savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+				lcfile = open(self.savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 				if self.telescope.lower() == 'user':
 					lcfile.write('BJD\tfluxes\terrors\tflags\tquarter\n')
 				elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
@@ -981,7 +982,7 @@ class MoonpyLC(object):
 			self.flags_detrend = final_flags
 
 		if save_lc == 'y':
-			lcfile = open(savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+			lcfile = open(self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 			if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 				lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 			elif self.telescope.lower() == 'tess':
@@ -2371,10 +2372,10 @@ class MoonpyLC(object):
 
 		if save_to_file == 'y':
 			try:
-				lcfile = open(savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+				lcfile = open(self.savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
 			except:
-				lcfile = open(savepath+'/'+self.target+'_lightcurve.tsv', mode='r') ### for older files.
-			lcfile_new = open(savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
+				lcfile = open(self.savepath+'/'+self.target+'_lightcurve.tsv', mode='r') ### for older files.
+			lcfile_new = open(self.savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
@@ -2397,8 +2398,8 @@ class MoonpyLC(object):
 			lcfile.close()
 			lcfile_new.close()
 			### rename the file.
-			#os.system('mv '+savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
-			os.system('mv '+savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
+			#os.system('mv '+self.savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
+			os.system('mv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
 
 		self.all_transit_times = np.array(neighbor_transit_times)
 		self.all_transit_list = neighbor_transit_list
