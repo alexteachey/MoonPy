@@ -1070,6 +1070,10 @@ class MoonpyLC(object):
 		if modelcode == "LUNA":
 			folded = False ### you should not be fitting a moon model to a folded light curve!
 
+		##### LIGHT CURVES NEED TO HAVE THE DATA POINTS WELL OUTSIDE THE TRANSITS REMOVED,
+		###### OTHERWISE IT TAKES WAAAAAAY TOO LONG TO CHEW ON THIS. (11/25/2020)
+
+
 		if self.telescope.lower() != 'user':
 			self.get_properties(locate_neighbor='n')
 		self.initialize_priors(modelcode=modelcode)
@@ -1094,7 +1098,7 @@ class MoonpyLC(object):
 			skip_ntqs = 'n' ### if you have a phase-folded light curve you don't need to skip non-transiting quarters!
 			lc_times, lc_fluxes, lc_errors = self.fold_times, self.fold_fluxes, self.fold_errors
 			### update the tau0 prior!
-			self.param_uber_dict['tau0'] = ['uniform', (self.fold_tau-0.1, self.fold_tau+0.1)]
+			self.param_uber_dict['tau0'] = ['uniform', (self.fold_tau-0.1, self.fold_tau+0.1)] ### establishing the prior.
 
 		else:
 			### stacks of arrays!
@@ -1128,6 +1132,7 @@ class MoonpyLC(object):
 
 		if model == 'M':
 			pass
+
 		elif (model == 'P') or (model=='T'):
 			### THESE ARE INPUTS TO THE MODEL BUT SHOULD NOT BE FREE PARAMETERS!
 			self.param_uber_dict['RsatRp'] = ['fixed', 1e-8]
@@ -1199,9 +1204,9 @@ class MoonpyLC(object):
 		param_limit_tuple = []
 
 		for pkey in self.param_uber_dict.keys():
-			param_labels.append(pkey)
-			param_prior_forms.append(param_uber_dict[pkey][0])
-			param_limit_tuple.append(param_uber_dict[pkey][1])
+			param_labels.append(pkey) ### name of the prior 
+			param_prior_forms.append(param_uber_dict[pkey][0]) ### the shape of the prior
+			param_limit_tuple.append(param_uber_dict[pkey][1]) ### limits of the prior
 
 		self.param_labels = param_labels
 		self.param_prior_forms = param_prior_forms 
