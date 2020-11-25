@@ -10,7 +10,8 @@ import mp_tools
 
 
 ### DIRECTORIES
-LUNAdir = '/Users/hal9000/Documents/Software/MoonPy'
+#LUNAdir = '/Users/hal9000/Documents/Software/MoonPy'
+LUNAdir = os.getcwd()
 outputdir = LUNAdir+'/output'
 
 
