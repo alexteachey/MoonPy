@@ -1059,7 +1059,7 @@ class MoonpyLC(object):
 
 	### FITTING!
 
-	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
+	def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
 		### optional values for code are "multinest" and "emcee"
 		#if type(params) != dict:
 		#	raise Exception("'params' must be a dictionary, with strings as the keys and priors for the values.")
@@ -1116,10 +1116,19 @@ class MoonpyLC(object):
 					for stau in self.taus:
 						if (stau >= np.nanmin(qtimes)) and (stau <+ np.nanmax(qtimes)):
 							### transit in this quarter:
+
+							if segment == 'y':
+								#### we're going to segment the light curve, by including only n=segment_length data points on either side of tau
+								##### THIS WILL GREATLY REDUCE THE COMPUTATION TIME
+								stau_idx = np.nanargmin(np.abs(stau - qtimes)) #### closest index within qtimes for the transit time.
+								segment_idxs = np.arange(int(stau_idx - np.ceil(segment_length/2)), int(stau_idx + np.ceil(segment_length/2)), 1)
+								qtimes, qfluxes, qerrors = qtimes[segment_idxs], qfluxes[segment_idxs], qerrors[segment_idxs]
+
 							fit_times.append(qtimes)
 							fit_fluxes.append(qfluxes)
 							fit_errors.append(qerrors)
 							break
+
 				fit_times, fit_fluxes, fit_errors = np.hstack(np.array(fit_times)), np.hstack(np.array(fit_fluxes)), np.hstack(np.array(fit_errors))
 
 		else:
@@ -1128,6 +1137,11 @@ class MoonpyLC(object):
 				fit_times, fit_fluxes, fit_errors = np.hstack(lc_times), np.hstack(lc_fluxes), np.hstack(lc_errors)
 			elif folded == True:
 				fit_times, fit_fluxes, fit_errors = lc_times, lc_fluxes, lc_errors ### already flattened!
+
+
+
+
+
 
 
 		if model == 'M':
