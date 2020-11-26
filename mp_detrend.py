@@ -112,13 +112,23 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		f_detrend, sigma_detrend = untrendy.untrend(times, fluxes, errors)
 	return f_detrend, sigma_detrend
 
-def george_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
+def george_detrend(times, fluxes, errors, kernel_name=None, metric=1.0, telescope=None, mask_idxs=None):
 	import george
-	from george.kernels import ExpSquaredKernel
+	if kernel != None:
+		try:
+			kernel_choice = vars(george.kernels)[kernel_name] ### accesses the kernel through a dictionary, with kernel_name being the key.
+		except:
+			print('GP_kernel input in self.fit() missing or invalid. unable to load your kernel choice. Loading ExpSquaredKernel.')
+			from george.kernels import ExpSquaredKernel
+			print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
+		
+	elif kernel == None:
+		from george.kernels import ExpSquaredKernel
+		print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
 
 	unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 
-	kernel = ExpSquaredKernel(1.0)
+	kernel = ExpSquaredKernel(metric=metric)
 	gp = george.GP(kernel)
 	gp.compute(unmasked_times, unmasked_errors) ### pre-compute the factorization of the matrix
 
