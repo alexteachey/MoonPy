@@ -16,7 +16,7 @@ from astropy.stats import LombScargle
 #### BELOW ARE MOONPY PACKAGES
 from mp_tools import *
 from mp_lcfind import *
-from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend
+from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from cofiam import max_order
@@ -724,7 +724,7 @@ class MoonpyLC(object):
 
 		if mask_neighbors == 'y':
 			mask_transits = 'y' 
-		### optional values for method are "cofiam", "untrendy", "medfilt"
+		### optional values for detrending method (dmeth) are "cofiam", "untrendy", "medfilt", "george", and "polyAM"
 		### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
 
 		#try:
@@ -916,22 +916,44 @@ class MoonpyLC(object):
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
 
+
+					elif dmeth == 'polyAM':
+						"""
+						Polynomial detrending is the same basic algorithm as CoFiAM, but instead of using sinusoids, it uses polynomials, and minimizes autocorrelation.
+						"""
+						try:
+							fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						except:
+							fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
+
+
+
 					elif dmeth == 'untrendy':
 						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
 						fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
 
+
+
 					elif dmeth == 'george':
 						fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
+
+
 
 					elif dmeth == 'medfilt':
 						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
 						fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
+
+
+
 
 				except:
 					traceback.print_exc()
