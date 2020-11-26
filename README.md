@@ -3,9 +3,9 @@
 
 
 # Welcome to MoonPy!
-last updated: July 8, 2019. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: November 26, 2020. Developed by [Alex Teachey](http://www.alexteachey.com).
 
-*Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.*
+*Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
 This document will walk you through the basics of using the MoonPy code. 
 MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. (We'd appreciate a shoutout, too).
@@ -21,13 +21,13 @@ This code requires a number of packages, including:
 * [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - standard parameter estimator and Bayesian evidence calculator, developed by Johannes Buchner as a wrapper to the standard MultiNest code (Feroz and Hobson)
 * [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey (DFM) et al
 * [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - Standard transit-modeling code by L. Kreidberg
-* [kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by DFM
-* [k2plr](https://github.com/rodluger/k2plr) -- a modification of the kplr code for downloading K2 data, by Rodrigo Luger
+* ~~[kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by DFM~~
+* ~~[k2plr](https://github.com/rodluger/k2plr) -- a modification of the kplr code for downloading K2 data, by Rodrigo Luger~~
 * [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by DFM
 * [george](https://george.readthedocs.io/en/latest/) -- a Gaussian process regression tool developed by (you guessed it) DFM
 * [untrendy](https://github.com/dfm/untrendy) -- another DFM package for fast and easy detrending (currently having difficulties here)
 
-As well as standard packages (numpy, scipy, astropy, matplotlib, pandas, etc) that likely came with your python distribution.
+As well as several standard packages (numpy, scipy, astropy, matplotlib, pandas, etc) that likely came with your python distribution.
 
 Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
 
