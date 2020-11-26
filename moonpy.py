@@ -716,7 +716,7 @@ class MoonpyLC(object):
 
 	### DETRENDING!
 
-	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', kernel=None, GP_kernel=None, GP_metric=1.0, max_degree=30, use_mazeh='y'):
+	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
 		exceptions_raised = 'n'
 
 		if self.telescope.lower() != 'kepler':
@@ -923,13 +923,13 @@ class MoonpyLC(object):
 						flags_detrend = dflags
 
 					elif dmeth == 'george':
-						fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, kernel_name=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+						fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
 
 					elif dmeth == 'medfilt':
 						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
-						fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  size=kernel, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+						fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
 

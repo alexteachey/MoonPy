@@ -112,13 +112,14 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		f_detrend, sigma_detrend = untrendy.untrend(times, fluxes, errors)
 	return f_detrend, sigma_detrend
 
-def george_detrend(times, fluxes, errors, kernel_name=None, metric=1.0, telescope=None, mask_idxs=None):
+def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1.0, telescope=None, mask_idxs=None):
 	import george
-	if kernel != None:
+	if kernel_name != 'ExpSquaredKernel':
 		try:
 			kernel_choice = vars(george.kernels)[kernel_name] ### accesses the kernel through a dictionary, with kernel_name being the key.
+			print('using ', kernel_name)
 		except:
-			print('GP_kernel input in self.fit() missing or invalid. unable to load your kernel choice. Loading ExpSquaredKernel.')
+			print('GP_kernel input in self.detrend() or george_detrend() is missing or invalid. unable to load your kernel choice. Loading ExpSquaredKernel.')
 			from george.kernels import ExpSquaredKernel
 			print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
 		
@@ -145,11 +146,14 @@ def george_detrend(times, fluxes, errors, kernel_name=None, metric=1.0, telescop
 
 
 
-def medfilt_detrend(times, fluxes, errors, size, telescope=None, mask_idxs=None):
-	if size == None:
-		size = 9 
+def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_idxs=None):
 
-	print('kernel size = ', size)
+	print('kernel_hours = ', kernel_hours)
+
+	kernel_size = int(2*kernel_hours) #### 2 data points per hour for Kepler.
+	if kernel_size % 2 == 0:
+		kernel_size = kernel_size += 1
+
 	if type(mask_idxs) != type(None):
 		print('performing median filter with masked points.')
 		### that is, if there are masks for the transits (there should be!)
