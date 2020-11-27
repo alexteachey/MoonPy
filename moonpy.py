@@ -776,17 +776,14 @@ class MoonpyLC(object):
 
 				if use_mazeh == 'y':
 
-					"""
-					NOTE TO FUTURE SELF: THESE EPHEMERIDES ARE ACCURATELY ACCOUNTING FOR DIFFERENT TIME CONVENTIONS. DON'T PANIC.
-					VERIFIED: 11/27/2020
-					"""
 
 					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
 					mazeh = pandas.read_csv('Table3_O-C.csv')
-					maz_koi = np.array(mazeh['KOI'])
+					maz_koi = np.array(mazeh['KOI']).astype(str)
 					maz_epoch = np.array(mazeh['n'])
 					maz_reftime = np.array(mazeh['ref_time'])
+					maz_reftime = maz_reftime + 2454900 - 2454833 #### adjusts into BKJD -- a difference of 67 days from the Holczer catalog.	
 					maz_OCmin = np.array(mazeh['O-C_min'])
 
 					### find the indices of the target!
@@ -819,7 +816,8 @@ class MoonpyLC(object):
 								tOCmin = float(maz_OCmin[tidx])
 								tOCday = tOCmin / (60 * 24)
 							except:
-								continue 
+								traceback.print_exc()
+								#continue 
 
 							target_epochs.append(tepoch)
 							target_reftimes.append(treftime)
@@ -828,47 +826,66 @@ class MoonpyLC(object):
 
 						target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
 
+						print('target_reftimes = ', target_reftimes)
+
 						### interpolate OCmins! to grab missing transit times -- have to do this in case Mazeh has not cataloged them all.
-						all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs), 1)
-						all_target_reftimes = []
+						all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs)+1, 1)
+						all_target_reftimes = [] ### a list of all the transit times (basically linear ephemeris, from which the offset is calculated)
 						all_target_OCmins = []
 						all_target_OCdays = []
 
 						OCmin_interp = interp1d(target_epochs, target_OCmins, kind='quadratic', bounds_error=False, fill_value='extrapolate')
-						reftime_interp = interp1d(target_epochs, target_reftimes_BKJD, kind='linear', bounds_error=False, fill_value='extrapolate')
+						reftime_interp = interp1d(target_epochs, target_reftimes, kind='linear', bounds_error=False, fill_value='extrapolate')
+
+						### the number of epochs (integer transit numbers) in "all_target_epochs" will *always* be greater or equal to number in target_epochs
+						#### target epochs is the # of epochs recorded in Mazeh, all_target_epochs is every possible one from first transit to last.
+						##### it appears that Mazeh DOES skip numbers when there is a missing transit, so this *ought* to work.
 
 						for ate in all_target_epochs:
-							if ate not in target_epochs:
-								### interpolate them! 
-								all_target_reftime = reftime_interp(ate)
-								all_target_reftimes.append(all_target_reftime)
-								all_target_OCmin = OCmin_interp(ate)
-								all_target_OCmins.append(all_target_OCmin)
-								all_target_OCdays.append(all_target_OCmin / (60 * 24))
-							else:
-								#### otherwise, leave them alone!
-								pass
+							if ate in target_epochs:
+								#### this value is already recorded by mazeh
+								epoch_idx = np.where(target_epochs == ate)[0]
+								epoch_reftime = target_reftimes[epoch_idx]
+								epoch_OCmins = target_OCmins[epoch_idx]
+								epoch_OCdays = target_OCdays[epoch_idx]
+
+							elif ate not in target_epochs:
+								#### you still want it! so you're going to interpolate it.
+								epoch_reftime = reftime_interp(ate)
+								epoch_OCmins = OCmin_interp(ate)
+								epoch_OCdays = epoch_OCmins / (60 * 24)
+
+							all_target_reftimes.append(epoch_reftime)
+							all_target_OCmins.append(epoch_OCmins)
+							all_target_OCdays.append(epoch_OCdays)
 
 						all_target_reftimes, all_target_OCmins, all_target_OCdays = np.array(all_target_reftimes), np.array(all_target_OCmins), np.array(all_target_OCdays)
+						assert len(all_target_epochs) == len(all_target_reftimes)	
+						assert len(all_target_epochs) >= len(target_epochs)
 
 						### FINALLY, calculate the taus!
 						mazeh_taus = all_target_reftimes + all_target_OCdays 
-						self.mask_taus = mazeh_taus 
+						#print('mazeh_taus = ', mazeh_taus)
+						self.mask_taus = mazeh_taus
+						if len(self.mask_taus.shape) > 1:
+							self.mask_taus = self.mask_taus.reshape(self.mask_taus.shape[0])
 
 				elif use_mazeh == 'n':
 					self.mask_taus = self.taus 
 
-				try:
-					quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
-				except:
-					self.find_transit_quarters()
-					traceback.print_exc()
-					quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]		
+				#try:
+				quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
+				print("QUARTER TRANSIT TAUs = ", quarter_transit_taus)
+				
+				#except:
+				#	self.find_transit_quarters()
+				#	quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]		
+				#	traceback.print_exc()
 								
 				for qtt in quarter_transit_taus:
 					in_transit_idxs = np.where((dtimes >= qtt - self.duration_days) & (dtimes <= qtt + self.duration_days))[0]
 					mask_transit_idxs.append(in_transit_idxs)
-
+				print('mask_transit_idxs = ', mask_transit_idxs)
 
 				### add neighbor transit times to mask_transit_idxs.
 				try:
