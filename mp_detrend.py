@@ -14,17 +14,17 @@ import matplotlib.pyplot as plt
 
 
 def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
-	print("len(mask_idxs) = ", len(mask_idxs))
-	print('len(times) = ', len(times))
+	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
+	#print('len(times) = ', len(times))
 
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
 			mask_idxs = np.array(mask_idxs, dtype=np.int8)
-			print('type(mask_idxs) = ', type(mask_idxs))
+			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		else:
-			print('mask_idxs = ', mask_idxs)
+			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 	if remove_outliers == 'y':
@@ -50,7 +50,7 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 		### identify the largest gap!
 		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		print('largest_gap_idx = ', largest_gap_idx)
+		#print('largest_gap_idx = ', largest_gap_idx)
 		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
@@ -94,18 +94,18 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 
 def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=20):
-	print("len(mask_idxs) = ", len(mask_idxs))
-	print('len(times) = ', len(times))
+	#print("len(mask_idxs) = ", len(mask_idxs))
+	#print('len(times) = ', len(times))
 
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
 			mask_idxs = np.array(mask_idxs, dtype=np.int8)
-			print('type(mask_idxs) = ', type(mask_idxs))
+			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		
 		else:
-			print('mask_idxs = ', mask_idxs)
+			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 
@@ -135,7 +135,7 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 		### identify the largest gap! -- THIS SHOULD BE THE DATA GAP IN THE TESS SECTOR.
 		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		print('largest_gap_idx = ', largest_gap_idx)
+		#print('largest_gap_idx = ', largest_gap_idx)
 		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
@@ -245,9 +245,10 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 	print(gp.lnlikelihood(unmasked_fluxes))
 
 	### now interpolate
+	print('predicting...')
 	gp_mu, gp_cov = gp.predict(unmasked_fluxes, times)  ### FIRST ARGUMENT ARE THE ORIGINAL y-values, *NOT* ALL y-values! (you leave out the transit times)
-	print('len(gp_mu) = ', len(gp_mu))
-	print('len(times) = ', len(times))
+	#print('len(gp_mu) = ', len(gp_mu))
+	#print('len(times) = ', len(times))
 	gp_std = np.sqrt(np.diag(gp_cov))
 	flux_detrend = fluxes / gp_mu 
 	errors_detrend = errors / fluxes 
@@ -271,7 +272,7 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 		print('performing median filter with masked points.')
 		### that is, if there are masks for the transits (there should be!)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		print('len(unmasked_times), len(unmasked_fluxes) = ', len(unmasked_times), len(unmasked_fluxes))
+		#print('len(unmasked_times), len(unmasked_fluxes) = ', len(unmasked_times), len(unmasked_fluxes))
 		try:
 			flux_trend = median_filter(unmasked_fluxes, size=size, mode='nearest')
 			print('utilizing scipy.ndimage.median_filter().')

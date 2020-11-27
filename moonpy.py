@@ -742,8 +742,8 @@ class MoonpyLC(object):
 				dtimes, dfluxes, derrors, dflags = self.times[qidx], self.fluxes[qidx], self.errors[qidx], self.flags[qidx]
 			elif nquarters == 1:
 				dtimes, dfluxes, derrors, dflags = self.times, self.fluxes, self.errors, self.flags
-			print('dtimes.shape = ', dtimes.shape)
-			print('dtimes.shape[0] = ', dtimes.shape[0])
+			#print('dtimes.shape = ', dtimes.shape)
+			#print('dtimes.shape[0] = ', dtimes.shape[0])
 			if dtimes.shape[0] == 0:
 				exceptions_raised = 'y'
 				fluxes_detrend, errors_detrend = dfluxes, derrors
@@ -785,6 +785,18 @@ class MoonpyLC(object):
 
 					### find the indices of the target!
 					target_idxs = np.where(self.target[4:] == maz_koi)[0]
+					if len(target_idxs) == 0:
+						print('no TTV record under the name '+str(self.target)+'. Checking aliases...')
+						### check for aliases -- your self.target may not be a KOI natively!
+						try:
+							for planet_alias in self.aliases:
+								if planet_alias.lower().startswith('koi'):
+									target_idxs = np.where(planet_alias[4:] == maz_koi)[0]
+									print('found a TTV record for alias: ', planet_alias)
+									break
+						except:
+							print('Could not find any TTV record. Computing transit times from Tau0 and orbital period.')
+							pass
 
 					if len(target_idxs) == 0:
 						self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
@@ -868,7 +880,7 @@ class MoonpyLC(object):
 						mask_transit_idxs.append(neighbor_transit_idxs)
 
 				try:
-					print("transit midtimes this quarter: ", quarter_transit_taus)
+					#print("transit midtimes this quarter: ", quarter_transit_taus)
 					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
 					if len(quarter_transit_taus) > 1:
 						mask_transit_idxs = np.concatenate((mask_transit_idxs))
@@ -877,7 +889,7 @@ class MoonpyLC(object):
 
 					mask_transit_idxs = np.unique(mask_transit_idxs)
 
-					print('mask_transit_idxs = ', mask_transit_idxs)	
+					#print('mask_transit_idxs = ', mask_transit_idxs)	
 					if len(quarter_transit_taus) > 0:
 						print("transit in this quarter.")
 				except:
@@ -997,9 +1009,9 @@ class MoonpyLC(object):
 		else:
 			final_flags = []
 			for qidx in np.arange(0,len(self.quarters),1):
-				print('qidx = ', qidx)
+				#print('qidx = ', qidx)
 				qfinal_flags = np.nanmax((self.flags[qidx], self.flags_detrend[qidx]), axis=0)
-				print("qfinal_flags.shape = ", qfinal_flags.shape)
+				#print("qfinal_flags.shape = ", qfinal_flags.shape)
 				final_flags.append(np.array(qfinal_flags))
 			self.flags_detrend = final_flags
 
@@ -1019,7 +1031,7 @@ class MoonpyLC(object):
 
 			if len(self.quarters) > 1:
 				for qidx in np.arange(0,len(self.quarters),1):
-					print('qidx = ', qidx)
+					#print('qidx = ', qidx)
 					qtq = self.quarters[qidx]
 					qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
 

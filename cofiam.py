@@ -92,7 +92,7 @@ def cofiam_iterative(times, fluxes, max_degree=30, min_degree=1):
 	DWstats = []
 
 	for deg in degs_to_try:
-		print("k = ", deg)
+		#print("k = ", deg)
 		output_function = cofiam_function(times, fluxes, deg)
 
 		residuals = fluxes - output_function
