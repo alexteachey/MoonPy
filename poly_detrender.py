@@ -51,6 +51,20 @@ def DurbinWatson(residuals):
 
 
 
+def BIC(model, data, errors, nparams):
+	chi2 = np.nansum(((model - data) / errors)**2)
+	BICval = nparams*np.log(len(data)) + chi2
+	return BICval
+
+
+##########
+
+# POLYNOMIAL
+### AUTOCORRELATION
+##### MINIMIZATION 
+
+##########
+
 ### Special thanks to Michael Hippke for speeding this function up by orders of magnitude!
 #@jit(fastmath=True, nopython=True, cache=True)
 #@jit
@@ -118,6 +132,82 @@ def polyAM_iterative(times, fluxes, max_degree=20, min_degree=1):
 
 	return best_model, best_degree, best_DW, max_degree 
 
+
+##########
+
+# LOCAL
+### POLYNOMIAL
+##### FIT 
+
+##########
+
+
+
+
+
+
+### Special thanks to Michael Hippke for speeding this function up by orders of magnitude!
+#@jit(fastmath=True, nopython=True, cache=True)
+#@jit
+#@jit((float64[:], i8))
+@jit(debug=True, fastmath=True, nopython=True, cache=True)
+def polyLOC_matrix_gen(times, degree):
+	baseline = np.nanmax(times) - np.nanmin(times)
+	rows = len(times)
+	#cols = 2 * (degree+1) #### this was the CoFiAM formulation 
+	cols = (degree+1) #### if degree = 2, you need three columns -- for ax^2 + bx^1 + cx^0
+	X_matrix = np.ones(shape=(rows,cols))
+	for x in range(rows): ### for each row, that is, for each time!
+		for y in range(1, int(cols/2)): #### for each column, up to half the columns -- why?
+			#sinarg = (2*np.pi*times[x] * y) / baseline
+			#X_matrix[x,y*2] = np.sin(sinarg)
+			#X_matrix[x,y*2 + 1] = np.cos(sinarg)
+			X_matrix[x,y*2] = times[x]**y #### TRY THIS!
+		X_matrix[x,1] = times[x]
+	return X_matrix 
+
+
+def polyLOC_matrix_coeffs(times, fluxes, degree):
+	assert len(times) > 0
+	Xmat = polyLOC_matrix_gen(times, degree)
+	beta_coefs = np.linalg.lstsq(Xmat, fluxes, rcond=None)[0]
+	return Xmat, beta_coefs
+
+
+
+### this function spits out the best fit line!
+def polyLOC_function(times, fluxes, degree):
+	input_times = times.astype('f8')
+	input_fluxes = fluxes.astype('f8')
+	polyLOC_matrix, polyLOC_coefficients = polyLOC_matrix_coeffs(input_times, input_fluxes, degree)
+	output = np.matmul(polyLOC_matrix, polyLOC_coefficients)
+	return output 
+
+
+def polyLOC_iterative(times, fluxes, errors, max_degree=20, min_degree=1):
+	### this function utilizes polyAM_function above, iterates it up to max_degree.
+	### max degree may be calculated using max_order function
+
+	vals_to_min = []
+	degs_to_try = np.arange(min_degree,max_degree+1,1)
+	BICstats = []
+
+	for deg in degs_to_try:
+		output_function = polyAM_function(times, fluxes, deg) ### this is the model
+		residuals = fluxes - output_function
+		BICstat = BIC(output_function, fluxes, errors, deg+1)
+		BICstats.append(BICstat)
+
+	BICstats = np.array(BICstats)
+
+	best_degree = degs_to_try[np.argmin(BICstats)]
+	best_BIC = BICstats[np.argmin(np.array(BICstats))]
+
+	### re-generate the function with the best degree
+
+	best_model = polyLOC_function(times, fluxes, best_degree)
+
+	return best_model, best_degree, best_BIC, max_degree 
 
 
 

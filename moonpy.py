@@ -967,6 +967,44 @@ class MoonpyLC(object):
 						flags_detrend = dflags
 
 
+					elif dmeth == 'polyLOC':
+						"""
+						Like polyAM, except that it's a LOCAL fit that minimizes the BIC... AND it does one transit at a time, so you need to handle this a bit differently
+
+						"""
+
+						fluxes_detrend, errors_detrend = [], []
+						all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], []
+						for tau in self.taus:
+							#### FOR EVERY TRANSIT!
+							transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+							
+							#### APPEND THIS LIST OF VALUES OT A BIGGER LIST
+							all_transit_times_detrend.append(transit_times_detrend)
+							all_transit_fluxes_detrend.append(transit_fluxes_detrend)
+							all_transit_errors_detrend.append(transit_errors_detrend)
+
+						### MAKE THE BIG LIST A BIG ARRAY
+						all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
+						all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
+						all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
+
+						#### now we need to replace all non-transiting fluxes_detrend and errors_detrend with NaNs
+						##### WHY? SO THAT IT IS THE SAME SIZE AS times, fluxes, and errors (for the way it saves in the file).
+						for dtidx, dt in enumerate(dtimes):
+							if dt in all_transit_times_detrend:
+								fluxes_detrend.append(all_transit_fluxes_detrend[dtidx])
+								errors_detrend.append(all_transit_errors_detrend[dtidx])
+							elif dt not in all_transit_times_detrend:
+								fluxes_detrend.append(np.nan)
+								errors_detrend.append(np.nan)
+							flags_detrend = dflags 
+
+
+
+
+
+
 
 					elif dmeth == 'untrendy':
 						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
