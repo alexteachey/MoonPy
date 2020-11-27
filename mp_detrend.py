@@ -211,33 +211,48 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 
 def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1.0, telescope=None, mask_idxs=None):
 	import george
-	if kernel_name != 'ExpSquaredKernel':
+
+	if GP_kernel != 'ExpSquaredKernel':
 		try:
-			kernel_choice = vars(george.kernels)[kernel_name] ### accesses the kernel through a dictionary, with kernel_name being the key.
-			print('using ', kernel_name)
+			kernel_choice = vars(george.kernels)[GP_kernel] ### accesses the kernel through a dictionary, with kernel_name being the key.
+			print('using ', GP_kernel)
+		
 		except:
 			print('GP_kernel input in self.detrend() or george_detrend() is missing or invalid. unable to load your kernel choice. Loading ExpSquaredKernel.')
-			from george.kernels import ExpSquaredKernel
+			from george.kernels import ExpSquaredKernel as kernel_choice
 			print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
 		
-	elif kernel == None:
-		from george.kernels import ExpSquaredKernel
+	elif GP_kernel == 'ExpSquaredKernel':
+		from george.kernels import ExpSquaredKernel as kernel_choice
+		print("george GP code is using the Exponential Squared Kernel with metric="+str(metric))
+
+
+	elif GP_kernel == None:
+		from george.kernels import ExpSquaredKernel as kernel_choice
 		print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
 
-	unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 
-	kernel = ExpSquaredKernel(metric=metric)
-	gp = george.GP(kernel)
+	unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+	#kernel = ExpSquaredKernel(metric=metric)
+	kernel_arg = np.var(unmasked_fluxes) * kernel_choice(metric=metric)
+	print('generating the gp...')
+	gp = george.GP(kernel_arg)
+	print('computing the gp...')
 	gp.compute(unmasked_times, unmasked_errors) ### pre-compute the factorization of the matrix
 
 	### compute the log likelihood
+	print('computing gp.lnlikelihood...')
 	print(gp.lnlikelihood(unmasked_fluxes))
 
 	### now interpolate
-	gp_mu, gp_cov = gp.predict(fluxes, times)
+	gp_mu, gp_cov = gp.predict(unmasked_fluxes, times)  ### FIRST ARGUMENT ARE THE ORIGINAL y-values, *NOT* ALL y-values! (you leave out the transit times)
+	print('len(gp_mu) = ', len(gp_mu))
+	print('len(times) = ', len(times))
 	gp_std = np.sqrt(np.diag(gp_cov))
 	flux_detrend = fluxes / gp_mu 
 	errors_detrend = errors / fluxes 
+	print(' ')
+	print(' ')
 
 	return flux_detrend, errors_detrend
 
