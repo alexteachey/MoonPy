@@ -775,6 +775,12 @@ class MoonpyLC(object):
 				mask_transit_idxs = []
 
 				if use_mazeh == 'y':
+
+					"""
+					NOTE TO FUTURE SELF: THESE EPHEMERIDES ARE ACCURATELY ACCOUNTING FOR DIFFERENT TIME CONVENTIONS. DON'T PANIC.
+					VERIFIED: 11/27/2020
+					"""
+
 					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
 					mazeh = pandas.read_csv('Table3_O-C.csv')
@@ -802,11 +808,11 @@ class MoonpyLC(object):
 						self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
 
 					else:
-						target_epochs = []
-						target_reftimes = []
-						target_OCmins = []
-						target_OCdays = []
-						for tidx in target_idxs:
+						target_epochs = [] ### a list of all the epochs in the Mazeh catalog.
+						target_reftimes = [] ### ditto for reftimes
+						target_OCmins = [] #### ditto for O - C (minutes)
+						target_OCdays = [] #### converting above to days
+						for tidx in target_idxs: ### all the indices for this planet -- have to loop through to grab the relevant values.
 							try:
 								tepoch = int(maz_epoch[tidx])
 								treftime = float(maz_reftime[tidx])
@@ -822,30 +828,32 @@ class MoonpyLC(object):
 
 						target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
 
-						### interpolate OCmins! to grab missing transit times.
+						### interpolate OCmins! to grab missing transit times -- have to do this in case Mazeh has not cataloged them all.
 						all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs), 1)
 						all_target_reftimes = []
 						all_target_OCmins = []
 						all_target_OCdays = []
 
 						OCmin_interp = interp1d(target_epochs, target_OCmins, kind='quadratic', bounds_error=False, fill_value='extrapolate')
-						reftime_interp = interp1d(target_epochs, target_reftimes, kind='linear', bounds_error=False, fill_value='extrapolate')
+						reftime_interp = interp1d(target_epochs, target_reftimes_BKJD, kind='linear', bounds_error=False, fill_value='extrapolate')
 
 						for ate in all_target_epochs:
 							if ate not in target_epochs:
-								### interpolate them!
+								### interpolate them! 
 								all_target_reftime = reftime_interp(ate)
 								all_target_reftimes.append(all_target_reftime)
 								all_target_OCmin = OCmin_interp(ate)
 								all_target_OCmins.append(all_target_OCmin)
 								all_target_OCdays.append(all_target_OCmin / (60 * 24))
+							else:
+								#### otherwise, leave them alone!
+								pass
 
 						all_target_reftimes, all_target_OCmins, all_target_OCdays = np.array(all_target_reftimes), np.array(all_target_OCmins), np.array(all_target_OCdays)
 
 						### FINALLY, calculate the taus!
 						mazeh_taus = all_target_reftimes + all_target_OCdays 
 						self.mask_taus = mazeh_taus 
-
 
 				elif use_mazeh == 'n':
 					self.mask_taus = self.taus 
