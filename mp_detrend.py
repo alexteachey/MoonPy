@@ -10,7 +10,7 @@ import traceback
 import matplotlib.pyplot as plt 
 #import pyximport 
 
-### some mod
+### another mod
 
 
 def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
