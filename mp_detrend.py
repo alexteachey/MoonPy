@@ -255,8 +255,8 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 	else:
 		try:
 			best_model, best_degree, best_BIC, max_degree = polyLOC_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), np.array(unmasked_errors, dtype=np.float64), max_degree=int(max_degree))
-			print(' ')
-			print(' ')
+			#print(' ')
+			#print(' ')
 		except:
 			traceback.print_exc()
 			print('unable to call polyAM_iterative. Data points likely reduced to zero.')

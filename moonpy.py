@@ -954,10 +954,14 @@ class MoonpyLC(object):
 						flags_detrend = dflags
 
 
+
+
+
 					elif dmeth == 'polyAM':
 						"""
 						Polynomial detrending is the same basic algorithm as CoFiAM, but instead of using sinusoids, it uses polynomials, and minimizes autocorrelation.
 						"""
+						max_degree = max_order(dtimes, self.duration_days)
 						try:
 							fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 						except:
@@ -965,6 +969,9 @@ class MoonpyLC(object):
 
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
+
+
+
 
 
 					elif dmeth == 'polyLOC':
@@ -975,9 +982,34 @@ class MoonpyLC(object):
 
 						fluxes_detrend, errors_detrend = [], []
 						all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], []
-						for tau in self.taus:
+						
+
+						for ntau, tau in enumerate(self.taus):
+							if tau < np.nanmin(dtimes) or tau > np.nanmax(dtimes):
+								continue 
+
+							#### FIX THIS! NOT EVERY TAU IS IN THIS QUARTER!!!!
+
+							print('tau '+str(ntau)+' of '+str(len(self.taus)))
 							#### FOR EVERY TRANSIT!
-							transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+							local_window_duration = 10*self.duration_days
+							lwdm = 10 ### "local window duration multiple"
+							if local_window_duration > 0.5 * self.period:
+								#### you need a shorter duration!
+								local_window_duration = 0.5 * self.period
+								lwdm = local_window_duration / self.duration_days
+							###local_window_duration_multiple
+							
+							max_degree = max_order(local_window_duration, self.duration_days)
+
+							"""
+							tau_time_idxs = np.where((dtimes >= (tau - local_window_duration)) & (dtimes <= (tau + local_window_duration)))[0]
+							tau_times = dtimes[tau_time_idxs]
+							tau_fluxes = dfluxes[tau_time_idxs]
+							tau_errors = derrors[tau_time_idxs]
+							"""
+
+							transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 							
 							#### APPEND THIS LIST OF VALUES OT A BIGGER LIST
 							all_transit_times_detrend.append(transit_times_detrend)
