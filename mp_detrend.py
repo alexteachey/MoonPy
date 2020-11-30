@@ -89,7 +89,7 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 
 
-
+#### some modification
 
 
 def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=20):
