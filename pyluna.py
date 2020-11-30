@@ -28,7 +28,8 @@ HERE IS THE MASTER FUNCTION! THIS IS WHAT YOU WILL CALL TO GENERATE THE MOONS YO
 #	assert len(sat_params) == 6
 
 def prepare_files(all_times, ntaus, nparam, nparamorig):
-	seriesP_file = open(LUNAdir+'/seriesP.jam', mode='w')
+	#seriesP_file = open(LUNAdir+'/seriesP.jam', mode='w')
+	seriesP_file = open('seriesP.jam', mode='w')
 
 	for at in all_times:
 		seriesP_file.write(str(at)+'\t1.\t0.001\t1\n')
@@ -36,8 +37,10 @@ def prepare_files(all_times, ntaus, nparam, nparamorig):
 
 
 	### need to update plotit.f90 to make nplen = len(all_times)
-	plotitf90 = open(LUNAdir+'/plotit.f90', mode='r')
-	plotitf90_update = open(LUNAdir+'/plotit_update.f90', mode='w')
+	#plotitf90 = open(LUNAdir+'/plotit.f90', mode='r')
+	#plotitf90_update = open(LUNAdir+'/plotit_update.f90', mode='w')
+	plotitf90 = open('plotit.f90', mode='r')
+	plotitf90_update = open('plotit_update.f90', mode='w')	
 
 	for nline, line in enumerate(plotitf90):
 		try:
@@ -59,9 +62,11 @@ def prepare_files(all_times, ntaus, nparam, nparamorig):
 		plotitf90_update.write(newline)
 	plotitf90.close()
 	plotitf90_update.close()
-	os.system('mv '+LUNAdir+'/plotit_update.f90 '+LUNAdir+'/plotit.f90')
+	#os.system('mv '+LUNAdir+'/plotit_update.f90 '+LUNAdir+'/plotit.f90')
+	os.system('mv plotit_update.f90 plotit.f90')	
 
 	os.system('sh '+LUNAdir+'/make.sh')
+	os.system('sh make.sh')	
 
 
 
@@ -113,7 +118,8 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 
 	#print('generating the input file...')
 	### now you have to generate the input file!
-	input_file = open(LUNAdir+'/inputs.jam', mode='w')
+	#input_file = open(LUNAdir+'/inputs.jam', mode='w')
+	input_file = open('inputs.jam', mode='w')	
 	### inputs are 1) Rp/Rstar, rhostar, impact, Pplan, tau0, q1, q2, rho_plan, asp, phi_s, is, )s, Msp, Rsp.
 	if 'e' in str(RpRstar):
 		input_file.write(str('%.7f' % RpRstar)+'D0\n') #Rp(1)
@@ -256,10 +262,12 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 
 	### now it's time to run plotit!
 	os.system('./plotit')
+	#os.system('. '+LUNAdir+'/plotit')
 
 
 	### now you should have light curves... load them and plot them
-	moon_file = np.genfromtxt(outputdir+'/PRI_full.0.jam')
+	#moon_file = np.genfromtxt(outputdir+'/PRI_full.0.jam')
+	moon_file = np.genfromtxt('output/PRI_full.0.jam')
 	output_times, output_fluxes = moon_file.T[0], moon_file.T[1]
 
 	#if np.all(output_fluxes == 1):
