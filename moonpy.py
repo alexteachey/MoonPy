@@ -776,7 +776,6 @@ class MoonpyLC(object):
 
 				if use_mazeh == 'y':
 
-
 					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
 					mazeh = pandas.read_csv('Table3_O-C.csv')
@@ -873,6 +872,8 @@ class MoonpyLC(object):
 				elif use_mazeh == 'n':
 					self.mask_taus = self.taus 
 
+
+
 				#try:
 				quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
 				print("QUARTER TRANSIT TAUs = ", quarter_transit_taus)
@@ -881,11 +882,24 @@ class MoonpyLC(object):
 				#	self.find_transit_quarters()
 				#	quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]		
 				#	traceback.print_exc()
-								
+						
+
 				for qtt in quarter_transit_taus:
-					in_transit_idxs = np.where((dtimes >= qtt - self.duration_days) & (dtimes <= qtt + self.duration_days))[0]
+					#### FOR EACH TRANSIT IN THIS QUARTER.... 
+
+					in_transit_idxs = np.where((dtimes >= qtt - 2.5*self.duration_days) & (dtimes <= qtt + 2.5*self.duration_days))[0]
 					mask_transit_idxs.append(in_transit_idxs)
-				print('mask_transit_idxs = ', mask_transit_idxs)
+				
+				try:
+					mask_transit_idxs = np.concatenate((mask_transit_idxs))
+				except:
+					print('mask_transit_idxs could not be concatenated (probably not needed).')
+
+
+				#print("BEFORE: ")
+				#print('mask_transit_idxs = ', mask_transit_idxs)
+				#print("mask transit times = ", dtimes[mask_transit_idxs])
+				#mask_transit_idxs = mask_transit_idxs
 
 				### add neighbor transit times to mask_transit_idxs.
 				try:
@@ -896,27 +910,45 @@ class MoonpyLC(object):
 					except:
 						pass
 
-				if mask_neighbors == 'y':
-					if len(self.neighbors) > 0:
-						neighbor_transit_idxs = []
-						for ntt in self.all_transit_times:
-							if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
-								neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
+				if (mask_neighbors == 'y') and (len(self.neighbors) > 0):
+
+					neighbor_transit_idxs = np.where( (self.all_transit_times > np.nanmin(dtimes)) & (self.all_transit_times < np.nanmax(dtimes)) )[0]						
+					"""
+					neighbor_transit_idxs = []
+					for ntt in self.all_transit_times:
+						if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
+							#### NOTE TO FUTURE SELF -- THIS IS FINE...
+							###### THESE NEIGHBOR TRANSIT TIMES ARE NOT JUST MIDTIMES -- THEY ARE ALL TRANSIT TIMES. (I.E. IF IT'S IN TRANSIT AT ALL, IT"S ON THIS LIST)
+
+							#### the neighbor is in this quarter -- so mask it!
+							neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
+					"""
+					if len(neighbor_transit_idxs) > 0:
+						print("NEIGHBORS IN THIS SEGMENT!")						
 						mask_transit_idxs.append(neighbor_transit_idxs)
 
 				try:
 					#print("transit midtimes this quarter: ", quarter_transit_taus)
 					print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
+					
 					if len(quarter_transit_taus) > 1:
-						mask_transit_idxs = np.concatenate((mask_transit_idxs))
+						try:
+							mask_transit_idxs = np.concatenate((mask_transit_idxs))
+						except:
+							print('Concatenate not necessary')
+							mask_transit_idxs = np.array(mask_transit_idxs)
 					else:
 						mask_transit_idxs = np.array(mask_transit_idxs)
+
+					print('mask_transit_idxs (pre-unique) = ', mask_transit_idxs)
 
 					mask_transit_idxs = np.unique(mask_transit_idxs)
 
 					#print('mask_transit_idxs = ', mask_transit_idxs)	
 					if len(quarter_transit_taus) > 0:
 						print("transit in this quarter.")
+				
+
 				except:
 					traceback.print_exc()
 					mask_transit_idxs = np.array([])
@@ -926,7 +958,14 @@ class MoonpyLC(object):
 						fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
 						skip_quarter = 'y'
 
-				mask_transit_idxs = np.array(mask_transit_idxs, dtype=np.int8)		
+
+				#mask_transit_idxs = np.array(mask_transit_idxs, dtype=np.int8)
+				#print("AFTER: ")
+				print("mask_transit_idxs = ", mask_transit_idxs)		
+				try:
+					print("mask transit times = ", dtimes[mask_transit_idxs])
+				except:
+					pass
 
 
 			elif mask_transits == 'n':

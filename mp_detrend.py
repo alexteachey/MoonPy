@@ -20,7 +20,7 @@ def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			mask_idxs = np.array(mask_idxs, dtype=np.int8)
+			#mask_idxs = np.array(mask_idxs, dtype=np.int8)
 			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		else:
@@ -100,7 +100,7 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			mask_idxs = np.array(mask_idxs, dtype=np.int8)
+			#mask_idxs = np.array(mask_idxs, dtype=np.int8)
 			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		
@@ -200,7 +200,7 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			mask_idxs = np.array(mask_idxs, dtype=np.int8)
+			#mask_idxs = np.array(mask_idxs, dtype=np.int8)
 			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		
@@ -293,7 +293,7 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 
 	print('BEWARE: Untrendy is failing because of a strange bug within scipy.')
 	if type(mask_idxs) != type(None):
-		mask_idxs = np.array(mask_idxs, dtype=np.int8)
+		#mask_idxs = np.array(mask_idxs, dtype=np.int8)
 		print(' ')
 		print(type(mask_idxs))
 		print(' ')
