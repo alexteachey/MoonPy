@@ -390,7 +390,7 @@ class MoonpyLC(object):
 					#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 					if user_supplied == 'n':
 						if download == 'y':
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 						elif download == 'n':
 							print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
@@ -402,7 +402,7 @@ class MoonpyLC(object):
 						#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 						if user_supplied == 'n':
 							if download == 'y':
-								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
+								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
 							elif download == 'n':
 								print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
 								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
@@ -432,12 +432,12 @@ class MoonpyLC(object):
 				try:
 					print('first try statement...')
 					#if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try: ### maybe it just wants the number.
 						print('second try statement...')
 						if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 					except:
 						traceback.print_exc()
 
@@ -719,6 +719,11 @@ class MoonpyLC(object):
 	def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
 		exceptions_raised = 'n'
 
+
+		### make sure you get_neighbors() first!
+		self.get_neighbors()
+
+
 		if self.telescope.lower() != 'kepler':
 			use_mazeh == 'n' ### mazeh is only for Kepler targets!
 
@@ -876,7 +881,7 @@ class MoonpyLC(object):
 
 				#try:
 				quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
-				print("QUARTER TRANSIT TAUs = ", quarter_transit_taus)
+				#print("QUARTER TRANSIT TAUs = ", quarter_transit_taus)
 				
 				#except:
 				#	self.find_transit_quarters()
@@ -891,7 +896,7 @@ class MoonpyLC(object):
 					mask_transit_idxs.append(in_transit_idxs)
 				
 				try:
-					mask_transit_idxs = np.concatenate((mask_transit_idxs))
+					mask_transit_idxs = np.concatenate(mask_transit_idxs)
 				except:
 					print('mask_transit_idxs could not be concatenated (probably not needed).')
 
@@ -903,7 +908,8 @@ class MoonpyLC(object):
 
 				### add neighbor transit times to mask_transit_idxs.
 				try:
-					print(self.all_transit_times)
+					#print('self.neighbor_transit_times = ', self.neighbor_transit_times)
+					sntt = self.neighbor_transit_times # don't need to print them, just see if they're there!
 				except:
 					try:
 						self.mystery_solver(self.tau0, self.period, self.duration_hours)
@@ -912,10 +918,11 @@ class MoonpyLC(object):
 
 				if (mask_neighbors == 'y') and (len(self.neighbors) > 0):
 
-					neighbor_transit_idxs = np.where( (self.all_transit_times > np.nanmin(dtimes)) & (self.all_transit_times < np.nanmax(dtimes)) )[0]						
+					neighbor_transit_idxs = np.where( (self.neighbor_transit_times > np.nanmin(dtimes)) & (self.neighbor_transit_times < np.nanmax(dtimes)) )[0]	
+					#print('neighbor_transit_idxs = ', neighbor_transit_idxs)					
 					"""
 					neighbor_transit_idxs = []
-					for ntt in self.all_transit_times:
+					for ntt in self.neighbor_transit_times:
 						if ntt >= np.nanmin(dtimes) and ntt <= np.nanmax(dtimes):
 							#### NOTE TO FUTURE SELF -- THIS IS FINE...
 							###### THESE NEIGHBOR TRANSIT TIMES ARE NOT JUST MIDTIMES -- THEY ARE ALL TRANSIT TIMES. (I.E. IF IT'S IN TRANSIT AT ALL, IT"S ON THIS LIST)
@@ -924,8 +931,19 @@ class MoonpyLC(object):
 							neighbor_transit_idxs.append(np.where(ntt == dtimes)[0])
 					"""
 					if len(neighbor_transit_idxs) > 0:
-						print("NEIGHBORS IN THIS SEGMENT!")						
-						mask_transit_idxs.append(neighbor_transit_idxs)
+						print("NEIGHBORS IN THIS SEGMENT!")	
+						#### THERE WON'T BE THAT MANY, JUST USE A FOR LOOP TO AVOID WEIRD FORMATTING ISSUES
+						try:
+							mask_transit_idxs = mask_transit_idxs.tolist()
+						except:
+							pass
+						for nti in neighbor_transit_idxs:
+							mask_transit_idxs.append(nti)		
+						#try:			
+						#	mask_transit_idxs.append(neighbor_transit_idxs)
+						#except:
+						#	mask_transit_idxs = mask_transit_idxs.tolist()
+						#	mask_transit_idxs.append(neighbor_transit_idxs)
 
 				try:
 					#print("transit midtimes this quarter: ", quarter_transit_taus)
@@ -933,16 +951,20 @@ class MoonpyLC(object):
 					
 					if len(quarter_transit_taus) > 1:
 						try:
-							mask_transit_idxs = np.concatenate((mask_transit_idxs))
+							mask_transit_idxs = np.concatenate(mask_transit_idxs)
 						except:
 							print('Concatenate not necessary')
 							mask_transit_idxs = np.array(mask_transit_idxs)
 					else:
 						mask_transit_idxs = np.array(mask_transit_idxs)
 
-					print('mask_transit_idxs (pre-unique) = ', mask_transit_idxs)
+					#print('mask_transit_idxs (pre-unique) = ', mask_transit_idxs)
 
-					mask_transit_idxs = np.unique(mask_transit_idxs)
+					try:
+						mask_transit_idxs = np.unique(mask_transit_idxs)
+					except:
+						mask_transit_idxs = np.concatenate(mask_transit_idxs)
+						mask_transit_idxs = np.unique(mask_transit_idxs)
 
 					#print('mask_transit_idxs = ', mask_transit_idxs)	
 					if len(quarter_transit_taus) > 0:
@@ -961,11 +983,11 @@ class MoonpyLC(object):
 
 				#mask_transit_idxs = np.array(mask_transit_idxs, dtype=np.int8)
 				#print("AFTER: ")
-				print("mask_transit_idxs = ", mask_transit_idxs)		
-				try:
-					print("mask transit times = ", dtimes[mask_transit_idxs])
-				except:
-					pass
+				#print("mask_transit_idxs = ", mask_transit_idxs)		
+				#try:
+				#	print("mask transit times = ", dtimes[mask_transit_idxs])
+				#except:
+				#	pass
 
 
 			elif mask_transits == 'n':
@@ -987,7 +1009,7 @@ class MoonpyLC(object):
 						try:
 							fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 						except:
-							fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+							fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
@@ -2486,6 +2508,7 @@ class MoonpyLC(object):
 			neighbor_dict = self.neighbor_dict
 			### indicates you're dealing with the target. Therefore:
 			is_neighbor='n'
+		
 		except:
 			is_neighbor='y'
 			### you need to generate the neighbor_dict
@@ -2513,6 +2536,7 @@ class MoonpyLC(object):
 					print('calling MoonpyLC for neighbor: ', neighbor)
 
 					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, download='y', clobber='n')
+
 				except:
 					traceback.print_exc()
 					print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
@@ -2526,6 +2550,9 @@ class MoonpyLC(object):
 		for neighbor in neighbor_dict.keys():
 			neighbor_taus = neighbor_dict[neighbor].taus 
 			neighbor_dur = neighbor_dict[neighbor].duration_days 
+
+			print('appending '+str(len(neighbor_taus))+' neighbor transit times.')
+			print('neighbor duration = '+str(neighbor_dur))
 
 			for nt in neighbor_taus:
 				ntidxs = np.where((np.hstack(self.times) >= (nt - 0.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 0.5*neighbor_dur)))[0]
@@ -2548,6 +2575,7 @@ class MoonpyLC(object):
 		neighbor_transit_idxs = np.array(neighbor_transit_idxs)
 		neighbor_transit_IDs = np.array(neighbor_transit_IDs)
 
+		print('number of neighbor transit idxs = ', len(neighbor_transit_idxs))
 		for ntidx in np.unique(neighbor_transit_idxs):
 			### find all transiting planets that have this index
 			all_neighbors = neighbor_transit_IDs[np.where(neighbor_transit_idxs == ntidx)[0]]
@@ -2555,6 +2583,7 @@ class MoonpyLC(object):
 
 
 		neighbor_transit_idxs = np.unique(neighbor_transit_idxs)
+		print('number of unique neighbor_transit_idxs = ', len(neighbor_transit_idxs))
 
 		neighbor_transit_times = []
 		neighbor_transit_list = []
@@ -2591,9 +2620,9 @@ class MoonpyLC(object):
 			#os.system('mv '+self.savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
 			os.system('mv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
 
-		self.all_transit_times = np.array(neighbor_transit_times)
-		self.all_transit_list = neighbor_transit_list
-		self.all_transit_IDs = neighbor_transit_ID 
+		self.neighbor_transit_times = np.array(neighbor_transit_times)
+		self.neighbor_transit_list = neighbor_transit_list
+		self.neighbor_transit_IDs = neighbor_transit_ID 
 
 
 

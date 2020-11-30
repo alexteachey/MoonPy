@@ -235,7 +235,7 @@ def k2_URL_generator(EPIC):
 
 
 
-def kepler_fits_download(target_name):
+def kepler_fits_download(target_name, clobber='n'):
 	### first extract the KIC number
 	try:
 		KIC_name = find_KIC_alias(target_name)
@@ -244,25 +244,35 @@ def kepler_fits_download(target_name):
 		KIC_URL, KIC_wget, KIC_download_dir = kepler_URL_generator(KIC_name)
 		#print("KIC wget = ", KIC_wget)
 
-		print('wgetting KIC light curves...')
-		os.system(KIC_wget)
-		print('done.')
+		#### check if KIC_download_dir files already exist... if they do, skip it!
+		if (len(os.listdir(KIC_download_dir)) > 0) and (clobber == 'n'):
+			print('light curve files already exist, no need to re-download.')
+		else:
+			print('wgetting KIC light curves...')
+			os.system(KIC_wget)
+			print('done.')
+
 	except:
 		traceback.print_exc()
 		raise Exception("something went wrong in 'kepler_fits_download()' (see traceback).")
 
 
-def k2_fits_download(target_name):
+def k2_fits_download(target_name, clobber='n'):
 	try:
 		EPIC_name = find_EPIC_alias(target_name)
 
 		EPIC_URLs, EPIC_wgets, EPIC_download_dir = k2_URL_generator(EPIC_name) ### EPIC_URLs and EPIC_wgets are LISTS!!!!
 
-		print('wgetting EPIC light curves...')
-		for EPIC_URL, EPIC_wget in zip(EPIC_URLs, EPIC_wgets):
-			print('looking for ', EPIC_URL)
-			os.system(EPIC_wget)
-		print('done.')
+		if (len(os.listdir(EPIC_download_dir)) > 0) and (clobber == 'n'):
+			print("light curve files already exist, no need to download again.")
+		
+		else:
+			print('wgetting EPIC light curves...')
+			for EPIC_URL, EPIC_wget in zip(EPIC_URLs, EPIC_wgets):
+				print('looking for ', EPIC_URL)
+				os.system(EPIC_wget)
+			print('done.')
+
 	except:
 		traceback.print_exc()
 		raise Exception("something went wrong in 'k2_fits_download()' (see traceback).")
@@ -400,24 +410,26 @@ def k2_unpack_fits(target_name):
 
 
 
-def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', sc=False):
+def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', clobber='n', sc=False):
 	#### using the functions developed above
 	### first, try unpacking without downloading.
 		
 	### FOR MOONPY COMPATIBILITY, THIS REQUIRES SUPPORT FOR BOTH KEPLER AND K2 LIGHT CURVES.
 
 	if telescope.lower() == 'kepler':
-		kepler_fits_download(targID)
+		kepler_fits_download(targID, clobber=clobber)
 		try:
 			kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
+		
 		except:
 			print('first except triggered.')
 			time.sleep(10)
 			try:
 				print('lc may not have been downloaded. Attempting to download...')
-				kepler_fits_download(targID)
+				kepler_fits_download(targID, clobber=clobber)
 				### after it's been downloaded, you can try to unpack again.
 				kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
+			
 			except:
 				print('second except triggered.')
 				time.sleep(10)
@@ -425,17 +437,20 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 				raise Exception("Something went wrong in 'kplr_target_download()' (see traceback).")
 
 	elif telescope.lower() == 'k2':
-		k2_fits_download(targID)
+		k2_fits_download(targID, clobber=clobber)
 		try:
 			kepler_lc_dictionary = k2_unpack_fits(targID)
+		
 		except:
 			print('first except triggered.')
 			time.sleep(10)
+			
 			try:
 				print('lc may not have been downloaded. Attempting to download...')
-				k2_fits_download(targID)
+				k2_fits_download(targID, clobber=clobber)
 				### after it's been downloaded, you can try to unpack again.
 				kepler_lc_dictionary = k2_unpack_fits(targID)
+			
 			except:
 				print('second except triggered.')
 				time.sleep(10)
@@ -510,7 +525,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 
 
 
-def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', sc=False):
+def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', clobber='n', sc=False):
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	### try to interpret the coordinate_format 
@@ -571,7 +586,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 	elif lc_format == 'sap':
 		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
 	elif lc_format == 'both':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc, clobber=clobber)
 
 
 	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
