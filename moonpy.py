@@ -1056,9 +1056,12 @@ class MoonpyLC(object):
 							all_transit_errors_detrend.append(transit_errors_detrend)
 
 						### MAKE THE BIG LIST A BIG ARRAY
-						all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
-						all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
-						all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
+						try:
+							all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
+							all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
+							all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
+						except:
+							print('could not concatenate (maybe an empty quarter')
 
 						#### now we need to replace all non-transiting fluxes_detrend and errors_detrend with NaNs
 						##### WHY? SO THAT IT IS THE SAME SIZE AS times, fluxes, and errors (for the way it saves in the file).
