@@ -293,7 +293,10 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		print(type(mask_idxs))
 		print(' ')
 
-		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+		if (mask_idxs != None) and (len(mask_idxs) > 0):
+			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+		else:
+			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 		### untrendy throws an error if unmasked_times arent strictly increasing
 		time_diffs = np.diff(unmasked_times)
 		if np.any(time_diffs <= 0):
