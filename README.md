@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last (non-exhaustive) update: November 26, 2020. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: December 2, 2020. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
