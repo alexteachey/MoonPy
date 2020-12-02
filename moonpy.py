@@ -1103,7 +1103,7 @@ class MoonpyLC(object):
 
 
 					elif dmeth == 'untrendy':
-						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
+						print("UNTRENDY IMPLEMENTATION IS STILL BUGGY. BEWARE!")
 						mask_transit_idxs = mask_transit_idxs.astype(int)
 						print('mask_transit_idxs = ', mask_transit_idxs)
 						fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
@@ -1113,6 +1113,7 @@ class MoonpyLC(object):
 
 
 					elif dmeth == 'george':
+						print("GEORGE IMPLEMENTATION IS STILL BUGGY. BEWARE!")
 						fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
@@ -1124,6 +1125,23 @@ class MoonpyLC(object):
 						fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
+
+
+					elif dmeth == 'methmarg':
+						local_window_duration = 10*self.duration_days
+						lwdm = 10 ### "local window duration multiple"
+						if local_window_duration > 0.5 * self.period:
+							#### you need a shorter duration!
+							local_window_duration = 0.5 * self.period
+							lwdm = local_window_duration / self.duration_days
+						###local_window_duration_multiple
+
+						
+						print('RUNNING METHOD MARGINALIZATION! MAKE SURE YOU CHECK YOUR INPUTS!')
+						fluxes_detrend, errors_detrend = methmarg_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  GP_kernel=GP_kernel, metric=GP_metric, kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
+
 
 
 

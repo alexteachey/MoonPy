@@ -372,11 +372,12 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 		kernel_size = kernel_size + 1
 		assert kernel_size % 2 == 1
 
-	if type(mask_idxs) != type(None):
+	if (type(mask_idxs) != type(None)) and (len(mask_idxs) > 0):
 		print('performing median filter with masked points.')
 		### that is, if there are masks for the transits (there should be!)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		#print('len(unmasked_times), len(unmasked_fluxes) = ', len(unmasked_times), len(unmasked_fluxes))
+		"""
 		try:
 			flux_trend = median_filter(unmasked_fluxes, size=size, mode='nearest')
 			print('utilizing scipy.ndimage.median_filter().')
@@ -385,16 +386,136 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 		print('median_filter() failed, utilizing scipy.signal.medfilt().')
 		medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
 		flux_trend = medfilt_interp(times)
+		"""
+
 
 	else:
+		unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
+
 		print('performing median filter without masked points.')
+		"""
 		try:
 			flux_trend = median_filter(fluxes, size=size, mode='nearest')
 		except:
 			flux_trend = medfilt(fluxes, kernel_size=size)
+		"""
+
+
+	try:
+		flux_trend = median_filter(unmasked_fluxes, size=kernel_size, mode='nearest')
+		print('utilizing scipy.ndimage.median_filter().')
+	
+	except:
+		flux_trend = medfilt(unmasked_fluxes, kernel_size=kernel_size)
+		print('median_filter() failed, utilizing scipy.signal.medfilt().')
+
+	medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
+	flux_trend = medfilt_interp(times)	
 
 	detrend_errors = errors / fluxes 
 	detrend_fluxes = fluxes / flux_trend
 
 	return detrend_fluxes, detrend_errors
+
+
+
+
+
+def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredKernel', metric=1.0, local_window_duration_multiple=10, Tdur_days=None, Tmid=None, telescope=None, mask_idxs=None, max_degree=30):
+	#### THIS FUNCTION WILL RUN ALL THE OTHER DETRENDERS, and take the median value at every time step.
+
+	try:
+		cofiam_fluxes, cofiam_errors = cofiam_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=30)
+		include_cofiam = 'y'
+	except:
+		traceback.print_exc()
+		include_cofiam = 'n'
+
+	try:
+		polyAM_fluxes, polyAM_errors = polyAM_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=20)	
+		include_polyAM = 'y'
+	except:
+		traceback.print_exc()
+		include_polyAM = 'n'
+
+	try:
+		polyLOC_times, polyLOC_fluxes, polyLOC_errors = polyLOC_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, local_window_duration_multiple=local_window_duration_multiple, Tmid=Tmid, Tdur_days=Tdur_days, mask_idxs=mask_idxs, max_degree=20)
+		include_polyLOC = 'y'
+
+		#### need to embed this in a larger array, so that it's the same size.
+		full_polyLOC_fluxes, full_polyLOC_errors = np.full(len(times), np.nan), np.full(len(times), np.nan)
+		match_idxs = []
+		for i in np.arange(0,len(times),1):
+			if times[i] in polyLOC_times:
+				match_idx = np.where(times[i] == polyLOC_times)[0]
+				full_polyLOC_fluxes[i] = polyLOC_fluxes[match_idx]
+				full_polyLOC_errors[i] = polyLOC_errors[match_idx]
+
+		polyLOC_fluxes, polyLOC_errors = full_polyLOC_fluxes, full_polyLOC_errors #### should be the same size as the other arrays!
+		
+	except:
+		traceback.print_exc()
+		include_polyLOC = 'n'
+
+	try:
+		medfilt_fluxes, medfilt_errors = medfilt_detrend(times=times, fluxes=fluxes, errors=errors, kernel_hours=kernel_hours, telescope=telescope, mask_idxs=mask_idxs)	
+		include_medfilt = 'y'
+	except:
+		traceback.print_exc()
+		include_medfilt = 'n'
+
+
+
+	methmarg_fluxes = []
+	mathmarg_errors = []
+
+	#### IDEALLY THIS DETRENDING IS ALREADY HAPPENING ON A QUARTER BY QUARTER BASIS -- YOU ARE NOT 
+	if include_cofiam == 'y':
+		quarter_flux_stack = cofiam_fluxes
+		quarter_error_stack = cofiam_errors
+	else:
+		pass
+
+	if (include_polyAM == 'y') and (include_cofiam == 'y'):
+		quarter_flux_stack = np.vstack((quarter_flux_stack, polyAM_fluxes))
+		quarter_error_stack = np.vstack((quarter_error_stack, polyAM_errors))
+	elif (include_polyAM == 'y') and (include_cofiam == 'n'):
+		quarter_flux_stack = polyAM_fluxes 
+		quarter_error_stack = polyAM_errors
+	elif include_polyAM == 'n':
+		pass
+
+	if (include_polyLOC == 'y') and ((include_cofiam == 'y') or (include_polyAM == 'y')):
+		quarter_flux_stack = np.vstack((quarter_flux_stack, polyLOC_fluxes))
+		quarter_error_stack = np.vstack((quarter_error_stack, polyLOC_errors))
+	elif (include_polyLOC == 'y') and include_cofiam == 'n' and include_polyAM == 'n':
+		quarter_flux_stack = polyLOC_fluxes 
+		quarter_error_stack = polyLC_errors 
+	elif include_polyLOC == 'n':
+		pass
+
+	if (include_medfilt == 'y') and ((include_cofiam == 'y') or (include_polyAM == 'y') or (include_polyLOC == 'y')):
+		quarter_flux_stack = np.vstack((quarter_flux_stack, medfilt_fluxes))
+		quarter_error_stack = np.vstack((quarter_error_stack, medfilt_errors))
+	elif (include_medfilt == 'y') and (include_cofiam == 'n') and (include_polyAM == 'n') and (include_polyLOC == 'n'):
+		quarter_flux_stack = medfilt_fluxes 
+		quarter_error_stack = medfilt_errors
+	else:
+		pass
+
+	print("number of methods included in MethMarg = ", quarter_flux_stack.shape[0])
+
+	quarter_methmarg_median_fluxes = np.nanmedian(quarter_flux_stack, axis=0)
+	quarter_methmarg_median_errors = np.zeros(shape=quarter_methmarg_median_fluxes.shape)
+	for i in np.arange(0,quarter_flux_stack.shape[1],1):
+		iMAD = np.nanmedian(np.abs(quarter_error_stack.T[i] - np.nanmedian(quarter_error_stack.T[i])))
+		isig = 1.4826 * iMAD
+		quarter_methmarg_median_errors[i] = isig 
+
+
+	print('quarter_methmarg_median_fluxes.shape = ', quarter_methmarg_median_fluxes.shape)
+	print('quarter_methmarg_median_errors.shape = ', quarter_methmarg_median_errors.shape)
+
+	return quarter_methmarg_median_fluxes, quarter_methmarg_median_errors
+
 
