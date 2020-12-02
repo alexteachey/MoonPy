@@ -293,7 +293,7 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		print(type(mask_idxs))
 		print(' ')
 
-		if (mask_idxs != None) and (len(mask_idxs) > 0):
+		if (type(mask_idxs) != type(None)) and (len(mask_idxs) > 0):
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		else:
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
@@ -331,8 +331,12 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 		from george.kernels import ExpSquaredKernel as kernel_choice
 		print("george GP code is using the Exponential Squared Kernel with metric="+str(metric)+'.')
 
+	print('mask_idxs = ', mask_idxs)
+	if (type(mask_idxs) != type(None)) and (len(mask_idxs) > 0):
+		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
+	else:
+		unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors 
 
-	unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 	#kernel = ExpSquaredKernel(metric=metric)
 	kernel_arg = np.var(unmasked_fluxes) * kernel_choice(metric=metric)
 	print('generating the gp...')

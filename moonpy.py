@@ -1104,6 +1104,8 @@ class MoonpyLC(object):
 
 					elif dmeth == 'untrendy':
 						print("UNTRENDY ISN'T REALLY SUPPORTED RIGHT NOW, SORRY!")
+						mask_transit_idxs = mask_transit_idxs.astype(int)
+						print('mask_transit_idxs = ', mask_transit_idxs)
 						fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 						flags_detrend = dflags
