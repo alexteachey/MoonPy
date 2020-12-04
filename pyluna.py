@@ -2,7 +2,19 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import mp_tools 
+import mp_tools
+import socket
+
+hostname = socket.gethostname()
+if ('tethys' in hostname) and ('sinica' in hostname):
+	moonpydir = '/data/tethys/Documents/Software/MoonPy'
+	central_data_dir = '/data/tethys/Documents/Central_Data/'
+elif ('Alexs-Macbook') in hostname:
+	moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
+	central_data_dir = '/Users/hal9000/Documents/Central_Data'
+elif 'umbriel' in hostname:
+	moonpydir = '/home/cal/ateachey/Documents/MoonPy'
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
 
 
 ### THIS CODE IS THE MASTER LUNA INTERFACE. ALL LUNA QUERIES THROUGH ME.
@@ -11,7 +23,7 @@ import mp_tools
 
 ### DIRECTORIES
 #LUNAdir = '/Users/hal9000/Documents/Software/MoonPy'
-LUNAdir = os.getcwd()+'/LUNA'
+LUNAdir = moonpydir+'/LUNA'
 outputdir = LUNAdir+'/output'
 if os.path.exists(outputdir) == False:
 	os.system('mkdir '+LUNAdir+'/output')
