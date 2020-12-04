@@ -12,6 +12,7 @@ import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from astropy.stats import LombScargle
+import socket 
 
 #### BELOW ARE MOONPY PACKAGES
 from mp_tools import *
@@ -31,15 +32,17 @@ from scipy.interpolate import interp1d
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
 #rc('text', usetex=True)
 
-#moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
-moonpydir = os.getcwd()
-
-if moonpydir.startswith('/data/tethys'):
+hostname = socket.gethostname()
+if ('tethys' in hostname) and ('sinica' in hostname):
+	moonpydir = '/data/tethys/Documents/Software/MoonPy'
 	central_data_dir = '/data/tethys/Documents/Central_Data/'
-elif moonpydir.startswith('/home/cal'):
-	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
-elif moonpydir.startswith('/Users/hal9000'):
+elif ('Alexs-Macbook') in hostname:
+	moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
+elif 'umbriel' in hostname:
+	moonpydir = '/home/cal/ateachey/Documents/MoonPy'
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+
 
 """
 savepath = moonpydir+'/saved_lcs'
