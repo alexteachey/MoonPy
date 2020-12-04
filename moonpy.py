@@ -786,7 +786,7 @@ class MoonpyLC(object):
 
 					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
-					mazeh = pandas.read_csv('Table3_O-C.csv')
+					mazeh = pandas.read_csv(moonpydir+'/Table3_O-C.csv')
 					maz_koi = np.array(mazeh['KOI']).astype(str)
 					maz_epoch = np.array(mazeh['n'])
 					maz_reftime = np.array(mazeh['ref_time'])

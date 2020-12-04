@@ -143,6 +143,23 @@ def density_conversion(mass, radius, munit='kg', runit='meters'):
 	return rho_obj 
 
 
+def density_from_orbit(a_over_R, Porbit, in_unit='days', out_unit='mks'):
+	#### this computes a density based on the semimajor axis of the orbiter and the orbital period.
+	##### SEE EQUATION 3 HERE: https://arxiv.org/pdf/1710.07293.pdf
+	numerator = 3*np.pi * a_over_R**3
+	if in_unit == 'days':
+		Porbit_seconds = Porbit*24*60*60
+	elif in_unit == 'hours':
+		Porbit_seconds = Porbit*60*60
+	denominator = G.value * Porbit_seconds**2
+	density_kgm3 = numerator / denominator
+	if out_unit == 'mks':
+		return density_kgm3
+	elif out_unit == 'cgs':
+		density_gcm3 = density_kgm3 * 1000 * (1/100)**3
+		return density_gcm3
+
+
 
 def transit_SNR_integrator(times, fluxes, errors):
 	### THIS CAN ONLY BE USED ON A FLAT MODEL! DOESN'T WORK FOR FLUXES!

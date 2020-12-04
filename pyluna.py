@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import mp_tools
 import socket
+from astropy.constants import G
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
@@ -85,7 +86,7 @@ def prepare_files(all_times, ntaus, nparam, nparamorig):
 
 
 #def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
-def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None, rhoplan=None, sat_sma=None, sat_phase=None, sat_inc=None, sat_omega=None, MsatMp=None, RsatRp=None, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
@@ -111,6 +112,13 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 		sat_inc = deg2rad(sat_inc)
 		sat_phase = deg2rad(sat_phase)
 		sat_omega = deg2rad(sat_omega)
+
+
+
+	if rhoplan == None:
+		### calculate it! 
+		rhoplan = mp_tools.density_from_orbit(sat_sma, Psat, in_unit='days', out_unit='mks')
+
 
 	#assert (bplan >= 0) and (bplan <= 2)
 
@@ -168,81 +176,84 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 	else:
 		input_file.write(str(round(q2,7))+'D0\n') #Rp(7)
 
-	if 'e' in str(rhoplan):
-		input_file.write(str('%.7f' % rhoplan)+'D0\n') #Rp(8)
-	else:
-		input_file.write(str(round(rhoplan,7))+'D0\n') #Rp(8)
+	if (model == 'M') or (model == 'Z'):
 
-	if 'e' in str(sat_sma):
-		input_file.write(str('%.7f' % sat_sma)+'D0\n') #Rp(9)
-	else:
-		input_file.write(str(round(sat_sma,7))+'D0\n') #Rp(9)
+		if 'e' in str(rhoplan):
+			input_file.write(str('%.7f' % rhoplan)+'D0\n') #Rp(8)
+		else:
+			input_file.write(str(round(rhoplan,7))+'D0\n') #Rp(8)
 
-	if 'e' in str(sat_phase):
-		input_file.write(str('%.7f' % sat_phase)+'D0\n') #Rp(10)
-	else:
-		input_file.write(str(round(sat_phase,7))+'D0\n') #Rp(10)
+		if 'e' in str(sat_sma):
+			input_file.write(str('%.7f' % sat_sma)+'D0\n') #Rp(9)
+		else:
+			input_file.write(str(round(sat_sma,7))+'D0\n') #Rp(9)
 
-	if 'e' in str(sat_inc):
-		input_file.write(str('%.7f' % sat_inc)+'D0\n') #Rp(11)
-	else:
-		input_file.write(str(round(sat_inc,7))+'D0\n') #Rp(11)
+		if 'e' in str(sat_phase):
+			input_file.write(str('%.7f' % sat_phase)+'D0\n') #Rp(10)
+		else:
+			input_file.write(str(round(sat_phase,7))+'D0\n') #Rp(10)
 
-	if 'e' in str(sat_omega):
-		input_file.write(str('%.7f' % sat_omega)+'D0\n') #Rp(12)
-	else:
-		input_file.write(str(round(sat_omega,7))+'D0\n') #Rp(12)
+		if 'e' in str(sat_inc):
+			input_file.write(str('%.7f' % sat_inc)+'D0\n') #Rp(11)
+		else:
+			input_file.write(str(round(sat_inc,7))+'D0\n') #Rp(11)
 
-	if 'e' in str(MsatMp):
-		input_file.write(str('%.7f' % MsatMp)+'D0\n') # Rp(13)
-	else:
-		input_file.write(str(round(MsatMp,7))+'D0\n') # Rp(13)
-	if 'e' in str(RsatRp):
-		input_file.write(str('%.7f' % RsatRp)+'D0\n') # Rp(14)
-	else:
-		input_file.write(str(round(RsatRp,7))+'D0\n') # Rp(14)	
+		if 'e' in str(sat_omega):
+			input_file.write(str('%.7f' % sat_omega)+'D0\n') #Rp(12)
+		else:
+			input_file.write(str(round(sat_omega,7))+'D0\n') #Rp(12)
+
+		if 'e' in str(MsatMp):
+			input_file.write(str('%.7f' % MsatMp)+'D0\n') # Rp(13)
+		else:
+			input_file.write(str(round(MsatMp,7))+'D0\n') # Rp(13)
+		if 'e' in str(RsatRp):
+			input_file.write(str('%.7f' % RsatRp)+'D0\n') # Rp(14)
+		else:
+			input_file.write(str(round(RsatRp,7))+'D0\n') # Rp(14)	
 
 
 	#### FITTING INDIVIDUAL TAUS!
-	if tau1 != None:
-		if 'e' in str(tau1):
-			input_file.write(str('%.7f' % tau1)+'D0\n') # Rp(15)
-		else:
-			input_file.write(str(round(tau1,7))+'D0\n') # Rp(15)	
-	#### FITTING INDIVIDUAL TAUS!
-	if tau2 != None:
-		if 'e' in str(tau2):
-			input_file.write(str('%.7f' % tau2)+'D0\n') # Rp(16)
-		else:
-			input_file.write(str(round(tau2,7))+'D0\n') # Rp(16)	
+	if model == 'T':
+		if tau1 != None:
+			if 'e' in str(tau1):
+				input_file.write(str('%.7f' % tau1)+'D0\n') # Rp(15)
+			else:
+				input_file.write(str(round(tau1,7))+'D0\n') # Rp(15)	
+		#### FITTING INDIVIDUAL TAUS!
+		if tau2 != None:
+			if 'e' in str(tau2):
+				input_file.write(str('%.7f' % tau2)+'D0\n') # Rp(16)
+			else:
+				input_file.write(str(round(tau2,7))+'D0\n') # Rp(16)	
 
-	#### FITTING INDIVIDUAL TAUS!
-	if tau3 != None:
-		if 'e' in str(tau3):
-			input_file.write(str('%.7f' % tau3)+'D0\n') # Rp(17)
-		else:
-			input_file.write(str(round(tau3,7))+'D0\n') # Rp(17)	
+		#### FITTING INDIVIDUAL TAUS!
+		if tau3 != None:
+			if 'e' in str(tau3):
+				input_file.write(str('%.7f' % tau3)+'D0\n') # Rp(17)
+			else:
+				input_file.write(str(round(tau3,7))+'D0\n') # Rp(17)	
 
-	#### FITTING INDIVIDUAL TAUS!
-	if tau4 != None:
-		if 'e' in str(tau4):
-			input_file.write(str('%.7f' % tau4)+'D0\n') # Rp(18)
-		else:
-			input_file.write(str(round(tau4,7))+'D0\n') # Rp(18)
+		#### FITTING INDIVIDUAL TAUS!
+		if tau4 != None:
+			if 'e' in str(tau4):
+				input_file.write(str('%.7f' % tau4)+'D0\n') # Rp(18)
+			else:
+				input_file.write(str(round(tau4,7))+'D0\n') # Rp(18)
 
-	#### FITTING INDIVIDUAL TAUS!
-	if tau5 != None:
-		if 'e' in str(tau5):
-			input_file.write(str('%.7f' % tau5)+'D0\n') # Rp(19)
-		else:
-			input_file.write(str(round(tau5,7))+'D0\n') # Rp(19)
+		#### FITTING INDIVIDUAL TAUS!
+		if tau5 != None:
+			if 'e' in str(tau5):
+				input_file.write(str('%.7f' % tau5)+'D0\n') # Rp(19)
+			else:
+				input_file.write(str(round(tau5,7))+'D0\n') # Rp(19)
 
-	#### FITTING INDIVIDUAL TAUS!
-	if tau6 != None:
-		if 'e' in str(tau1):
-			input_file.write(str('%.7f' % tau6)+'D0\n') # Rp(20)
-		else:
-			input_file.write(str(round(tau6,7))+'D0\n') # Rp(20)			
+		#### FITTING INDIVIDUAL TAUS!
+		if tau6 != None:
+			if 'e' in str(tau1):
+				input_file.write(str('%.7f' % tau6)+'D0\n') # Rp(20)
+			else:
+				input_file.write(str(round(tau6,7))+'D0\n') # Rp(20)			
 
 
 	input_file.close()
@@ -263,13 +274,14 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, s
 		print("Period [days] = ", Pplan)
 		print("tau_0 [day] = ", tau0)
 		print("q1,q2 = ", q1, q2)
-		print("planet density [kg / m^3] = ", rhoplan)
-		print("sat_sma = [Rp] ", sat_sma)
-		print("sat_phase = ", sat_phase)
-		print("sat_inc = ", sat_inc)
-		print("sat_omega = ", sat_omega)
-		print("Msat / Mp = ", MsatMp)
-		print("Rsat / Rp = ", RsatRp)
+		if (model == 'M') or (model == "Z"):
+			print("planet density [kg / m^3] = ", rhoplan)
+			print("sat_sma = [Rp] ", sat_sma)
+			print("sat_phase = ", sat_phase)
+			print("sat_inc = ", sat_inc)
+			print("sat_omega = ", sat_omega)
+			print("Msat / Mp = ", MsatMp)
+			print("Rsat / Rp = ", RsatRp)
 		print(" ")
 
 	### now it's time to run plotit!
