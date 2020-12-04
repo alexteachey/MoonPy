@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last (non-exhaustive) update: December 2, 2020. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: December 4, 2020. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
@@ -12,6 +12,9 @@ MoonPy is designed to make downloading, plotting, detrending, and fitting light 
 
 MoonPy is kind of like a streamlined astro package aggregator, but in time it will hopefully also contain brand new functionality. 
 In particular, support for modeling exomoon transits is coming! (Hence the name, MoonPy). It's not quite ready for prime time, so stay tuned!
+
+## Installation
+The easiest way to use MoonPy is to clone the directory, and then create a .pth file that will link this directory such that it will be included in your python path for importing. I've always found this terribly confusing, personally; the best instructions are in [the accepted answer to this question on StackOverflow](https://stackoverflow.com/questions/37006114/anaconda-permanently-include-external-packages-like-in-pythonpath). Basically, create a text file called moonpy.pth and place it in site-packages directory of the python you're using (for example, ```$HOME/path/to/anaconda/lib/pythonX.X/site-packages``` or ```~/anaconda3/envs/{NAME_OF_ENVIRONMENT}/lib/pythonX.X/site-packages/```. Then you should be able to do ```from moonpy import *``` from anywhere.
 
 
 ## Prerequisites
