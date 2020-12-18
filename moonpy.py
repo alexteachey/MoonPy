@@ -5,6 +5,7 @@ import os
 #import astropy
 import warnings
 from astropy.io import ascii
+from astropy.time import Time
 import time
 #import datetime
 import pandas
@@ -715,6 +716,51 @@ class MoonpyLC(object):
 		self.find_transit_quarters()
 	except:
 		print('could not find_transit_quarters().')
+
+
+
+	def get_future_transits(self, num_transits=20, output_format='datetime', native_format=None):
+		#### uses last tau to project future transit times
+		#### format can be 'BJD', 'BKJD', 'BTJD', or 'datetime'
+		last_tau = self.taus[-1]
+		print('producing '+str(num_transits)+' future transits. Barycentric corrections not considered.')
+
+		if self.telescope.lower() == 'kepler':
+			native_format='BKJD'
+		elif self.telescope.lower() == 'tess':
+			native_format=='BTJD'
+
+		if native_format.lower() == 'bkjd':
+			last_tau_BJD = last_tau + 2454833.0
+		elif native_format.lower() == 'btjd':
+			last_tau_BJD = last_tau + 2457000.0
+		elif (native_format.lower() == 'bjd') or (native_format.lower() == 'jd'):
+			last_tau_BJD = last_tau 
+
+		future_taus = []
+		for i in np.arange(1,num_transits+1,1):
+			future_taus.append(last_tau_BJD + (i*self.period))
+		future_taus = np.array(future_taus)
+		future_taus = Time(future_taus, format='jd', scale='utc')
+
+		if output_format.lower() == 'datetime':
+			output_taus = future_taus.isot 
+		elif (output_format.lower() == 'bjd') or (output_format.lower() == 'jd'):
+			output_taus = future_taus.jd 
+		elif (output_format.lower() == 'bkjd') or (output_format.lower() == 'kjd'):
+			output_taus = future_taus.jd - 2454833
+		elif (output_format.lower() == 'btjd') or (output_format.lower() == 'tjd'):
+			output_taus = future_taus.jd - 2457000
+
+		### return future_taus in both native format, and the requested format
+		#for opt, ft in zip(output_taus, future_taus):
+		#	print(str(opt)+' --- '+str(ft))
+
+		return future_taus, output_taus
+
+
+
+
 
 
 	### DETRENDING!
