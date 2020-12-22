@@ -5,6 +5,7 @@ import os
 import mp_tools
 import socket
 from astropy.constants import G
+import time
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
@@ -23,8 +24,14 @@ elif 'umbriel' in hostname:
 
 
 ### DIRECTORIES
-#LUNAdir = '/Users/hal9000/Documents/Software/MoonPy'
-LUNAdir = moonpydir+'/LUNA'
+#### NEW FUNCTIONALITY -- ALLOWS YOU TO RUN MULTIPLE LUNA runs at once -- your LUNAdir will be based in your CURRENT WORKING DIRECTORY!!!!
+master_LUNAdir = moonpydir+'/LUNA'
+local_LUNAdir = os.getcwd()+'/LUNA'
+print('COPYING '+master_LUNAdir+' to '+local_LUNAdir)
+time.sleep(3)
+#### COPY master_LUNAdir locally -- that way you can make global changes within the master without doing ad-hoc changes.
+os.system('cp -r '+master_LUNAdir+' '+local_LUNAdir)
+LUNAdir = local_LUNAdir
 outputdir = LUNAdir+'/output'
 if os.path.exists(outputdir) == False:
 	os.system('mkdir '+LUNAdir+'/output')
