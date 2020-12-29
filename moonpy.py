@@ -2209,7 +2209,7 @@ class MoonpyLC(object):
 			target_eccen, target_eccen_uperr, target_eccen_lowerr = mast_data['koi_eccen'][mast_rowidx], mast_data['koi_eccen_err1'][mast_rowidx], mast_data['koi_eccen_err2'][mast_rowidx]
 			target_longp, target_longp_uperr, target_longp_lowerr = mast_data['koi_longp'][mast_rowidx], mast_data['koi_longp_err1'][mast_rowidx], mast_data['koi_longp_err2'][mast_rowidx]
 			target_incl, target_incl_uperr, target_incl_lowerr = mast_data['koi_incl'][mast_rowidx], mast_data['koi_incl_err1'][mast_rowidx], mast_data['koi_incl_err2'][mast_rowidx]	
-
+			#target_snr = mast_data['koi_model_snr']
 
 
 		elif (self.telescope.lower() == 'k2'):
@@ -2301,6 +2301,7 @@ class MoonpyLC(object):
 			self.ldm_a1 = float(target_ldm1)
 			self.ldm_a2 = float(target_ldm2)
 			self.q1, self.q2 = u1u2_to_q1q2(self.ldm_a1, self.ldm_a2)
+			#self.snr = float(target_snr)
 
 		try:
 			self.sma_AU = float(target_sma_AU) ### sma in AU
