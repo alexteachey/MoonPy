@@ -752,9 +752,10 @@ class MoonpyLC(object):
 		elif (output_format.lower() == 'btjd') or (output_format.lower() == 'tjd'):
 			output_taus = future_taus.jd - 2457000
 
+		
 		### return future_taus in both native format, and the requested format
 		#for opt, ft in zip(output_taus, future_taus):
-		#	print(str(opt)+' --- '+str(ft))
+		#		print(str(opt)+' --- '+str(ft))
 
 		return future_taus, output_taus
 
@@ -1878,7 +1879,7 @@ class MoonpyLC(object):
 		#### KEPLER HANDLING
 		if current_time - kep_mast_fct > 86400: ### one day old
 			print("DOWNLOADING Kepler MAST file...")
-			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
 
 			print(" ")
 		if current_time - kep_fop_fct > 86400:
