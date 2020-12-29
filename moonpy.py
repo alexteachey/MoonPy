@@ -81,10 +81,18 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
 		original_target_input = targetID ### keep this around! sometimes you want it!
+
+		if attributes_only == 'y':
+			clobber = 'n' #### if the file already exists, don't clobber it!
+			##### this option allows you to download all the attributes of the object without getting the light curve!	
+			###### to pull this off you will need to act as though these are user suppled light curves.
+			print('attributes_only option selected... creating dummy light curves.')
+			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = np.linspace(0,1,1000), np.linspace(1,1,1000), np.linspace(0.001,0.001,1000), np.linspace(1,1,1000), np.linspace(0.001,0.001, 1000), np.linspace(0,0,1000), np.array([1])
+
 
 		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
 			print('using USER-SUPPLIED VALUES.')
@@ -100,30 +108,32 @@ class MoonpyLC(object):
 			self.flags = lc_flags
 			self.quarters = lc_quarters 
 
-			targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
-			telescope='USER'
-			self.telescope = telescope
+			if attributes_only == 'n':			
+				targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
+				telescope='USER'
+				self.telescope = telescope
 
-			RA, Dec = 0.0, 0.0
-			is_neighbor='y'
+				RA, Dec = 0.0, 0.0
+				is_neighbor='y'
 
-			try:
-				self.period = usr_dict['period']
-				self.tau0 = usr_dict['tau0']
-				self.impact = usr_dict['impact']
-				self.duration_hours = usr_dict['duration_hours']
-				self.rprstar = usr_dict['rprstar']
-				self.sma_AU = usr_dict['sma_AU']
-				self.rp_rearth = usr_dict['rp_rearth']
-			except:
-				print(usr_dict)
-				self.period = float(input('Enter the period: '))
-				self.tau0 = float(input('Enter the tau0: '))
-				self.impact = float(input('Enter the impact parameter: '))
-				self.duration_hours = float(input('Enter the duration of the transit in hours: '))
-				self.rprstar = float(input('Enter the Rp/Rstar: '))
-				self.sma_AU = float(input('Enter the planet sma in AU: '))
-				self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+				try:
+					self.period = usr_dict['period']
+					self.tau0 = usr_dict['tau0']
+					self.impact = usr_dict['impact']
+					self.duration_hours = usr_dict['duration_hours']
+					self.rprstar = usr_dict['rprstar']
+					self.sma_AU = usr_dict['sma_AU']
+					self.rp_rearth = usr_dict['rp_rearth']
+				except:
+					print(usr_dict)
+					self.period = float(input('Enter the period: '))
+					self.tau0 = float(input('Enter the tau0: '))
+					self.impact = float(input('Enter the impact parameter: '))
+					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.sma_AU = float(input('Enter the planet sma in AU: '))
+					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+		
 		else:
 			user_supplied = 'n'
 
@@ -295,26 +305,32 @@ class MoonpyLC(object):
 			try:
 				try:
 					pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+				
 				except:
+				
 					try:
 						pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 					except:
 						print("could not load the light curve from file. Will download.")
 						load_lc = 'n'
+				
 				try:
 					if self.telescope.lower() == 'user':
 						ptimes = np.array(pandafile['BJD'])
 					elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 						ptimes = np.array(pandafile['BKJD'])
 					elif self.telescope.lower() == 'tess':
+						
 						try:
-							ptimes = np.array(pandafile['BTJD'])
+							ptimes = np.array(pandafile['BTJD'])	
 						except:
 							ptimes = np.array(pandafile['BKJD']) ### fix for earlier mislabeling of TESS time offsets.
+					
 					pfluxes = np.array(pandafile['fluxes'])
 					perrors = np.array(pandafile['errors'])
 					pquarters = np.array(pandafile['quarter'])
 					pflags = np.array(pandafile['flags'])
+					
 					try:
 						pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
 						perrors_detrend = np.array(pandafile['errors_detrended'])
@@ -333,6 +349,7 @@ class MoonpyLC(object):
 						lc_errors.append(perrors[uqidxs])
 						lc_flags.append(pflags[uqidxs])
 						lc_quarters.append(uq)
+						
 						try:
 							lc_fluxes_detrend.append(pfluxes_detrend[uqidxs])
 							lc_errors_detrend.append(perrors_detrend[uqidxs])
@@ -370,7 +387,7 @@ class MoonpyLC(object):
 
 
 		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
-		if (load_lc=='n') and (type(targetID) != type(None)) and (type(telescope) != type(None)):
+		if (load_lc=='n') and (type(targetID) != type(None)) and (type(telescope) != type(None)) and (attributes_only == 'n'):
 			### implies you've selected a target you want to download.
 
 			### USER-INPUT HANDLING
@@ -381,7 +398,6 @@ class MoonpyLC(object):
 				mast_columns = mast_data.columns
 				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
 				exofop_columns = exofop_data.columns
-
 
 
 
@@ -512,7 +528,7 @@ class MoonpyLC(object):
 
 
 		### HANDLING FOR USER-SUPPLIED COORDINATES.
-		elif (load_lc == 'n') and (type(RA) != type(None)) and (type(Dec) != type(None)): 
+		elif (load_lc == 'n') and (type(RA) != type(None)) and (type(Dec) != type(None)) and (attributes_only == 'n'): 
 			try:	
 				if (telescope.lower() == 'kepler') or (telescope.lower() =='k2'):
 					if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
@@ -550,8 +566,9 @@ class MoonpyLC(object):
 			pass
 
 		else:
-			raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
-				lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
+			if attributes_only == 'n':
+				raise Exception("You have supplied inconsistent inputs. Must be 1) lc_times, \
+					lc_fluxes, and lc_errors, 2) targetID and telescope, or 3) RA, Dec and telescope.")
 
 
 		print ('load_lc = ', load_lc)
