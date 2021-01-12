@@ -317,6 +317,9 @@ def kepler_unpack_fits(target_name, sc=False):
 
 
 		for Kdf in KIC_directory_files:
+			if KDf in reject_wrong_cadence_files:
+				continue
+				
 			print('reading ', Kdf)
 
 			if ('.fits' in Kdf) and (Kdf not in reject_wrong_cadence_files):
