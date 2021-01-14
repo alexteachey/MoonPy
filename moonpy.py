@@ -43,17 +43,11 @@ elif ('Alexs-Macbook') in hostname:
 elif 'umbriel' in hostname:
 	moonpydir = '/home/cal/ateachey/Documents/MoonPy'
 	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
-
-
-"""
-savepath = moonpydir+'/saved_lcs'
-print("light curve savepath = ", savepath)
-if os.path.exists(savepath):
-	pass
 else:
-	print("did not exist. generating...")
-	os.system('mkdir '+savepath)
-"""
+	moonpydir = input('Please specify the MoonPy directory (or hard-code this into moonpy.py): ')
+	central_data_dir = input("Please specify a 'central data' directory (or hard-code this into moonpy.py): ")
+
+
 
 """
 This is the MoonPy master script! To open, you should only have to type 'import moonpy'
@@ -63,9 +57,6 @@ This package is designed to do the following:
 3) detrend data using CoFiAM or untrendy
 4) fit a model to the data using MultiNest or emcee
 5) visualize the results
-NOTES to Alex:
--a light curve should be an OBJECT, which you can manipulate with methods such as 'detrend', and 'fit'.
--build the skeleton first, and then start filling out the functionality.
 """
 
 ### STANDARD LUNA FIT PRIOR DICTIONARY. YOU MAY CHANGE INDIVIDUAL ASPECTS WHEN CALLING THE FUNCTION!
