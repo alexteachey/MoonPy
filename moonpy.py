@@ -27,6 +27,8 @@ from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/moonpy.py')]
 
 #from matplotlib import rc
 
@@ -35,17 +37,25 @@ from scipy.interpolate import interp1d
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
-	moonpydir = '/data/tethys/Documents/Software/MoonPy'
+	#moonpydir = '/data/tethys/Documents/Software/MoonPy'
 	central_data_dir = '/data/tethys/Documents/Central_Data/'
 elif ('Alexs-Macbook') in hostname:
-	moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
+	#moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 elif 'umbriel' in hostname:
-	moonpydir = '/home/cal/ateachey/Documents/MoonPy'
+	#moonpydir = '/home/cal/ateachey/Documents/MoonPy'
 	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
 else:
-	moonpydir = input('Please specify the MoonPy directory (or hard-code this into moonpy.py): ')
-	central_data_dir = input("Please specify a 'central data' directory (or hard-code this into moonpy.py): ")
+	#moonpydir = input('Please specify the MoonPy directory (or hard-code this into moonpy.py): ')
+	#central_data_dir = input("Please specify a 'central data' directory (or hard-code this into moonpy.py): ")
+	### store central_data within MoonPy directory
+	if os.path.exists(moonpydir+'/Central_Data'):
+		pass
+	else:
+		os.system('mkdir '+moonpydir+'/Central_Data')
+		central_data_dir = moonpydir+'/Central_Data'
+print('moonpydir = ', moonpydir)
+print('Light curves will be stored in '+central_data_dir)
 
 
 
