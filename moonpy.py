@@ -1896,23 +1896,23 @@ class MoonpyLC(object):
 
 		#### KEPLER HANDLING
 		if current_time - kep_mast_fct > 86400: ### one day old
-			print("DOWNLOADING Kepler MAST file...")
-			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
+			print("DOWNLOADING Kepler MAST file (once per day)...")
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
 
 			print(" ")
 		if current_time - kep_fop_fct > 86400:
-			print("DOWNLOADING Kepler ExoFOP file...")
+			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
 			os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
 
 			print(' ')
 
 		#### K2 HANDLING
 		if current_time - k2_mast_fct > 86400:
-			print('DOWNLOADING K2 MAST file...')
+			print('DOWNLOADING K2 MAST file (once per day)...')
 			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+k2_mast_address+'"')
 			print(' ')
 		if current_time - k2_fop_fct > 86400:	
-			print("DOWNLOADING K2 ExoFOP file...")
+			print("DOWNLOADING K2 ExoFOP file (once per day)...")
 			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
 			#os.system('wget --tries=1 '+k2_fop_address+' "https://exofop.ipac.caltech.edu/k2/download_summary_csv/php?camp=All&sort=target"')
 			print(' ')
@@ -1920,11 +1920,11 @@ class MoonpyLC(object):
 
 		#### TESS HANDLING
 		if current_time - tess_mast_fct > 86400:
-			print('DOWNLOADING TESS MAST file...')
+			print('DOWNLOADING TESS MAST file (once per day)...')
 			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+tess_mast_address+'"')			
 			print(' ')
 		if current_time - tess_fop_fct > 86400:
-			print('DOWNLOADING TESS ExoFOP file...')
+			print('DOWNLOADING TESS ExoFOP file (once per day)...')
 			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
 			print(' ')
 
@@ -2210,6 +2210,7 @@ class MoonpyLC(object):
 			target_eccen, target_eccen_uperr, target_eccen_lowerr = mast_data['koi_eccen'][mast_rowidx], mast_data['koi_eccen_err1'][mast_rowidx], mast_data['koi_eccen_err2'][mast_rowidx]
 			target_longp, target_longp_uperr, target_longp_lowerr = mast_data['koi_longp'][mast_rowidx], mast_data['koi_longp_err1'][mast_rowidx], mast_data['koi_longp_err2'][mast_rowidx]
 			target_incl, target_incl_uperr, target_incl_lowerr = mast_data['koi_incl'][mast_rowidx], mast_data['koi_incl_err1'][mast_rowidx], mast_data['koi_incl_err2'][mast_rowidx]	
+			target_smass, target_smass_uperr, target_smass_lowerr = mast_data['koi_smass'][mast_rowidx], mast_data['koi_smass_err1'][mast_rowidx], mast_data['koi_smass_err2'][mast_rowidx]
 			#target_snr = mast_data['koi_model_snr']
 
 
@@ -2354,6 +2355,12 @@ class MoonpyLC(object):
 		try:
 			self.incl = float(target_incl) ### equilibrium temperature of the planet
 			self.incl_err = (float(target_incl_lowerr), float(target_incl_uperr))
+		except:
+			pass
+
+		try:
+			self.smass = float(target_smass)
+			self.smass_err = (float(target_smass_lowerr), float(target_smass_uperr))
 		except:
 			pass
 
