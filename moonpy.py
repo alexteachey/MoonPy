@@ -12,7 +12,7 @@ import pandas
 import traceback
 from astroquery.simbad import Simbad 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
-from astropy.stats import LombScargle
+from astropy.timeseries import LombScargle
 import socket 
 
 #### BELOW ARE MOONPY PACKAGES
