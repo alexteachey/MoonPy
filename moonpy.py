@@ -69,14 +69,6 @@ This package is designed to do the following:
 5) visualize the results
 """
 
-### STANDARD LUNA FIT PRIOR DICTIONARY. YOU MAY CHANGE INDIVIDUAL ASPECTS WHEN CALLING THE FUNCTION!
-### have default param_labels, prior forms, and limits set!
-### tau0 is planet specific. This will also allow you to generate the moon outside pymultinest.
-
-
-#run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
-#run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan, sat_sma, sat_phase, sat_inc, sat_omega, MsatMp, RsatRp, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
-
 class MoonpyLC(object):
 	### this is the light curve object. You can detrend this light curve, or fit it.
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
