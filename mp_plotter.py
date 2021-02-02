@@ -11,7 +11,7 @@ plt.rcParams["font.family"] = 'serif'
 ##### this code will put in one place all your plotting choices
 
 
-def mp_scatter(xarr, yarr, xerr=None, yerr=None, xlabel=None, ylabel=None, label=None, title=None, xscale='linear', yscale='linear', facecolor='LightCoral', edgecolor='k', size=None, colorarr=None, colormap=None, alpha=1, plot_legend='y', show_plot='y'):
+def mp_scatter(xarr, yarr, xerr=None, yerr=None, xlabel=None, ylabel=None, label=None, title=None, xscale='linear', yscale='linear', facecolor='LightCoral', edgecolor='k', size=None, colorarr=None, colormap=None, alpha=1, zorder=1, plot_legend='y', show_plot='y'):
 	
 	#### BASIC SCATTER PLOT
 	plt.figure(figsize=(6,8))
@@ -24,9 +24,9 @@ def mp_scatter(xarr, yarr, xerr=None, yerr=None, xlabel=None, ylabel=None, label
 	if type(colorarr) != type(None):
 		norm_colorarr = (colorarr - np.nanmin(colorarr)) / (np.nanmax(colorarr) - np.nanmin(colorarr))
 		colors = scatter_cmap(norm_colorarr)
-		plt.scatter(xarr, yarr, color=colors, s=size, edgecolor=edgecolor, alpha=alpha, zorder=1, label=None)
+		plt.scatter(xarr, yarr, color=colors, s=size, edgecolor=edgecolor, alpha=alpha, zorder=zorder, label=None)
 	else:
-		plt.scatter(xarr, yarr, color=facecolor, edgecolor=edgecolor, s=size, alpha=alpha, zorder=1, label=None)
+		plt.scatter(xarr, yarr, color=facecolor, edgecolor=edgecolor, s=size, alpha=alpha, zorder=zorder, label=None)
 
 	plt.errorbar(xarr, yarr, xerr=xerr, ecolor='k', alpha=0.5, fmt='none', zorder=0)
 	plt.errorbar(xarr, yarr, yerr=yerr, ecolor='k', alpha=0.5, fmt='none', zorder=0)
