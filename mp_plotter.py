@@ -11,7 +11,7 @@ plt.rcParams["font.family"] = 'serif'
 ##### this code will put in one place all your plotting choices
 
 
-def mp_scatter(xarr, yarr, xlabel=None, ylabel=None, label=None, title=None, xscale='linear', yscale='linear', facecolor='LightCoral', edgecolor='k', size=None, colorarr=None, colormap=None, xerr=None, yerr=None, alpha=1, plot_legend='y', show_plot='y'):
+def mp_scatter(xarr, yarr, xerr=None, yerr=None, xlabel=None, ylabel=None, label=None, title=None, xscale='linear', yscale='linear', facecolor='LightCoral', edgecolor='k', size=None, colorarr=None, colormap=None, alpha=1, plot_legend='y', show_plot='y'):
 	
 	#### BASIC SCATTER PLOT
 	plt.figure(figsize=(6,8))
@@ -40,6 +40,21 @@ def mp_scatter(xarr, yarr, xlabel=None, ylabel=None, label=None, title=None, xsc
 
 	if show_plot == 'y':
 		plt.show()
+
+
+def mp_plot(xarr, yarr, xlabel=None, ylabel=None, xscale='linear', yscale='linear', label=None, title=None, color='DodgerBlue', linewidth=1, linestyle='solid', alpha=1, plot_legend='y', show_plot='y'):
+	plt.plot(xarr, yarr, color=color, linestyle=linestyle, linewidth=linewidth)
+	plt.xlabel(xlabel)
+	plt.ylabel(ylabel)
+	plt.xscale(xscale)
+	plt.yscale(yscale)
+	plt.title(title)
+	if plot_legend == 'y':
+		plt.legend()
+	if show_plot == 'y':
+		plt.show()
+
+
 
 
 def mp_hist(vals, nbins=20, bins=None, xscale='linear', title=None, yscale='linear', facecolor='DodgerBlue', edgecolor='k', alpha=0.7, xlabel=None, ylabel=None):
