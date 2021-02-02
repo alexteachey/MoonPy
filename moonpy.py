@@ -21,6 +21,7 @@ from mp_lcfind import *
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
+from mp_plotter import *
 from cofiam import max_order
 #from pyluna import run_LUNA, prepare_files
 from pyluna import prepare_files
