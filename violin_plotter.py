@@ -21,6 +21,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.cm as cm 
 
+plt.rcParams["font.family"] = 'serif'
+
 
 def create_violin(data, data_labels=None, x_label=None, y_label=None, plot_title=None, colormap='viridis', autoshow=False):
     #### data should be a list of lists!
@@ -105,6 +107,6 @@ def create_violin(data, data_labels=None, x_label=None, y_label=None, plot_title
     #    set_axis_style(ax, labels)
     set_axis_style(ax2, labels)
 
-    plt.subplots_adjust(bottom=0.15, wspace=0.05)
+    plt.subplots_adjust(left=0.09, bottom=0.15, right=0.92, top=0.88, wspace=0.05, hspace=0.05)
     if autoshow == True:
         plt.show()

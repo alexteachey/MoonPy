@@ -31,6 +31,8 @@ from scipy.interpolate import interp1d
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/moonpy.py')]
 
+plt.rcParams["font.family"] = 'serif'
+
 #from matplotlib import rc
 
 #rc('font', **{'family':'serif','serif':['computer modern roman']})
