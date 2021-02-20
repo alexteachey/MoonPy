@@ -76,8 +76,9 @@ def Mpost2R(mass, unit='Earth', classify='No'):
 
 	# mass range
 	if np.min(mass) < 3e-4 or np.max(mass) > 3e5:
-		print('Mass range out of model expectation. Returning None.')
-		return None
+		#print('Mass range out of model expectation. Returning None.')
+		#return None
+		raise Exception('Mass range out of model expectation.')
 
 	## convert to radius
 	sample_size = len(mass)
@@ -193,8 +194,9 @@ def Rpost2M(radius, unit='Earth', grid_size = int(1e3), classify = 'No'):
 
 	# radius range
 	if np.min(radius) < 1e-1 or np.max(radius) > 1e2:
-		print('Radius range out of model expectation. Returning None.')
-		return None
+		#print('Radius range out of model expectation. Returning None.')
+		#return None
+		raise Exception('Radius range out of model expectation.')
 
 
 
@@ -273,7 +275,8 @@ def Rstat2M(mean, std, unit='Earth', sample_size=int(1e3), grid_size=int(1e3), c
 		mass = Rpost2M(radius, 'Earth', grid_size)
 
 	if mass is None:
-		return None
+		#return None
+		raise Exception('Mass could not be computed (likely out of range).')
 
 	if unit=='Jupiter':
 		mass = mass / mearth2mjup
