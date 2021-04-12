@@ -626,19 +626,7 @@ class MoonpyLC(object):
 						lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.delete(lc_times, flag_idxs), np.delete(lc_fluxes, flag_idxs), np.delete(lc_errors, flag_idxs), np.delete(lc_fluxes_detrend, flag_idxs), np.delete(lc_errors_detrend, flag_idxs), np.delete(lc_flags, flag_idxs)					
 
 
-			### sort the times here!
-			"""
-			print('len(lc_quarters) = ', len(lc_quarters))
-			print('lc_times = ', lc_times)
-			print ('lc_times.shape = ', lc_times.shape)
-			print('lc_fluxes.shape = ', lc_fluxes.shape)
-			print('lc_errors.shape = ', lc_errors.shape)
-			print('lc_fluxes_detrend.shape = ', lc_fluxes_detrend.shape)
-			print('lc_errors_detrend.shape = ', lc_errors_detrend.shape)
-			print('lc_flags.shape = ', lc_flags.shape)
-			print(" ")
-			print(" ")
-			"""
+
 
 			if len(lc_quarters) > 1:
 				timesort = np.argsort(lc_times[qidx])
@@ -719,11 +707,6 @@ class MoonpyLC(object):
 		except:
 			traceback.print_exc()
 			raise Exception('an exception was raised while trying to save the light curve.')
-
-
-
-
-
 
 
 
