@@ -964,10 +964,10 @@ class MoonpyLC(object):
 					print('mask_transit_idxs could not be concatenated (probably not needed).')
 
 
-				#print("BEFORE: ")
-				#print('mask_transit_idxs = ', mask_transit_idxs)
-				#print("mask transit times = ", dtimes[mask_transit_idxs])
-				#mask_transit_idxs = mask_transit_idxs
+				print("BEFORE: ")
+				print('mask_transit_idxs = ', mask_transit_idxs)
+				print("mask transit times = ", dtimes[mask_transit_idxs])
+				mask_transit_idxs = mask_transit_idxs
 
 				### add neighbor transit times to mask_transit_idxs.
 				try:
@@ -1032,6 +1032,11 @@ class MoonpyLC(object):
 					#print('mask_transit_idxs = ', mask_transit_idxs)	
 					if len(quarter_transit_taus) > 0:
 						print("transit in this quarter.")
+
+
+					#### remove out of bounds transit idxs:
+					OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
+					mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
 				
 
 				except:
