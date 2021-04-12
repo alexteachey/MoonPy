@@ -9,8 +9,11 @@ from mp_detrend import *
 from astroquery.simbad import Simbad 
 from scipy.signal import medfilt 
 
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/mp_tpf_examiner.py')]
 
-destination_dir = '/Users/hal9000/Documents/Software/MoonPy/TPFs'
+
+destination_dir = moonpydir+'/TPFs'
 #k1654_tpf = 'kplr008410697-2010355172524_lpd-targ.fits'
 #tpfdir = '/Users/hal9000/Documents/Projects/k1654/008410697/'
 
