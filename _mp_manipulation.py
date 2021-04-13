@@ -367,6 +367,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 	master_detrend, master_error_detrend, master_flags_detrend = [], [], []
 
 	nquarters = len(self.quarters)
+
+	all_quarter_mask_transit_idxs = []			
 	for qidx in np.arange(0,nquarters,1):
 		skip_quarter = 'n'
 		print('quarter = ', self.quarters[qidx])
@@ -577,6 +579,18 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 		elif mask_transits == 'n':
 			mask_transit_idxs = np.array([])
+
+		print(' ')
+		print("AFTER: ")
+		print('mask_transit_idxs = ', mask_transit_idxs)
+		if len(mask_transit_idxs) > 0:
+			print("mask transit times = ", dtimes[mask_transit_idxs])			
+
+
+		all_quarter_mask_transit_idxs.append(mask_transit_idxs)
+
+		##### update!
+		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs)
 
 		if skip_quarter == 'n':
 			try:
@@ -850,3 +864,6 @@ def gen_batman(self):
 
 	self.bat_times = bat_times
 	self.bat_fluxes = bat_fluxes 
+
+
+

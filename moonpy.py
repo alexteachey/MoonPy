@@ -72,7 +72,7 @@ print('Light curves will be stored in '+central_data_dir)
 
 
 class MoonpyLC(object):
-	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS
+	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector
 	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, find_taus, mystery_solver, find_neighbors, get_neighbors, find_TTVs
 	from _mp_manipulation import fit, prep_for_CNN, initialize_priors, detrend, gen_batman
 

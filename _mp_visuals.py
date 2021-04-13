@@ -410,6 +410,49 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 
 
 
+def correlated_noise_detector(self):
+	#### this function will take the light curve and bin it up in larger and larger bins, to test whether there is correlated noise present.
+	#### must mask transits (use self.mask_transit_idxs, shape=self.times.shape).
+
+	unmasked_times, unmasked_fluxes = [], []
+
+	for i in np.arange(0,self.times.shape[0],1):
+		if len(self.mask_transit_idxs[i]) > 0:
+			unmasked_times.append(np.delete(self.times[i], self.mask_transit_idxs[i]))
+			unmasked_fluxes.append(np.delete(self.fluxes_detrend[i], self.mask_transit_idxs[i]))
+		else:
+			unmasked_times.append(self.times[i])
+			unmasked_fluxes.append(self.fluxes_detrend[i])
+
+	unmasked_times, unmasked_fluxes = np.array(unmasked_times), np.array(unmasked_fluxes)
+	unmasked_times, unmasked_fluxes = np.concatenate(unmasked_times), np.concatenate(unmasked_fluxes)
+
+	bin_sizes = np.logspace(1,4,100) ### from 1 to 10,000 per bin.
+	bin_size_stds = []
+	for bin_size in bin_sizes:
+		print('bin_size = ', bin_size)
+		#### number of bins will be length(unmasked_fluxes) / bin_size
+		num_bins = int(len(unmasked_fluxes) / bin_size) + 1 
+		bin_medians = []
+		for bin_number in np.arange(0,num_bins-1,1):
+			bin_vals = unmasked_fluxes[int(bin_number*bin_size):int((bin_number+1)*bin_size)]
+			bin_medians.append(np.nanmedian(bin_vals))
+		bin_std = np.nanstd(bin_medians)
+		bin_size_stds.append(bin_std)
+
+	plt.plot(bin_sizes, np.array(bin_size_stds)*1e6, c='r')
+	#plt.plot(bin_sizes, (-1/2)*np.log10(bin_sizes) + bin_size_stds[0], c='k')
+	plt.xscale('log')
+	plt.yscale('log')
+	plt.ylabel(r'$\log_{10} \, \sigma$ [ppm]')
+	plt.show()
+
+	self.bin_sizes, self.bin_size_stds = bin_sizes, bin_size_stds
+
+
+
+
+
 
 
 
