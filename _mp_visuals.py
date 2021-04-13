@@ -35,7 +35,6 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	try:
@@ -84,7 +83,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			plt.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
 
-
 		### this will highlight all the other transits for the neighbors (if any)
 		try:
 			neighbors = self.neighbor_dict.keys()
@@ -104,7 +102,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
 				neighbor_transit_idxs.append(ntidxs)
 			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-			#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
 			if show_neighbors == 'y':
 				plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
 		
@@ -128,10 +125,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
 		plt.legend()		
-
-
-		
-
 
 
 	elif folded == 'y':
@@ -161,10 +154,8 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			plt.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
 			plt.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
-			#plt.errorbar(fold_bins, fold_bin_fluxes, yerr=fold_bin_errors, ecolor='k', zorder=0, fmt='none')
 
 
-	#plt.xlabel('BKJD')
 	if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
 		if folded=='y':
 			plt.xlabel('Phase')
@@ -257,12 +248,10 @@ def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
 		sample_shape = samples.shape
 		samples = samples[int(burnin_pct*sample_shape[0]):,1:]
 
-
 	self.initialize_priors(modelcode=modelcode)
 	fig = corner.corner(samples, labels=self.param_labels)
 	plt.savefig(chainsdir+'/'+str(self.target)+"_corner.png")
 	plt.close()
-
 
 
 
@@ -286,7 +275,6 @@ def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
 		sample_shape = samples.shape
 		samples = samples[int(burnin_pct*sample_shape[0]):,1:]
 
-		### 
 		best_fit_dict = {}
 		for npar, parlab in enumerate(self.param_labels):
 			best_fit_dict[parlab] = np.nanmedian(samples.T[npar])
@@ -316,7 +304,6 @@ def fold(self, detrended='y', phase_offset=0.0):
 	### this method will phase fold your light curve. 
 	### first tau in the time series:
 	try:
-		#first_tau = self.tau0
 		first_tau = self.taus[0]
 	except:
 		self.get_properties()
@@ -340,7 +327,6 @@ def fold(self, detrended='y', phase_offset=0.0):
 	self.fold_times = fold_times
 	self.fold_fluxes = fold_fluxes
 	self.fold_errors = fold_errors
-	#self.fold_tau = fold_first_tau
 
 
 
@@ -350,6 +336,7 @@ def examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None
 	if type(quarters) == type(None):
 		quarters = self.quarters 
 	tpf_examiner(self.target, quarters=quarters, Tdur=self.duration_days, time_lims=time_lims, detrend=detrend, mask_idxs=mask_idxs, find_alias='y')
+
 
 
 
@@ -365,7 +352,6 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 	if type(LSquarters) == type(None):
 		LSquarters = self.quarters
 
-	#for qidx in np.arange(0,nquarters,1):
 	for qidx in np.arange(0,nquarters,1):
 		this_quarter = self.quarters[qidx]
 		if this_quarter not in LSquarters: ### use this in case you've only specified select quarters.
@@ -388,15 +374,10 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 			quarter_FALs = qls.false_alarm_level(probabilities)
 
 		if show_plot == 'y':
-			#try:
 			random_color = np.random.rand(3)
 			plt.plot(qperiods[::-1], qpower[::-1], c=random_color)
 			if compute_fap == 'y':
 				plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])), c=random_color)
-			#except:
-			#	plt.plot(qperiods[::-1], qpower[::-1])
-			#	if compute_fap == 'y':
-			#		plt.plot(qperiods[::-1], np.linspace(quarter_FALs[1], quarter_FALs[1], len(qperiods[::-1])))
 
 		LSperiods.append(qperiods)
 		max_power_period = qperiods[np.nanargmax(qpower)]
@@ -407,7 +388,6 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 
 	if show_plot == 'y':
 		plt.xscale('log')
-		#plt.xlim(np.nanmin(qperiods), np.nanmax(qperiods))
 		plt.xlabel('Period [days]')
 		plt.ylabel('Power')
 		plt.title(self.target)
