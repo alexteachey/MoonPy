@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 
-def cofiam_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
+def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=np.array([]), max_degree=30):
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
 	#print('len(times) = ', len(times))
 

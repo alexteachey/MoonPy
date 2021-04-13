@@ -35,7 +35,7 @@ def find_kic(targetname):
 
 
 
-def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
+def multi_polyfit(times, fluxes, seg_window=25, stagger=0.5, show_plot='n'):
 	### seg window is in days... can_should be substitute by some multiple of the transit duration
 	### overlap is also in days... one quarter 
 
@@ -48,7 +48,8 @@ def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
 	### then the start of the next segment will be subtract of the overlap for the next starting point
 
 	### for testing purposes, scatter plot the full quarter
-	plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
+	if show_plot=='y':
+		plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
 
 	seg = 0
 	while seg_except == 'n':
@@ -80,7 +81,8 @@ def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
 			seg_polyfunc = np.poly1d(seg_polyfit) 
 			seg_polycurve = seg_polyfunc(seg_times)
 
-			plt.plot(seg_times, seg_polycurve)
+			if show_plot == 'y':
+				plt.plot(seg_times, seg_polycurve)
 
 			if seg == 0:
 				uber_seg_times = seg_times
@@ -92,17 +94,17 @@ def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
 
 
 			seg += 1
-			print('starting, ending idxs = ', starting_idx, ending_idx)
-			print('seg = ', seg)
+			#print('starting, ending idxs = ', starting_idx, ending_idx)
+			#print('seg = ', seg)
 
 		except:
 			traceback.print_exc()
 			seg_except = 'y'
 			break
 
-
-	plt.title('local polynomial fits')
-	plt.show()
+	if show_plot == 'y':
+		plt.title('local polynomial fits')
+		plt.show()
 
 	#### now let's try to take avg, median, std at each timestep
 	final_times = []
@@ -125,10 +127,14 @@ def multi_polyfit(times, fluxes, seg_window=15, stagger=0.5):
 	final_median_fits = np.array(final_median_fits)
 	final_fit_stds = np.array(final_fit_stds)
 
-	plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
-	plt.plot(final_times, final_avg_fits, c='LightCoral', label='avg')
-	plt.plot(final_times, final_median_fits, c='DodgerBlue', label='median')
-	plt.show()
+	if show_plot == 'y':
+		plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
+		plt.plot(final_times, final_avg_fits, c='LightCoral', label='avg')
+		plt.plot(final_times, final_median_fits, c='DodgerBlue', label='median')
+		plt.legend()
+		plt.show()
+
+	return final_times, final_median_fits
 
 
 
@@ -431,7 +437,7 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 
 
 		### pixel fluxes
-		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True)
+		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(6,8))
 		ax1.scatter(window_times, aperture_flux_lc, s=10, color='DodgerBlue', zorder=1, label='aperture')
 		ax1.legend()
 		ax1.set_title('Quarter '+tpf_file_key)
@@ -447,13 +453,13 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 
 
 		### testing the polynomial fit
-		print('running the multiple / local polynomial fit.')
-		multi_polyfit(window_times, aperture_flux_lc)
+		#print('running the multiple / local polynomial fit.')
+		#multi_polyfit(window_times, aperture_flux_lc, show_plot='y')
 
 
 
 		### plot the flux stack -- each individual aperture pixel gets its own light curve!
-		fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(6,8))
 		for i in np.arange(0,aperture_flux_stack.shape[1], 1):
 
 			### identify the pixel value here:
@@ -475,11 +481,15 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				if Tdur_npoints % 2 == 0:
 					Tdur_npoints += 1 ### has to be odd!
 				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=3*Tdur_npoints)
+				#pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=3*Tdur_npoints)[1]				
 			else:
 				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=25)
+				#pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=25)[1]	
+			pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=25)[1]			
 			
 			#### need to do better than the median filter! but let's move on for now.
-			pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_medfilt)
+			#pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_medfilt)
+			pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_polyfit)
 			pixel_lc_snrs = np.abs(pixel_lc_residuals / pixel_errors)  ### this is a light curve basically!
 
 			try:
@@ -493,17 +503,18 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				aperture_snr_stack = pixel_lc_snrs 
 
 
-
 			#### PLOT IT
 			ax1.plot(window_times, normed_pixel_lc, label='x,y = '+str(xpix)+','+str(ypix), c=random_color) ### normed pixel light curve
-			ax1.plot(window_times, pixel_lc_medfilt, c='k') ### median filter running through it. Need something more sophisticated!
-			ax2.plot(window_times, pixel_lc_snrs, c=random_color) ### SNRs
+			ax1.plot(window_times, pixel_lc_polyfit, c='k', alpha=0.5) ### median filter running through it. Need something more sophisticated!
+			ax2.plot(window_times, normed_pixel_lc - pixel_lc_polyfit, label='x,y = '+str(xpix)+','+str(ypix), c=random_color)
+			ax3.plot(window_times, pixel_lc_snrs, c=random_color) ### SNRs
 
 		ax1.set_title('Quarter '+str(tpf_file_key))
 		ax1.legend(loc=0)
 		ax1.set_ylabel('Normalized Pixel Flux')
-		ax2.set_xlabel("BKJD")
-		ax2.set_ylabel('SNR')
+		ax2.set_ylabel('normed LC - polyfit')
+		ax3.set_xlabel("BKJD")
+		ax3.set_ylabel('SNR (residuals / errors)')
 		plt.show()
 
 		### NEEDS MODIFICATION
@@ -561,7 +572,14 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				ypix, xpix = aperture_pixel_idxs[0][i], aperture_pixel_idxs[1][i] 
 
 				### detrend each individual aperture pixel individually with CoFiAM!
-				pixel_flux_detrend, pixel_error_detrend = cofiam_detrend(window_times, aperture_flux_stack.T[i], aperture_error_stack.T[i], mask_idxs = mask_idxs)
+				try:
+					pixel_flux_detrend, pixel_error_detrend = cofiam_detrend(window_times, aperture_flux_stack.T[i], aperture_error_stack.T[i], mask_idxs = mask_idxs)
+				except:
+					try:
+						pixel_flux_detrend, pixel_error_detrend = cofiam_detrend(window_times, aperture_flux_stack.T[i], aperture_error_stack.T[i])
+					except:
+						pixel_flux_detrend, pixel_error_detrend = cofiam_detrend(window_times, aperture_flux_stack.T[i], aperture_error_stack.T[i], mask_idxs = np.array([]))
+
 
 				plt.plot(window_times, pixel_flux_detrend, label='x,y = '+str(xpix)+','+str(ypix))
 
