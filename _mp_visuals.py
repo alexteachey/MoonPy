@@ -36,7 +36,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', show_batman='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	try:
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -110,7 +110,18 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			target_transit_idxs = np.hstack(target_transit_idxs)
 			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
 
-		plt.legend()					
+		if (show_batman == 'y') and (detrended == 'y'):
+			try:
+				self.gen_batman()
+				plt.plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+			except:
+				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
+
+		plt.legend()		
+
+
+		
+
 
 
 	elif folded == 'y':

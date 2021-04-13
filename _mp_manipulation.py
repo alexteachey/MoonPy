@@ -362,6 +362,8 @@ def initialize_priors(self, modelcode):
 def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
 	exceptions_raised = 'n'
 
+	self.dmeth=dmeth
+
 
 	### make sure you get_neighbors() first!
 	self.get_neighbors()
@@ -920,4 +922,24 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 
 
+def gen_batman(self):
+	from mp_batman import run_batman 
+	##### this method will generate a batman light curve for the light curve object.
+	#run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+	
+	if np.isfinite(self.longp):
+		bat_longp = self.longp
+	else:
+		bat_longp = 0
 
+	if np.isfinite(self.eccen):
+		bat_eccen = self.eccen
+	else:
+		bat_eccen = 0
+
+	bat_sma = self.sma_AU * au.value 
+
+	bat_times, bat_fluxes = run_batman(all_times=self.times, RpRstar=self.rprstar, Rstar=self.rstar_meters, bplan=self.impact, Pplan=self.period, tau0=self.tau0, q1=self.q1, q2=self.q2, planet_sma=bat_sma)
+
+	self.bat_times = bat_times
+	self.bat_fluxes = bat_fluxes 
