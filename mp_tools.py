@@ -1,10 +1,6 @@
 from __future__ import division
 import numpy as np 
-#import mr_forecast ### needs to be somewhere readable!
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
-
-### important values
-### constants -- THESE SHOULD BE IMPORTED FROM ASTROPY!
 
 
 ### FROM ASTROPY
@@ -189,8 +185,7 @@ def transit_SNR_integrator(times, fluxes, errors):
 	transit_depth = np.nanmax(depths)
 
 	hires_precision = precision * np.sqrt(nobs_per_LC)
-	#single_point_SNRs = np.sqrt((depths/hires_precision)**2)
-	single_point_SNRs = depths / hires_precision ### equivalent to above, but not stupid.
+	single_point_SNRs = depths / hires_precision
 
 	quadsum_single_point_SNRs = quadsum(single_point_SNRs)
 	final_SNR = quadsum_single_point_SNRs 
