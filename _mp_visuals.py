@@ -86,7 +86,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 		### this will highlight all the other transits for the neighbors (if any)
-		neighbors = self.neighbor_dict.keys()
+		try:
+			neighbors = self.neighbor_dict.keys()
+		except:
+			print('NEIGHBOR DICTIONARY UNAVAILABLE.')
+			self.neighbor_dict = {}
+			self.neighbors = []
+			neighbors = np.array([])
+
 
 		for neighbor in neighbors:
 			neighbor_taus = self.neighbor_dict[neighbor].taus 
@@ -181,30 +188,33 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 	if (show_model_residuals == 'y') and (show_batman == 'y'):
-		##### plot the light curve with the model removed
-		plt.scatter(plot_stitched_times, stitched_fluxes-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-		plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs]-self.bat_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')		
-		plt.xlabel('BKJD')
-		plt.ylabel('fluxes - model')
-		plt.show()
+		try:
+			##### plot the light curve with the model removed
+			plt.scatter(plot_stitched_times, stitched_fluxes-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs]-self.bat_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')		
+			plt.xlabel('BKJD')
+			plt.ylabel('fluxes - model')
+			plt.show()
 
-		##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
-		full_LC_residuals = stitched_fluxes-self.bat_fluxes
-		full_LC_median = np.nanmedian(full_LC_residuals)
-		full_LC_std = np.nanstd(full_LC_residuals)
-		target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
-		ntarget_points_outside_1sig = 0
-		for ttp in full_LC_residuals[target_transit_idxs]:
-			if (ttp > full_LC_median + full_LC_std) or (ttp < full_LC_median - full_LC_std):
-				ntarget_points_outside_1sig += 1
+			##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
+			full_LC_residuals = stitched_fluxes-self.bat_fluxes
+			full_LC_median = np.nanmedian(full_LC_residuals)
+			full_LC_std = np.nanstd(full_LC_residuals)
+			target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
+			ntarget_points_outside_1sig = 0
+			for ttp in full_LC_residuals[target_transit_idxs]:
+				if (ttp > full_LC_median + full_LC_std) or (ttp < full_LC_median - full_LC_std):
+					ntarget_points_outside_1sig += 1
 
-		print('full_LC_median = ', full_LC_median)
-		print('full_LC_std = ', full_LC_std)
-		fraction_target_points_outside_1sig = ntarget_points_outside_1sig / len(target_transit_idxs)
-		print('fraction of target points outside 1sig: ', fraction_target_points_outside_1sig)
-		if fraction_target_points_outside_1sig > 0.05:
-			print("POSSIBLE BAD DETREND.")
+			print('full_LC_median = ', full_LC_median)
+			print('full_LC_std = ', full_LC_std)
+			fraction_target_points_outside_1sig = ntarget_points_outside_1sig / len(target_transit_idxs)
+			print('fraction of target points outside 1sig: ', fraction_target_points_outside_1sig)
+			if fraction_target_points_outside_1sig > 0.05:
+				print("POSSIBLE BAD DETREND.")
 
+		except:
+			print('BATMAN model not available.')
 
 
 def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
