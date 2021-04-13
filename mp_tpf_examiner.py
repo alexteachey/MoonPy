@@ -11,11 +11,9 @@ from scipy.signal import medfilt
 
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/mp_tpf_examiner.py')]
-
-
 destination_dir = moonpydir+'/TPFs'
-#k1654_tpf = 'kplr008410697-2010355172524_lpd-targ.fits'
-#tpfdir = '/Users/hal9000/Documents/Projects/k1654/008410697/'
+
+
 
 
 def find_kic(targetname):
@@ -38,16 +36,14 @@ def find_kic(targetname):
 def multi_polyfit(times, fluxes, seg_window=25, stagger=0.5, show_plot='n'):
 	### seg window is in days... can_should be substitute by some multiple of the transit duration
 	### overlap is also in days... one quarter 
-
 	seg_except = 'n'
 
 	### first determine how long each segment should be
 	#data_per_seg = int(len(times) / nsegs)
-
 	### ^ this will be the length of each segment
 	### then the start of the next segment will be subtract of the overlap for the next starting point
-
 	### for testing purposes, scatter plot the full quarter
+
 	if show_plot=='y':
 		plt.scatter(times, fluxes, c='k', alpha=0.5, s=5)
 
@@ -71,11 +67,8 @@ def multi_polyfit(times, fluxes, seg_window=25, stagger=0.5, show_plot='n'):
 		ending_idx = np.nanargmin(np.abs(times - (starting_time+seg_window)))
 		ending_time = times[ending_idx]
 
-		#print('starting_idx, ending_idx = ', starting_idx, ending_idx)
 		try:
 			seg_times, seg_fluxes = times[starting_idx:ending_idx], fluxes[starting_idx:ending_idx]
-			#print('len(seg_times), len(seg_fluxes) = ', len(seg_times), len(seg_fluxes))
-
 			### fit a 3rd order polynomial to the segment times and fluxes
 			seg_polyfit = np.polyfit(seg_times, seg_fluxes, 4) ### coefficients
 			seg_polyfunc = np.poly1d(seg_polyfit) 
@@ -91,11 +84,8 @@ def multi_polyfit(times, fluxes, seg_window=25, stagger=0.5, show_plot='n'):
 				uber_seg_times = np.concatenate((uber_seg_times, seg_times))
 				uber_seg_fits = np.concatenate((uber_seg_fits, seg_polycurve))
 
-
-
 			seg += 1
-			#print('starting, ending idxs = ', starting_idx, ending_idx)
-			#print('seg = ', seg)
+
 
 		except:
 			traceback.print_exc()
@@ -185,7 +175,6 @@ def tpf_downloader(target, quarters, cadence='long', clobber='n'):
 		kic = target 
 
 	### quarters can be a single quarter or a list.
-
 	file_dict = {}
 
 	if (type(quarters) == str) or (type(quarters) == float):
@@ -222,7 +211,6 @@ def tpf_downloader(target, quarters, cadence='long', clobber='n'):
 		kic_tpf_url = 'https://archive.stsci.edu/pub/kepler/target_pixel_files/'+kic_prefix+'/'+full_kicnum
 		print('kic_tpf_url = ', kic_tpf_url)
 		### at the page above, every quarter is saved as a separate tar.gz file. ugh.
-
 
 		for nquarter_code, quarter_code in enumerate(quarter_codes):
 			kic_tpf_filename_gz = 'kplr'+full_kicnum+'-'+str(quarter_code)+cadence_str
@@ -345,8 +333,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 			pass 
 
 		for nwtidx, wtidx in enumerate(window_time_idxs):
-			#print ('wtidx = ', wtidx)
-			#print('fluxes[wtidx].shape = ', fluxes[wtidx].shape)
 			try:
 				if qflags[wtidx] != 0:
 					continue
@@ -358,7 +344,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				all_flux_lc.append(np.nansum(all_fluxes))
 
 				all_flux_errs = flux_errs[wtidx][all_active_pixel_idxs]
-				#all_flux_error_lc.append(quadsum(all_flux_errs)) ### I don't think this should sum in quadrature
 				all_flux_error_lc.append(np.nansum(all_flux_errs))
 
 				all_flux_CRs = cosmic_rays[wtidx][all_active_pixel_idxs]
@@ -373,8 +358,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 
 				aperture_flux_CRs = cosmic_rays[wtidx][aperture_pixel_idxs]
 				aperture_flux_CR_lc.append(np.nansum(aperture_flux_CRs))
-
-
 
 				#### COMPUTE THE X AND Y CENTROIDS!
 				all_flux_centx = np.nansum(all_active_pixel_idxs[0]*all_fluxes) / np.nansum(all_fluxes)
@@ -398,21 +381,10 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 					aperture_flux_stack = aperture_fluxes
 					aperture_error_stack = aperture_flux_errs
 
-
-
 				### 1-D arrays
 				timecorrs.append(time_correlation[wtidx])
 				quality_flags.append(qflags[wtidx])
 
-
-				### as a test, let's generate the plot at each time step!
-				"""
-				fig, ax = plt.subplots(1)
-				ax.imshow(fluxes[wtidx], origin='lower')
-				ax.scatter(all_active_pixel_idxs[1], all_active_pixel_idxs[0], c='k', marker='*', s=10)
-				ax.scatter(aperture_pixel_idxs[1], aperture_pixel_idxs[0], c='r', marker='X', s=15)
-				plt.show()
-				"""
 
 			except:
 				traceback.print_exc()
@@ -452,12 +424,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		plt.show()
 
 
-		### testing the polynomial fit
-		#print('running the multiple / local polynomial fit.')
-		#multi_polyfit(window_times, aperture_flux_lc, show_plot='y')
-
-
-
 		### plot the flux stack -- each individual aperture pixel gets its own light curve!
 		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(6,8))
 		for i in np.arange(0,aperture_flux_stack.shape[1], 1):
@@ -467,7 +433,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 
 			### plot the light curve for just this pixel!
 			### normalize the pixel light curve.
-			#normed_pixel_lc = (aperture_flux_stack.T[i] - np.nanmin(aperture_flux_stack.T[i])) / (np.nanmax(aperture_flux_stack.T[i]) - np.nanmin(aperture_flux_stack.T[i]))
 			normed_pixel_lc = aperture_flux_stack.T[i] - np.nanmedian(aperture_flux_stack.T[i])
 			pixel_errors = aperture_error_stack.T[i] 
 
@@ -481,14 +446,11 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				if Tdur_npoints % 2 == 0:
 					Tdur_npoints += 1 ### has to be odd!
 				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=3*Tdur_npoints)
-				#pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=3*Tdur_npoints)[1]				
 			else:
 				pixel_lc_medfilt = medfilt(normed_pixel_lc, kernel_size=25)
-				#pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=25)[1]	
 			pixel_lc_polyfit = multi_polyfit(window_times, normed_pixel_lc, seg_window=25)[1]			
 			
 			#### need to do better than the median filter! but let's move on for now.
-			#pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_medfilt)
 			pixel_lc_residuals = np.array(normed_pixel_lc - pixel_lc_polyfit)
 			pixel_lc_snrs = np.abs(pixel_lc_residuals / pixel_errors)  ### this is a light curve basically!
 
@@ -501,7 +463,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 				aperture_residual_stack = pixel_lc_residuals 
 				aperture_residual_error_stack = pixel_errors 
 				aperture_snr_stack = pixel_lc_snrs 
-
 
 			#### PLOT IT
 			ax1.plot(window_times, normed_pixel_lc, label='x,y = '+str(xpix)+','+str(ypix), c=random_color) ### normed pixel light curve
@@ -532,15 +493,9 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		aperture_snr_xcentroids = np.array(aperture_snr_xcentroids)
 		aperture_snr_ycentroids = np.array(aperture_snr_ycentroids)
 
-		#aperture_snr_xcentroids = np.nansum(aperture_pixel_idxs[0]*aperture_snr_stack.T) / np.nansum(aperture_snr_stack.T)
-		#aperture_snr_ycentroids = np.nansum(aperture_pixel_idxs[1]*aperture_snr_stack.T) / np.nansum(aperture_snr_stack.T)
-
 		print("aperture_snr_stack.shape = ", aperture_snr_stack.shape)
 		print('aperture_snr_xcentroids.shape = ', aperture_snr_xcentroids.shape)
 
-		#aperture_snr_xcentroids.append(aperture_flux_centx)
-		#aperture_snr_ycentroids.append(aperture_flux_centy)
-		
 
 		### let's examine aperture flux centroids and snr centroids to see if we're on the right track
 		fig, (ax1, ax2) = plt.subplots(2)
@@ -597,21 +552,10 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		then compute that centroid using depth / sigma.
 		"""
 
-
-
-
-
-
-
-
 		fig, (ax1, ax2) = plt.subplots(2)
 		ax1.scatter(all_flux_xcentroids, all_flux_ycentroids, c=window_times, s=10)
-		#ax1.colorbar('BKJD')
-		#ax1.set_xlabel('x-centroid')
 		ax1.set_ylabel('active y-centroid')
 		ax2.scatter(aperture_flux_xcentroids, aperture_flux_ycentroids, c=window_times, s=10)
-		#ax2.colorbar('BKJD')
-		#plt.colorbar(label="BKJD")
 		ax2.set_xlabel('x-centroid')
 		ax2.set_ylabel('aperture y-centroid')
 		plt.show()
@@ -629,16 +573,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		plt.show()
 
 
-		#### look at the ratio vs time
-		"""
-		plt.title('Quarter '+str(tpf_file_key))
-		plt.scatter(window_times, aperture_flux_lc / all_flux_lc, color='LightCoral', s=10)
-		plt.xlabel('BKJD')
-		plt.ylabel('aperture flux / all pixel flux')
-		plt.show()
-		"""
-
-
 		#### examine cosmic rays
 		fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, sharey=True)
 		ax1.set_title('Quarter '+str(tpf_file_key))
@@ -650,15 +584,6 @@ def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, ca
 		ax3.legend()
 		ax3.set_xlabel('BKJD')
 		plt.show()
-
-		#### examine the quality flagsd
-		"""
-		plt.title('Quarter '+str(tpf_file_key))
-		plt.plot(window_times, quality_flags, c='LightCoral')
-		plt.xlabel('BKJD')
-		plt.ylabel('Quality')
-		plt.show()
-		"""
 
 
 		### examine time correlation
