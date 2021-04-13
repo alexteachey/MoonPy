@@ -29,9 +29,21 @@ from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 
 
+"""
+This is the MoonPy master script! To open, you should only have to type 'import moonpy'
+This package is designed to do the following:
+1) download light curves from Kepler, K2 or TESS (kplr, k2plr, tess)
+2) generate moon models based on user specifications
+3) detrend data using CoFiAM or untrendy
+4) fit a model to the data using MultiNest or emcee
+5) visualize the results
+
 ##### MAJOR UPDATE -- APRIL 12, 2021
 ###### CLASS METHODS ARE IMPORTED FROM _mp_visuals.py, _mp_attributes.py, and _mp_manipulation.py.
 ######## JUST A BIT CLEANER.
+"""
+
+
 
 
 
@@ -42,17 +54,12 @@ plt.rcParams["font.family"] = 'serif'
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
-	#moonpydir = '/data/tethys/Documents/Software/MoonPy'
 	central_data_dir = '/data/tethys/Documents/Central_Data/'
 elif ('Alexs-Macbook') in hostname:
-	#moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 elif 'umbriel' in hostname:
-	#moonpydir = '/home/cal/ateachey/Documents/MoonPy'
 	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
 else:
-	#moonpydir = input('Please specify the MoonPy directory (or hard-code this into moonpy.py): ')
-	#central_data_dir = input("Please specify a 'central data' directory (or hard-code this into moonpy.py): ")
 	### store central_data within MoonPy directory
 	if os.path.exists(moonpydir+'/Central_Data'):
 		pass
@@ -63,15 +70,6 @@ print('moonpydir = ', moonpydir)
 print('Light curves will be stored in '+central_data_dir)
 
 
-"""
-This is the MoonPy master script! To open, you should only have to type 'import moonpy'
-This package is designed to do the following:
-1) download light curves from Kepler, K2 or TESS (kplr, k2plr, tess)
-2) generate moon models based on user specifications
-3) detrend data using CoFiAM or untrendy
-4) fit a model to the data using MultiNest or emcee
-5) visualize the results
-"""
 
 class MoonpyLC(object):
 	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS
@@ -186,13 +184,9 @@ class MoonpyLC(object):
 
 
 		#### SPECIFY THE SAVEPATH FOR THE LIGHT CURVE -- NEW HANDLING (NOV 2020) SAVES THEM OUTSIDE THE MOONPY DIRECTORY, IN CENTRAL_DATA.
-		#download_directory = central_data_dir+'Kepler_lightcurves/KIC'+str(query_format_number)
-		#savepath = central_data_dir+'/'
 		if self.telescope.lower() == 'kepler':
 			savepath = kepler_URL_generator(find_KIC_alias(targetID))[2] 
-			#savepath = central_data_dir+'/Kepler_lightcurves/'+targetID
 		elif self.telescope.lower() == 'k2':
-			#savepath = central_data_dir+'/K2_lightcurves/'+targetID
 			savepath = k2_URL_generator(find_EPIC_alias(targetID))[2]
 		elif self.telescope.lower() == 'tess':
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
@@ -284,8 +278,6 @@ class MoonpyLC(object):
 		print("targetID = ", targetID)
 		print('target_type = ', target_type)
 		print('telescope = ', telescope)
-
-
 
 
 		#### LOADING A LIGHT CURVE THAT'S ALREADY BEEN DOWNLOADED.
@@ -386,9 +378,6 @@ class MoonpyLC(object):
 
 
 
-
-
-
 		### HANDLING FOR DOWNLOADING A FRESH LIGHT CURVE.
 		if (load_lc=='n') and (type(targetID) != type(None)) and (type(telescope) != type(None)) and (attributes_only == 'n'):
 			### implies you've selected a target you want to download.
@@ -410,7 +399,6 @@ class MoonpyLC(object):
 				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
-					#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 					if user_supplied == 'n':
 						if download == 'y':
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
@@ -419,10 +407,10 @@ class MoonpyLC(object):
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
 					print('lc_quarters = ', lc_quarters)
 
+
 				except:
 					try:
 						### maybe it needs the full name!
-						#if (type(lc_times) == type(None)) and (type(lc_fluxes) == type(None)) and (type(lc_errors) == type(None)):
 						if user_supplied == 'n':
 							if download == 'y':
 								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)	
@@ -438,8 +426,6 @@ class MoonpyLC(object):
 
 
 
-
-
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
 				#try:
@@ -450,11 +436,8 @@ class MoonpyLC(object):
 				print('exofop_rowidx = ', exofop_rowidx)
 				print('NEA_targetname = ', NEA_targetname)
 
-				#except:
-				#traceback.print_exc()
 				try:
 					print('first try statement...')
-					#if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, sc=sc)
 				except:
 					try: ### maybe it just wants the number.
@@ -491,9 +474,9 @@ class MoonpyLC(object):
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID) ### TIC number -- LACKS the TIC prefix!
 						print('lc_times.shape = ', lc_times.shape)
 
-					else: ### for targets that don't have a TIC number or a TOI number, have to find the tic number using mast_data!
+					else: 
+						### for targets that don't have a TIC number or a TOI number, have to find the tic number using mast_data!
 						### rowidx corresponds to the mast_data!
-
 						### first, see if your planet name is in the comments!
 						try:
 							### does not provide a TIC number!!!
@@ -512,11 +495,12 @@ class MoonpyLC(object):
 						except:
 							print('calling tess_coord_download().')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
-
 						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
 
-			#self.rowidx = rowidx #### IMPORTANT: only define self.rowidx for your TARGET! not for neighbors!
+
 			self.mast_rowidx = mast_rowidx
+
+
 
 			if (self.telescope.lower() != 'kepler') and (self.telescope.lower() != 'user'):
 				self.exofop_rowidx = exofop_rowidx
@@ -576,6 +560,8 @@ class MoonpyLC(object):
 
 		print ('load_lc = ', load_lc)
 
+
+
 		### BELOW THIS LINE IS HANDLING FOR EVERY DIFFERENT WAY YOU MIGHT HAVE LOADED THE LIGHT CURVE ABOVE.
 		if load_lc == 'y':
 			pass ### you've already turned them into arrays.
@@ -583,16 +569,12 @@ class MoonpyLC(object):
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object)
 		
 		nquarters = len(lc_quarters)
-		#for qidx,quarters in enumerate(lc_quarters):
 		for qidx in np.arange(0,nquarters,1):
 			### remove NaNs
-			#if nquarters != 1:
 			try:
 				nan_idxs = np.where(np.isfinite(np.array(lc_fluxes, dtype=np.float64)[qidx]) == False)[0]
 			except:
 				nan_idxs = np.where(np.isfinite(lc_fluxes[qidx]) == False)[0]
-			#elif nquarters == 1:
-			#	nan_idxs = np.where(np.isfinite(lc_fluxes) == False)[0]
 
 			if len(nan_idxs) > 0:
 				if len(lc_quarters) > 1:
@@ -611,8 +593,6 @@ class MoonpyLC(object):
 					assert np.all(np.isfinite(lc_fluxes))
 					assert np.all(np.isfinite(lc_errors))
 
-
-			#if load_lc == 'n':
 			if remove_flagged == 'y':
 				if len(lc_quarters) > 1:
 					flag_idxs = np.where(lc_flags[qidx] != 0)[0]
@@ -624,8 +604,6 @@ class MoonpyLC(object):
 						lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx] = np.delete(lc_times[qidx], flag_idxs), np.delete(lc_fluxes[qidx], flag_idxs), np.delete(lc_errors[qidx], flag_idxs), np.delete(lc_fluxes_detrend[qidx], flag_idxs), np.delete(lc_errors_detrend[qidx], flag_idxs), np.delete(lc_flags[qidx], flag_idxs)
 					elif len(lc_quarters) == 1:
 						lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.delete(lc_times, flag_idxs), np.delete(lc_fluxes, flag_idxs), np.delete(lc_errors, flag_idxs), np.delete(lc_fluxes_detrend, flag_idxs), np.delete(lc_errors_detrend, flag_idxs), np.delete(lc_flags, flag_idxs)					
-
-
 
 
 			if len(lc_quarters) > 1:
@@ -668,7 +646,6 @@ class MoonpyLC(object):
 			elif is_neighbor == 'n':
 				self.find_transit_quarters(locate_neighbor='y') ### ditto above.
 				traceback.print_exc()
-				#self.get_properties(locate_neighbor='y')
 				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
 		except:
 			traceback.print_exc()
