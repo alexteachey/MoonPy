@@ -2,12 +2,10 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-#import astropy
 import warnings
 from astropy.io import ascii
 from astropy.time import Time
 import time
-#import datetime
 import pandas
 import traceback
 from astroquery.simbad import Simbad 
@@ -23,7 +21,6 @@ from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from mp_plotter import *
 from cofiam import max_order
-#from pyluna import run_LUNA, prepare_files
 from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
@@ -32,7 +29,6 @@ plt.rcParams["font.family"] = 'serif'
 
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
-
 
 
 def find_transit_quarters(self, locate_neighbor='n'):
@@ -59,14 +55,6 @@ def find_transit_quarters(self, locate_neighbor='n'):
 				print('quarter has less than 10 data points.')
 				continue
 
-			#except:
-			#	print('something goofy with this quarter. Skipping.')
-			#	traceback.print_exc()
-			#	skip_this_quarter = 'y'
-
-			#if skip_this_quarter == 'y':
-			#	continue
-
 			quarter_times = np.array(quarter_times)
 
 			quarter_transit = 'n'
@@ -91,7 +79,6 @@ def find_transit_quarters(self, locate_neighbor='n'):
 			quarter_transit_dict[0] = 'y'
 			
 	self.quarter_transit_dict = quarter_transit_dict 
-
 
 
 
@@ -202,7 +189,7 @@ def find_planet_row(self, row_known='n'):
 			exofop_rowidx = self.exofop_rowidx
 
 
-	#### NEW CODE -- stolen from "planet_list_and_data_retriever.py"
+	#### stolen from "planet_list_and_data_retriever.py"
 	### check the file created times:
 	kep_mast_address = moonpydir+'/cumkois_mast.txt'
 	if os.path.exists(kep_mast_address):
@@ -260,7 +247,6 @@ def find_planet_row(self, row_known='n'):
 	if current_time - k2_fop_fct > 86400:	
 		print("DOWNLOADING K2 ExoFOP file (once per day)...")
 		os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
-		#os.system('wget --tries=1 '+k2_fop_address+' "https://exofop.ipac.caltech.edu/k2/download_summary_csv/php?camp=All&sort=target"')
 		print(' ')
 
 
@@ -451,7 +437,6 @@ def find_planet_row(self, row_known='n'):
 								exofop_rowidx = idx
 								exofop_rowidxs.append(exofop_rowidx)
 								print('found a planet in CFOP!, exofop_rowidx, TIC = ', exofop_rowidx, exofop_data['TIC ID'][idx])
-								#print("TIC = ", exofop_data['TIC ID'][exofop_rowidx])
 								nfound += 1
 						except:
 							pass
@@ -490,7 +475,6 @@ def find_planet_row(self, row_known='n'):
 		except:
 			pass
 
-	#print('rowidx = ', rowidx)
 	if self.telescope.lower() == 'user':
 		try:
 			return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
@@ -571,7 +555,6 @@ def get_properties(self, locate_neighbor='n'):
 
 
 	elif (self.telescope.lower() == "tess"):
-		#if (self.target.startswith('TIC')) or (self.target.startswith("TOI")):
 		if (np.isfinite(self.exofop_rowidx) == True) or (np.isfinite(self.exofop_rowidx) == np.array([True])):
 			print('searching for target parameters in the exofop database.')
 			print(' ')
@@ -648,7 +631,6 @@ def get_properties(self, locate_neighbor='n'):
 		self.ldm_a1 = float(target_ldm1)
 		self.ldm_a2 = float(target_ldm2)
 		self.q1, self.q2 = u1u2_to_q1q2(self.ldm_a1, self.ldm_a2)
-		#self.snr = float(target_snr)
 
 	try:
 		self.sma_AU = float(target_sma_AU) ### sma in AU
@@ -710,7 +692,6 @@ def get_properties(self, locate_neighbor='n'):
 		pass
 
 
-
 	if np.isfinite(target_duration):
 		self.duration_hours = float(target_duration)
 		self.duration_hours_err = (float(target_duration_lowerr), float(target_duration_uperr))
@@ -738,7 +719,7 @@ def get_properties(self, locate_neighbor='n'):
 	except:
 		traceback.print_exc()
 		print("UNABLE TO CALCULATE transit times. You may not have downloaded any data.")
-	###	identify in-transit times
+
 
 
 
@@ -746,9 +727,6 @@ def find_taus(self):
 	try:
 		print("calling 'find_taus()'.")
 		transit_midtimes = [self.tau0]
-		#continue_query = input('Do you wish to continue? y/n: ')
-		#if continue_query != 'y':
-		#	raise Exception('you opted not to continue.')
 		while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
 			print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
 			### the transit_midtime you just added isn't the first transit!
@@ -809,8 +787,6 @@ def find_neighbors(self, is_neighbor='n'):
 
 	elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 		mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-		#check_mast_rows = np.arange(0,len(mast_data['pl_name']),1)
-		#check_exofop_rows = np.arange(0,len(exofop_data['TOI']),1)
 		if mast_rowidx < 10:
 			check_mast_rows = np.arange(0,mast_rowidx+11,1)
 		else:
@@ -833,7 +809,6 @@ def find_neighbors(self, is_neighbor='n'):
 			#### you're going to need to check all mast rows!
 			check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
 		else:
-			#check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
 			if mast_rowidx < 10:
 				check_mast_rows = np.arange(0,mast_rowidx+11,1)
 			else:
@@ -1011,9 +986,6 @@ def get_neighbors(self, clobber_lc='y', save_to_file='y'):
 			neighbor_transit_idxs.append(ttidx)
 			neighbor_transit_IDs.append(self.target)
 
-	#neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-	#neighbor_transit_IDs = np.hstack(neighbor_transit_IDs)
-
 	neighbor_transit_idxs = np.array(neighbor_transit_idxs)
 	neighbor_transit_IDs = np.array(neighbor_transit_IDs)
 
@@ -1059,7 +1031,6 @@ def get_neighbors(self, clobber_lc='y', save_to_file='y'):
 		lcfile.close()
 		lcfile_new.close()
 		### rename the file.
-		#os.system('mv '+self.savepath+'/'+self.target+'_lc_temp.tsv '+savepath+'/'+self.target+'_lightcurve.tsv')
 		os.system('mv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
 
 	self.neighbor_transit_times = np.array(neighbor_transit_times)
@@ -1078,7 +1049,6 @@ def find_TTVs(self, show_plot='n', yvar='OCmins', window=2):
 	epochs = []
 
 	nquarters = len(self.quarters)
-	#for qidx,q in enumerate(self.quarters):
 	for qidx in np.arange(0,quarters,1):
 		if nquarters != 1:
 			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes_detrend[qidx], self.errors_detrend[qidx]
@@ -1168,11 +1138,6 @@ def get_future_transits(self, num_transits=20, output_format='datetime', native_
 		output_taus = future_taus.jd - 2454833
 	elif (output_format.lower() == 'btjd') or (output_format.lower() == 'tjd'):
 		output_taus = future_taus.jd - 2457000
-
-	
-	### return future_taus in both native format, and the requested format
-	#for opt, ft in zip(output_taus, future_taus):
-	#		print(str(opt)+' --- '+str(ft))
 
 	return future_taus, output_taus
 
