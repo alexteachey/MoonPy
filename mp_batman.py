@@ -21,9 +21,6 @@ def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=
 	else:
 		pass 	
 	planet_sma_Rstar = planet_sma/Rstar 
-	#print('planet_sma = ', planet_sma)
-	#print('impact parameter = ', bplan)
-	#print('inclination = ', inc_from_impact(bplan, Rstar, planet_sma, unit='degrees'))
 
 	batman_params = batman.TransitParams()
 
