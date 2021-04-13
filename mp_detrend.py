@@ -21,7 +21,8 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 		if len(mask_idxs) > 0:
 			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		else:
+		elif len(mask_idxs) == 0:
+			##### ALL TIMES, FLUXES, AND ERRORS ARE UNMASKED.
 			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
