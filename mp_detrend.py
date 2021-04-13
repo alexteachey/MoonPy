@@ -8,22 +8,17 @@ from cofiam import cofiam_iterative
 from poly_detrender import polyAM_iterative, polyLOC_iterative
 import traceback
 import matplotlib.pyplot as plt 
-#import pyximport 
-
 
 
 def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=np.array([]), max_degree=30):
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
-	#print('len(times) = ', len(times))
 
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		elif len(mask_idxs) == 0:
 			##### ALL TIMES, FLUXES, AND ERRORS ARE UNMASKED.
-			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 	if remove_outliers == 'y':
@@ -49,7 +44,6 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 		### identify the largest gap!
 		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		#print('largest_gap_idx = ', largest_gap_idx)
 		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
@@ -89,21 +83,13 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 
 
-#### some modification
-
-
 def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=20):
-	#print("len(mask_idxs) = ", len(mask_idxs))
-	#print('len(times) = ', len(times))
-
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		
 		else:
-			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 
@@ -133,7 +119,6 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 		### identify the largest gap! -- THIS SHOULD BE THE DATA GAP IN THE TESS SECTOR.
 		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		#print('largest_gap_idx = ', largest_gap_idx)
 		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
@@ -181,10 +166,6 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 
 	#### THIS DETRENDING HAS TO BE USED ON A TRANSIT BY TRANSIT BASIS, *NOT* A QUARTER BY QUARTER BASIS.
 
-	#print("len(mask_idxs) = ", len(mask_idxs))
-	#print('len(times) = ', len(times))
-
-
 	#### use the local_window_duration_multiple to use only times from transit midtime
 	if (Tdur_days != None) and (Tmid != None):
 		#### you need these to calculate
@@ -194,18 +175,12 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 		window_idxs = np.arange(Tmid_idx - local_window_nobs, Tmid_idx + local_window_nobs, 1)
 		times, fluxes, errors = times[window_idxs], fluxes[window_idxs], errors[window_idxs]
 
-
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
-			#print('type(mask_idxs) = ', type(mask_idxs))
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		
 		else:
-			#print('mask_idxs = ', mask_idxs)
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
-
-
 
 	if remove_outliers == 'y':
 		outlier_idxs = []
@@ -216,8 +191,6 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 		outlier_idxs = np.array(outlier_idxs)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
 
-
-
 	if telescope.lower() == 'tess':
 		### you need to detrend the two halves separately!
 		deltats = []
@@ -226,14 +199,12 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 				pass
 			else:
 				deltats.append(unmasked_times[nut+1] - unmasked_times[nut])
-
 		deltats = np.array(deltats)
 		deltat = np.nanmedian(deltats)
 
 
 		### identify the largest gap! -- THIS SHOULD BE THE DATA GAP IN THE TESS SECTOR.
 		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		#print('largest_gap_idx = ', largest_gap_idx)
 		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
@@ -248,17 +219,12 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 			traceback.print_exc()
 			print('unable to call polyAM_iterative. Data points likely reduced to zero.')
 
-
 	else:
 		try:
 			best_model, best_degree, best_BIC, max_degree = polyLOC_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), np.array(unmasked_errors, dtype=np.float64), max_degree=int(max_degree))
-			#print(' ')
-			#print(' ')
 		except:
 			traceback.print_exc()
 			print('unable to call polyAM_iterative. Data points likely reduced to zero.')
-
-
 
 	### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values
 	### at those locations in the time series, and to keep flux_detrend and errors_detrend the same length as the original time series.
@@ -272,14 +238,6 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 	flux_detrend = fluxes / best_model
 	errors_detrend = errors / fluxes
 	return times, flux_detrend, errors_detrend 
-
-
-
-
-
-
-
-
 
 
 
@@ -310,6 +268,10 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		f_detrend, sigma_detrend = untrendy.untrend(times, fluxes, errors)
 	return f_detrend, sigma_detrend
 
+
+
+
+
 def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1.0, telescope=None, mask_idxs=None):
 	import george
 
@@ -338,7 +300,6 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 	else:
 		unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors 
 
-	#kernel = ExpSquaredKernel(metric=metric)
 	kernel_arg = np.var(unmasked_fluxes) * kernel_choice(metric=metric)
 	print('generating the gp...')
 	gp = george.GP(kernel_arg)
@@ -352,8 +313,6 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 	### now interpolate
 	print('predicting...')
 	gp_mu, gp_cov = gp.predict(unmasked_fluxes, times)  ### FIRST ARGUMENT ARE THE ORIGINAL y-values, *NOT* ALL y-values! (you leave out the transit times)
-	#print('len(gp_mu) = ', len(gp_mu))
-	#print('len(times) = ', len(times))
 	gp_std = np.sqrt(np.diag(gp_cov))
 	flux_detrend = fluxes / gp_mu 
 	errors_detrend = errors / fluxes 
@@ -361,6 +320,8 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 	print(' ')
 
 	return flux_detrend, errors_detrend
+
+
 
 
 
@@ -377,30 +338,10 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 		print('performing median filter with masked points.')
 		### that is, if there are masks for the transits (there should be!)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
-		#print('len(unmasked_times), len(unmasked_fluxes) = ', len(unmasked_times), len(unmasked_fluxes))
-		"""
-		try:
-			flux_trend = median_filter(unmasked_fluxes, size=size, mode='nearest')
-			print('utilizing scipy.ndimage.median_filter().')
-		except:
-			flux_trend = medfilt(unmasked_fluxes, kernel_size=size)
-		print('median_filter() failed, utilizing scipy.signal.medfilt().')
-		medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
-		flux_trend = medfilt_interp(times)
-		"""
-
-
 	else:
 		unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
 		print('performing median filter without masked points.')
-		"""
-		try:
-			flux_trend = median_filter(fluxes, size=size, mode='nearest')
-		except:
-			flux_trend = medfilt(fluxes, kernel_size=size)
-		"""
-
 
 	try:
 		flux_trend = median_filter(unmasked_fluxes, size=kernel_size, mode='nearest')
@@ -424,7 +365,6 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 
 def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredKernel', metric=1.0, local_window_duration_multiple=10, Tdur_days=None, Tmid=None, telescope=None, mask_idxs=None, max_degree=30):
 	#### THIS FUNCTION WILL RUN ALL THE OTHER DETRENDERS, and take the median value at every time step.
-
 	try:
 		cofiam_fluxes, cofiam_errors = cofiam_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=30)
 		include_cofiam = 'y'
@@ -465,10 +405,9 @@ def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredK
 		traceback.print_exc()
 		include_medfilt = 'n'
 
-
-
 	methmarg_fluxes = []
 	mathmarg_errors = []
+	
 
 	#### IDEALLY THIS DETRENDING IS ALREADY HAPPENING ON A QUARTER BY QUARTER BASIS -- YOU ARE NOT 
 	if include_cofiam == 'y':
