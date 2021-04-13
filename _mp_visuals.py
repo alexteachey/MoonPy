@@ -36,7 +36,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', show_batman='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	try:
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -83,31 +83,34 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		if show_errors == 'y':
 			plt.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
-		if show_neighbors == 'y':
-			### this will highlight all the other transits for the neighbors (if any)
-			neighbors = self.neighbor_dict.keys()
 
-			for neighbor in neighbors:
-				neighbor_taus = self.neighbor_dict[neighbor].taus 
-				neighbor_dur = self.neighbor_dict[neighbor].duration_days 
 
-				neighbor_transit_idxs = []
-				for nt in neighbor_taus:
-					ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
-					neighbor_transit_idxs.append(ntidxs)
-				neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-				#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
+		### this will highlight all the other transits for the neighbors (if any)
+		neighbors = self.neighbor_dict.keys()
+
+		for neighbor in neighbors:
+			neighbor_taus = self.neighbor_dict[neighbor].taus 
+			neighbor_dur = self.neighbor_dict[neighbor].duration_days 
+
+			neighbor_transit_idxs = []
+			for nt in neighbor_taus:
+				ntidxs = np.where((stitched_times >= (nt - 0.5*neighbor_dur)) & (stitched_times <= (nt + 0.5*neighbor_dur)))[0]
+				neighbor_transit_idxs.append(ntidxs)
+			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+			#plt.scatter(stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], facecolors='g', s=10, marker='x')
+			if show_neighbors == 'y':
 				plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
 		
 
-			### PLOT THE TARGET TRANSITS TOO!
-			target_taus = self.taus 
-			target_dur = self.duration_days
-			target_transit_idxs = []
-			for tt in target_taus:
-				ttidxs = np.where((stitched_times >= (tt - 0.5*target_dur)) & (stitched_times <= (tt + 0.5*target_dur)))[0]
-				target_transit_idxs.append(ttidxs)
-			target_transit_idxs = np.hstack(target_transit_idxs)
+		### PLOT THE TARGET TRANSITS TOO!
+		target_taus = self.taus 
+		target_dur = self.duration_days
+		target_transit_idxs = []
+		for tt in target_taus:
+			ttidxs = np.where((stitched_times >= (tt - 0.5*target_dur)) & (stitched_times <= (tt + 0.5*target_dur)))[0]
+			target_transit_idxs.append(ttidxs)
+		target_transit_idxs = np.hstack(target_transit_idxs)
+		if show_neighbors == 'y':
 			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
 
 		if (show_batman == 'y') and (detrended == 'y'):
@@ -175,6 +178,32 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		plt.show()
 	else:
 		pass
+
+
+	if (show_model_residuals == 'y') and (show_batman == 'y'):
+		##### plot the light curve with the model removed
+		plt.scatter(plot_stitched_times, stitched_fluxes-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+		plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs]-self.bat_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')		
+		plt.xlabel('BKJD')
+		plt.ylabel('fluxes - model')
+		plt.show()
+
+		##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
+		full_LC_residuals = stitched_fluxes-self.bat_fluxes
+		full_LC_median = np.nanmedian(full_LC_residuals)
+		full_LC_std = np.nanstd(full_LC_residuals)
+		target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
+		ntarget_points_outside_1sig = 0
+		for ttp in full_LC_residuals[target_transit_idxs]:
+			if (ttp > full_LC_median + full_LC_std) or (ttp < full_LC_median - full_LC_std):
+				ntarget_points_outside_1sig += 1
+
+		print('full_LC_median = ', full_LC_median)
+		print('full_LC_std = ', full_LC_std)
+		fraction_target_points_outside_1sig = ntarget_points_outside_1sig / len(target_transit_idxs)
+		print('fraction of target points outside 1sig: ', fraction_target_points_outside_1sig)
+		if fraction_target_points_outside_1sig > 0.05:
+			print("POSSIBLE BAD DETREND.")
 
 
 
