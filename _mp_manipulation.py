@@ -537,38 +537,34 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 						mask_transit_idxs = mask_transit_idxs.tolist()
 					except:
 						pass
+					n_neighbor_idxs = 0
 					for nti in neighbor_transit_idxs:
-						mask_transit_idxs.append(nti)		
+						mask_transit_idxs.append(nti)	
+						n_neighbor_idxs += 1
+					print('appended '+str(n_neighbor_idxs)+' neighbor transit data points for masking.')	
 
-			try:
-				print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
-				
-				if len(quarter_transit_taus) > 1:
+			#try:
+			print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
+			
+			if len(quarter_transit_taus) > 0:
+				print(str(len(quarter_transit_taus))+" transit(s) in this quarter.")
+
+			if len(quarter_transit_taus) == 1:
+				try:
+					mask_transit_idxs = np.concatenate(mask_transit_idxs)
+				except:
+					print('Concatenate not necessary')
+				mask_transit_idxs = np.array(mask_transit_idxs)				
+
+			if len(quarter_transit_taus) > 1:
 					try:
 						mask_transit_idxs = np.concatenate(mask_transit_idxs)
 					except:
 						print('Concatenate not necessary')
-						mask_transit_idxs = np.array(mask_transit_idxs)
-				else:
 					mask_transit_idxs = np.array(mask_transit_idxs)
 
-				try:
-					mask_transit_idxs = np.unique(mask_transit_idxs)
-				except:
-					mask_transit_idxs = np.concatenate(mask_transit_idxs)
-					mask_transit_idxs = np.unique(mask_transit_idxs)
+			elif len(quarter_transit_taus) < 1:
 
-				if len(quarter_transit_taus) > 0:
-					print("transit in this quarter.")
-
-
-				#### remove out of bounds transit idxs:
-				OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
-				mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
-			
-
-			except:
-				traceback.print_exc()
 				mask_transit_idxs = np.array([])
 				print('no transits in this quarter.')
 				if skip_ntqs == 'y':
@@ -576,6 +572,17 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
 					skip_quarter = 'y'
 
+			try:
+				np.concatenate(mask_transit_idxs)
+			except:
+				pass
+			mask_transit_idxs = np.unique(mask_transit_idxs)
+
+
+			#### remove out of bounds transit idxs:
+			OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
+			mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
+			
 
 		elif mask_transits == 'n':
 			mask_transit_idxs = np.array([])
@@ -584,7 +591,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		#print("AFTER: ")
 		#print('mask_transit_idxs = ', mask_transit_idxs)
 		if len(mask_transit_idxs) > 0:
-			print("mask transit times = ", dtimes[mask_transit_idxs])			
+			print('len(mask_transit_idxs) = '+str(len(mask_transit_idxs)))
+			#print("mask transit times = ", dtimes[mask_transit_idxs])			
 
 
 		all_quarter_mask_transit_idxs.append(mask_transit_idxs)
