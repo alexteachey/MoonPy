@@ -14,6 +14,7 @@ from astropy.timeseries import LombScargle
 import socket 
 
 #### BELOW ARE MOONPY PACKAGES
+from moonpy import *
 from mp_tools import *
 from mp_lcfind import *
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
@@ -29,6 +30,11 @@ plt.rcParams["font.family"] = 'serif'
 
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
+
+
+#### test the moonpy import right here
+#print("TESTING THE MOONPY IMPORT (_mp_attributes.py)")
+#dummy = MoonpyLC(targetID='Kepler-1625b')
 
 
 def find_transit_quarters(self, locate_neighbor='n'):
@@ -914,128 +920,6 @@ def find_neighbors(self, is_neighbor='n'):
 
 
 
-
-def get_neighbors(self, clobber_lc='y', save_to_file='y'):
-	### this function will download grab all the information about your target's neighbors.
-	if self.telescope.lower() == 'user':
-		neighbor_dict = {}
-
-	try:
-		print(self.neighbor_dict.keys())
-		neighbor_dict = self.neighbor_dict
-		### indicates you're dealing with the target. Therefore:
-		is_neighbor='n'
-	
-	except:
-		is_neighbor='y'
-		### you need to generate the neighbor_dict
-		neighbor_dict = {}
-		for neighbor in self.neighbors:
-			###
-			try:
-				if (self.telescope.lower() == 'kepler'):
-					if neighbor.lower().startswith('kepler'):
-						neighbor_key = 'K'+str(neighbor[7:])
-					else:
-						### for now this is just a KOI!
-						neighbor_key = neighbor
-						while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
-							neighbor_key = neighbor_key[1:]
-						neighbor_key = 'K'+str(neighbor_key)
-				elif (self.telescope.lower() == 'k2'):
-					neighbor_key = 'K2_'+str(neighbor_key[3:])
-
-				elif (self.telescope.lower() == 'tess'):
-					neighbor_key = neighbor 
-
-				### now generate the LC object -- note that this will download duplicate light curves!
-				### for now, just delete them after downloading... should come up with a better solution.
-				print('calling MoonpyLC for neighbor: ', neighbor)
-
-				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, download='y', clobber='n')
-
-			except:
-				traceback.print_exc()
-				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
-
-		self.neighbor_dict = neighbor_dict 
-
-	final_neighbor_IDs = []		
-	neighbor_transit_idxs = []
-	neighbor_transit_IDs = []
-	
-	for neighbor in neighbor_dict.keys():
-		neighbor_taus = neighbor_dict[neighbor].taus 
-		neighbor_dur = neighbor_dict[neighbor].duration_days 
-
-		print('appending '+str(len(neighbor_taus))+' neighbor transit times.')
-		print('neighbor duration = '+str(neighbor_dur))
-
-		for nt in neighbor_taus:
-			ntidxs = np.where((np.hstack(self.times) >= (nt - 0.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 0.5*neighbor_dur)))[0]
-			for ntidx in ntidxs:
-				neighbor_transit_idxs.append(ntidx)
-				neighbor_transit_IDs.append(neighbor)
-
-	### include the target here!
-	target_taus = self.taus
-	target_dur = self.duration_days
-	for tt in target_taus:
-		ttidxs = np.where((np.hstack(self.times) >= (tt - 0.5*target_dur)) & (np.hstack(self.times) <= (tt + 0.5*target_dur)))[0]
-		for ttidx in ttidxs:
-			neighbor_transit_idxs.append(ttidx)
-			neighbor_transit_IDs.append(self.target)
-
-	neighbor_transit_idxs = np.array(neighbor_transit_idxs)
-	neighbor_transit_IDs = np.array(neighbor_transit_IDs)
-
-	print('number of neighbor transit idxs = ', len(neighbor_transit_idxs))
-	for ntidx in np.unique(neighbor_transit_idxs):
-		### find all transiting planets that have this index
-		all_neighbors = neighbor_transit_IDs[np.where(neighbor_transit_idxs == ntidx)[0]]
-		final_neighbor_IDs.append(list(all_neighbors))
-
-
-	neighbor_transit_idxs = np.unique(neighbor_transit_idxs)
-	print('number of unique neighbor_transit_idxs = ', len(neighbor_transit_idxs))
-
-	neighbor_transit_times = []
-	neighbor_transit_list = []
-	neighbor_transit_ID = []
-
-	if save_to_file == 'y':
-		try:
-			lcfile = open(self.savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
-		except:
-			lcfile = open(self.savepath+'/'+self.target+'_lightcurve.tsv', mode='r') ### for older files.
-		lcfile_new = open(self.savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
-
-		for nline, line in enumerate(lcfile):
-			if nline == 0:
-				newline = line[:-1]+'\tin_transit\ttransiter\n'
-
-			else:
-				if (nline-1) in neighbor_transit_idxs:
-					ntidx = np.where(neighbor_transit_idxs == (nline-1))[0][0]
-					every_neighbor = final_neighbor_IDs[ntidx]
-					newline = line[:-1]+'\ty\t'+str(every_neighbor)+'\n'
-					neighbor_transit_times.append(np.hstack(self.times)[nline-1])
-					neighbor_transit_list.append('y')
-					neighbor_transit_ID.append(str(every_neighbor))
-				else:
-					newline = line[:-1]+'\tn\n'
-					neighbor_transit_list.append('n')
-					neighbor_transit_ID.append('')
-
-			lcfile_new.write(newline)
-		lcfile.close()
-		lcfile_new.close()
-		### rename the file.
-		os.system('mv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
-
-	self.neighbor_transit_times = np.array(neighbor_transit_times)
-	self.neighbor_transit_list = neighbor_transit_list
-	self.neighbor_transit_IDs = neighbor_transit_ID 
 
 
 
