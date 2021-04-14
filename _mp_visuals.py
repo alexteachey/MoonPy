@@ -192,16 +192,16 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			full_LC_median = np.nanmedian(full_LC_residuals)
 			full_LC_std = np.nanstd(full_LC_residuals)
 			target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
-			ntarget_points_outside_1sig = 0
+			ntarget_points_outside_2sig = 0
 			for ttp in full_LC_residuals[target_transit_idxs]:
-				if (ttp > full_LC_median + full_LC_std) or (ttp < full_LC_median - full_LC_std):
-					ntarget_points_outside_1sig += 1
+				if (ttp > full_LC_median + 2*full_LC_std) or (ttp < full_LC_median - 2*full_LC_std):
+					ntarget_points_outside_2sig += 1
 
 			print('full_LC_median = ', full_LC_median)
-			print('full_LC_std = ', full_LC_std)
-			fraction_target_points_outside_1sig = ntarget_points_outside_1sig / len(target_transit_idxs)
-			print('fraction of target points outside 1sig: ', fraction_target_points_outside_1sig)
-			if fraction_target_points_outside_1sig > 0.05:
+			print('full_LC_std [ppm] = ', full_LC_std*1e6)
+			fraction_target_points_outside_2sig = ntarget_points_outside_2sig / len(target_transit_idxs)
+			print('fraction of target in-transit residuals outside 2sig: ', fraction_target_points_outside_2sig)
+			if fraction_target_points_outside_2sig > 0.05:
 				print("POSSIBLE BAD DETREND.")
 
 		except:
