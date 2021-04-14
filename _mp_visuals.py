@@ -228,7 +228,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 
-	if show_stats == 'y':
+	if (show_stats == 'y') and 'fluxes_detrend' in dir(self):
 		textstr = '\n'.join((
 		    r'depth $=%.2f$ ppm' % (batman_transit_depth, ),
 		    r'scatter $=%.2f$ ppm' % (full_LC_std_ppm, ),))

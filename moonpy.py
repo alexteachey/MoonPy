@@ -87,13 +87,13 @@ class MoonpyLC(object):
 		### treat the times, fluxes and errors as a single quarter
 		original_target_input = targetID ### keep this around! sometimes you want it!
 
+
 		if attributes_only == 'y':
 			clobber = 'n' #### if the file already exists, don't clobber it!
 			##### this option allows you to download all the attributes of the object without getting the light curve!	
 			###### to pull this off you will need to act as though these are user suppled light curves.
 			print('attributes_only option selected... creating dummy light curves.')
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = np.linspace(0,1,1000), np.linspace(1,1,1000), np.linspace(0.001,0.001,1000), np.linspace(1,1,1000), np.linspace(0.001,0.001, 1000), np.linspace(0,0,1000), np.array([1])
-
 
 		if (type(lc_times) != type(None)) and (type(lc_fluxes) != type(None)) and (type(lc_errors) != type(None)):
 			print('using USER-SUPPLIED VALUES.')
