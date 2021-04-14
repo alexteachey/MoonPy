@@ -688,14 +688,14 @@ class MoonpyLC(object):
 
 
 	### try this at the end
-	try:
-		self.get_properties()
-	except:
-		print('could not get_properties().')
-	try:
-		self.find_transit_quarters()
-	except:
-		print('could not find_transit_quarters().')
+	#try:
+	#	self.get_properties()
+	#except:
+	#	print('could not get_properties().')
+	#try:
+	#	self.find_transit_quarters()
+	#except:
+	#	print('could not find_transit_quarters().')
 
 
 
