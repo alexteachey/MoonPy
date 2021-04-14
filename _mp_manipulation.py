@@ -512,9 +512,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 				print('mask_transit_idxs could not be concatenated (probably not needed).')
 
 
-			print("BEFORE: ")
-			print('mask_transit_idxs = ', mask_transit_idxs)
-			print("mask transit times = ", dtimes[mask_transit_idxs])
+			#print("BEFORE: ")
+			#print('mask_transit_idxs = ', mask_transit_idxs)
+			#print("mask transit times = ", dtimes[mask_transit_idxs])
 			mask_transit_idxs = mask_transit_idxs
 
 			### add neighbor transit times to mask_transit_idxs.
@@ -581,8 +581,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 			mask_transit_idxs = np.array([])
 
 		print(' ')
-		print("AFTER: ")
-		print('mask_transit_idxs = ', mask_transit_idxs)
+		#print("AFTER: ")
+		#print('mask_transit_idxs = ', mask_transit_idxs)
 		if len(mask_transit_idxs) > 0:
 			print("mask transit times = ", dtimes[mask_transit_idxs])			
 

@@ -14,6 +14,7 @@ from astroquery.simbad import Simbad
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from astropy.timeseries import LombScargle
 import socket 
+from matplotlib.offsetbox import AnchoredText
 
 #### BELOW ARE MOONPY PACKAGES
 from mp_tools import *
@@ -35,8 +36,11 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_neighbors='n', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
+	
+	fig, ax = plt.subplots()
+
 	try:
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
 
@@ -124,9 +128,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
-		plt.legend()		
-
-
 	elif folded == 'y':
 		try:
 			self.fold(detrended=detrended, phase_offset=phase_offset)
@@ -158,7 +159,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		if (show_batman == 'y') and (detrended == 'y'):
 			try:
 				self.gen_batman(folded='y')
-				plt.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+				ax.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
@@ -167,19 +168,82 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 	if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
 		if folded=='y':
-			plt.xlabel('Phase')
+			ax.set_xlabel('Phase')
 		else:
-			plt.xlabel('BKJD')
+			ax.set_xlabel('BKJD')
 	elif (self.telescope.lower() == 'tess'):
 		if folded=='y':
-			plt.xlabel('Phase')
+			ax.set_xlabel('Phase')
 		else:
-			plt.xlabel('BTJD')
-	plt.ylabel('Flux')
+			ax.set_xlabel('BTJD')
+	ax.set_ylabel('Flux')
 	try:
-		plt.title(str(self.target))
+		ax.set_title(str(self.target))
 	except:
 		pass
+
+
+	try:
+		batman_transit_depth = (1 - np.nanmin(self.bat_fluxes))*1e6 #### ppm
+	except:
+		batman_transit_depth = None
+
+
+	##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
+	try:
+		full_LC_residuals = stitched_fluxes-self.bat_fluxes
+		print('full_LC_residuals = ', full_LC_residuals)
+		full_LC_median = np.nanmedian(full_LC_residuals)
+		print('full_LC_median = ', full_LC_median)
+		full_LC_std = np.nanstd(full_LC_residuals)
+		print('full_LC_std = ', full_LC_std)
+		full_LC_std_ppm = full_LC_std*1e6 
+		print('full_LC_std_ppm = ', full_LC_std_ppm)
+
+	except:
+		full_LC_residuals = np.nan
+		full_LC_median = np.nan 
+		full_LC_std = np.nan 
+		full_LC_std_ppm = np.nan 
+
+	try:
+		target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
+		ntarget_points_outside_2sig = 0
+		for ttp in full_LC_residuals[target_transit_idxs]:
+			if (ttp > full_LC_median + 2*full_LC_std) or (ttp < full_LC_median - 2*full_LC_std):
+				ntarget_points_outside_2sig += 1
+
+		print('full_LC_median = ', full_LC_median)
+		print('full_LC_std [ppm] = ', full_LC_std*1e6)
+		fraction_target_points_outside_2sig = ntarget_points_outside_2sig / len(target_transit_idxs)
+		print('fraction of target in-transit residuals outside 2sig: ', fraction_target_points_outside_2sig)
+		if fraction_target_points_outside_2sig > 0.05:
+			print("POSSIBLE BAD DETREND.")
+
+	except:
+		pass
+
+
+
+
+
+
+	if show_stats == 'y':
+		textstr = '\n'.join((
+		    r'depth $=%.2f$ ppm' % (batman_transit_depth, ),
+		    r'scatter $=%.2f$ ppm' % (full_LC_std_ppm, ),))
+
+		# these are matplotlib.patch.Patch properties
+		props = dict(boxstyle='square', facecolor='white', alpha=0.5)
+
+		# place a text box in upper left in axes coords
+		#ax.text(0.75, 0.98, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
+		#ax.text(0.65, 0.98, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
+		anchored_text = AnchoredText(textstr, loc='upper left')
+		ax.add_artist(anchored_text)
+
+
+	plt.legend(loc='upper right')	
 
 	if pltshow == 'y':	
 		plt.show()
@@ -187,7 +251,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		pass
 
 
-	if (show_model_residuals == 'y') and (show_batman == 'y'):
+	if (show_model_residuals == 'y') and (show_batman == 'y') and (folded == 'n'):
 		try:
 			##### plot the light curve with the model removed
 			plt.scatter(plot_stitched_times, stitched_fluxes-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
@@ -196,25 +260,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			plt.ylabel('fluxes - model')
 			plt.show()
 
-			##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
-			full_LC_residuals = stitched_fluxes-self.bat_fluxes
-			full_LC_median = np.nanmedian(full_LC_residuals)
-			full_LC_std = np.nanstd(full_LC_residuals)
-			target_median = np.nanmedian(full_LC_residuals[target_transit_idxs])
-			ntarget_points_outside_2sig = 0
-			for ttp in full_LC_residuals[target_transit_idxs]:
-				if (ttp > full_LC_median + 2*full_LC_std) or (ttp < full_LC_median - 2*full_LC_std):
-					ntarget_points_outside_2sig += 1
-
-			print('full_LC_median = ', full_LC_median)
-			print('full_LC_std [ppm] = ', full_LC_std*1e6)
-			fraction_target_points_outside_2sig = ntarget_points_outside_2sig / len(target_transit_idxs)
-			print('fraction of target in-transit residuals outside 2sig: ', fraction_target_points_outside_2sig)
-			if fraction_target_points_outside_2sig > 0.05:
-				print("POSSIBLE BAD DETREND.")
-
 		except:
 			print('BATMAN model not available.')
+
+
+
+
+
+
 
 
 def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
