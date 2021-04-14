@@ -711,6 +711,7 @@ class MoonpyLC(object):
 			is_neighbor='n'
 		
 		except:
+			print('moved to the exception statement.')
 			is_neighbor='y'
 			### you need to generate the neighbor_dict
 			neighbor_dict = {}
@@ -718,6 +719,7 @@ class MoonpyLC(object):
 				###
 				try:
 					if (self.telescope.lower() == 'kepler'):
+					
 						if neighbor.lower().startswith('kepler'):
 							neighbor_key = 'K'+str(neighbor[7:])
 						else:
@@ -726,6 +728,7 @@ class MoonpyLC(object):
 							while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
 								neighbor_key = neighbor_key[1:]
 							neighbor_key = 'K'+str(neighbor_key)
+					
 					elif (self.telescope.lower() == 'k2'):
 						neighbor_key = 'K2_'+str(neighbor_key[3:])
 
@@ -736,7 +739,7 @@ class MoonpyLC(object):
 					### for now, just delete them after downloading... should come up with a better solution.
 					print('calling MoonpyLC for neighbor: ', neighbor)
 
-					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor=is_neighbor, download='y', clobber='n')
+					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', download='y', clobber='n')
 
 				except:
 					traceback.print_exc()

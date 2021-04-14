@@ -210,3 +210,22 @@ def transit_SNR_integrator(times, fluxes, errors):
 		print(" ")
 
 	return final_SNR 
+
+
+
+def lc_fold(times, fluxes, errors, tau0, period, phase_offset=0.0):
+	### this method will phase fold your light curve. 
+	### first tau in the time series:
+	first_tau = tau0
+
+	fold_times = ((((np.hstack(times) - first_tau - 0.5*period - phase_offset*period) % period) / period)) ### yields the remainder!
+	fold_times = fold_times - 0.5
+
+	fold_fluxes = np.hstack(fluxes)
+	fold_errors = np.hstack(errors)
+
+	##### sort them
+	fold_sort_idxs = np.argsort(fold_times)
+	fold_times, fold_fluxes, folded_errors = fold_times[fold_sort_idxs], fold_fluxes[fold_sort_idxs], fold_errors[fold_sort_idxs]
+
+	return fold_times, fold_fluxes, fold_errors

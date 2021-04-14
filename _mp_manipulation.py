@@ -840,8 +840,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 
 
-def gen_batman(self):
+def gen_batman(self, folded='n'):
 	from mp_batman import run_batman 
+
 	"""
 	##### this method will generate a batman light curve for the light curve object.
 	#run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, Mstar=None, 
@@ -860,10 +861,18 @@ def gen_batman(self):
 
 	bat_sma = self.sma_AU * au.value 
 
+	#if folded == 'n':
 	bat_times, bat_fluxes = run_batman(all_times=self.times, RpRstar=self.rprstar, Rstar=self.rstar_meters, bplan=self.impact, Pplan=self.period, tau0=self.tau0, q1=self.q1, q2=self.q2, planet_sma=bat_sma)
-
 	self.bat_times = bat_times
-	self.bat_fluxes = bat_fluxes 
+	self.bat_fluxes = bat_fluxes 	
+
+	if folded == 'y':
+		#sorted_times_idxs = np.argsort(times)
+		#folded_bat_times, folded_bat_fluxes = run_batman(all_times=times, RpRstar=self.rprstar, Rstar=self.rstar_meters, bplan=self.impact, Pplan=self.period, tau0=0, q1=self.q1, q2=self.q2, planet_sma=bat_sma)
+		folded_bat_times, folded_bat_fluxes, folded_bat_errors = lc_fold(times=self.bat_times, fluxes=self.bat_fluxes, errors=self.errors_detrend, tau0=self.tau0, period=self.period)
+
+		self.folded_bat_times = folded_bat_times
+		self.folded_bat_fluxes = folded_bat_fluxes
 
 
 

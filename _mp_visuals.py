@@ -119,7 +119,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		if (show_batman == 'y') and (detrended == 'y'):
 			try:
-				self.gen_batman()
+				self.gen_batman(folded='n')
 				plt.plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
@@ -154,6 +154,15 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			plt.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
 			plt.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
+
+		if (show_batman == 'y') and (detrended == 'y'):
+			try:
+				self.gen_batman(folded='y')
+				plt.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+			except:
+				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
+
+
 
 
 	if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
@@ -323,6 +332,10 @@ def fold(self, detrended='y', phase_offset=0.0):
 	else:
 		fold_fluxes = np.hstack(self.fluxes)
 		fold_errors = np.hstack(self.errors)
+
+	##### sort them
+	fold_sort_idxs = np.argsort(fold_times)
+	fold_times, fold_fluxes, folded_errors = fold_times[fold_sort_idxs], fold_fluxes[fold_sort_idxs], fold_errors[fold_sort_idxs]
 
 	self.fold_times = fold_times
 	self.fold_fluxes = fold_fluxes
