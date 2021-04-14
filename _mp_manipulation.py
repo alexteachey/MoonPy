@@ -258,11 +258,12 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 				neighbor_taus = self.neighbor_dict[neighbor].taus
 				for nt in neighbor_taus:
 					if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
-						ntidxs = np.where((cnn_times >= nt-(0.5*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+(0.5*self.neighbor_dict[neighbor].duration_days)))[0]
+						ntidxs = np.where((cnn_times >= nt-(2.5*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+(2.5*self.neighbor_dict[neighbor].duration_days)))[0]
 						flag_idxs.append(ntidxs)
-			try:
+			#try:
+			if len(flag_idxs) > 0:
 				flag_idxs = np.unique(np.hstack(np.array(flag_idxs)))
-			except:
+			else:
 				flag_idxs = np.array([])
 
 			flag_array = np.zeros(shape=len(cnn_times))

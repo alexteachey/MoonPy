@@ -39,7 +39,7 @@ else:
 
 #### THIS IS A MAJOR REWORKING OF THE ORIGINAL mp_lcfind.py (eventually mp_lcfind_deprecated.py).
 #### THE KEY IS, The Kplr and k2plr packages are old, not available through conda, and cause all kinds of problems.
-#### So this script will get around them entirely, doing it all under the hood, the way you want it.
+#### So this short_cadenceript will get around them entirely, doing it all under the hood, the way you want it.
 #### (Note that you'll want to continue structuring the light curves as kplr does it.)
 #### 
 
@@ -303,7 +303,7 @@ def k2_fits_download(target_name, clobber='n'):
 
 
 
-def kepler_unpack_fits(target_name, sc=False):
+def kepler_unpack_fits(target_name, short_cadence=False):
 	#### first thing you have to do is make sure the damn thing exists!
 	KIC_directory = kepler_URL_generator(find_KIC_alias(target_name))[2] 
 	try:
@@ -317,14 +317,14 @@ def kepler_unpack_fits(target_name, sc=False):
 
 		KIC_fits_files = []
 
-		### if sc=True, you need to check whether there is a slc version!
-		### if sc=False, reject slcs!
+		### if short_cadence=True, you need to check whether there is a slc version!
+		### if short_cadence=False, reject slcs!
 		reject_wrong_cadence_files = []
 
 		for i,ki in enumerate(KIC_directory_files):
 			for j,kj in enumerate(KIC_directory_files):
 				if (i != j) and (ki[:-8] == kj[:-8]) and (ki[-8:] == 'slc.fits') and (kj[-8:] == 'llc.fits'):
-					if sc == True:
+					if short_cadence == True:
 						print('cadence reject: ', kj)
 						reject_wrong_cadence_files.append(kj)
 					else:
@@ -429,7 +429,7 @@ def k2_unpack_fits(target_name):
 
 
 
-def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', clobber='n', sc=False):
+def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', clobber='n', short_cadence=False):
 	#### using the functions developed above
 	### first, try unpacking without downloading.
 		
@@ -438,7 +438,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 	if telescope.lower() == 'kepler':
 		kepler_fits_download(targID, clobber=clobber)
 		try:
-			kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
+			kepler_lc_dictionary = kepler_unpack_fits(targID, short_cadence=short_cadence)
 		
 		except:
 			print('first except triggered.')
@@ -447,7 +447,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 				print('lc may not have been downloaded. Attempting to download...')
 				kepler_fits_download(targID, clobber=clobber)
 				### after it's been downloaded, you can try to unpack again.
-				kepler_lc_dictionary = kepler_unpack_fits(targID, sc=sc)
+				kepler_lc_dictionary = kepler_unpack_fits(targID, short_cadence=short_cadence)
 			
 			except:
 				print('second except triggered.')
@@ -544,7 +544,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 
 
 
-def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', clobber='n', sc=False):
+def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', clobber='n', short_cadence=False):
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	### try to interpret the coordinate_format 
@@ -601,11 +601,11 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 	if lc_format == 'pdc':
-		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 	elif lc_format == 'sap':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 	elif lc_format == 'both':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc, clobber=clobber)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = kplr_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence, clobber=clobber)
 
 
 	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
@@ -622,7 +622,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', sc=False):
+def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', short_cadence=False):
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	print('ra,dec = ', ra, dec)
@@ -680,11 +680,11 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 	if lc_format == 'pdc':
-		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 	elif lc_format == 'sap':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 	elif lc_format == 'both':
-		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, sc=sc)
+		kobj_times, kobj_sap_fluxes, kobj_sap_errors, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 
 
 	### it's valuable to keep the quarters separated like this, because they should be detrended separately!
@@ -697,7 +697,7 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete_fits='n'):
+def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='pdc', delete_fits='n'):
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
 		pass
@@ -889,7 +889,7 @@ def tess_target_download(targID, sectors='all', sc=True, lc_format='pdc', delete
 
 
 
-def eleanor_target_download(targID, sectors='all', sc=False, lc_format='pdc'):
+def eleanor_target_download(targID, sectors='all', short_cadence=False, lc_format='pdc'):
 	import eleanor
 	if sectors=='all':
 		sector_array = np.array([1,2])
@@ -919,6 +919,6 @@ def eleanor_target_download(targID, sectors='all', sc=False, lc_format='pdc'):
 
 
 
-def eleanor_coord_download(ra,dec, sectors='all', sc=False):
+def eleanor_coord_download(ra,dec, sectors='all', short_cadence=False):
 	print("nothing doing right now.")
 

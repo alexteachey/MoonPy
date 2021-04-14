@@ -926,7 +926,7 @@ def find_neighbors(self, is_neighbor='n'):
 
 
 
-def find_TTVs(self, show_plot='n', yvar='OCmins', window=2):
+def find_TTVs(self, show_plot='n', yvar='OCmins', window=2.5):
 	OC_mins = []
 	OC_days = []
 	OC_over_durs = []
