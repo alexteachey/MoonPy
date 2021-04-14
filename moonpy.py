@@ -185,7 +185,7 @@ class MoonpyLC(object):
 
 		#### SPECIFY THE SAVEPATH FOR THE LIGHT CURVE -- NEW HANDLING (NOV 2020) SAVES THEM OUTSIDE THE MOONPY DIRECTORY, IN CENTRAL_DATA.
 		if self.telescope.lower() == 'kepler':
-			savepath = kepler_URL_generator(find_KIC_alias(targetID))[2] 
+			savepath = kepler_URL_generator(find_KIC_alias(targetID), short_cadence=short_cadence)[2] 
 		elif self.telescope.lower() == 'k2':
 			savepath = k2_URL_generator(find_EPIC_alias(targetID))[2]
 		elif self.telescope.lower() == 'tess':
@@ -202,26 +202,32 @@ class MoonpyLC(object):
 
 
 
-		if (load_lc == 'n') and (clobber == None):
-			### check to see if a file already exists!
-			if os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv'):
-				print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
-				clobber = input('Clobber? y/n: ')
-				if clobber == 'n':
-					load_lc = 'y'
-				else:
-					print('loading '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')
 
-		elif (load_lc == 'n') and (clobber == 'n'):
+		### check to see if a file already exists!
+
+		if (clobber == None) and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
+			clobber = input('Clobber? y/n: ')
+
+		if (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
 			load_lc = 'y'
-		elif (load_lc == 'n') and (clobber == 'y'):
-			pass 
+			print('loading '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')			
+			
+		elif (clobber == 'y') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
+			print('CLOBBERING '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv.')			
+			load_lc = 'n'
+
+		elif (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv') == False):
+			load_lc = 'n'
+
+		else:
+			load_lc = 'n'
 
 		if load_lc == 'y':
 			save_lc = 'n' ### don't re-write what you've already got!
-
-		if load_lc == 'y':
 			self.newlc = 'n'
+		
 		else:
 			self.newlc = 'y'
 
@@ -401,7 +407,7 @@ class MoonpyLC(object):
 				try:
 					if user_supplied == 'n':
 						if download == 'y':
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber=clobber, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
 						elif download == 'n':
 							print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
@@ -413,7 +419,7 @@ class MoonpyLC(object):
 						### maybe it needs the full name!
 						if user_supplied == 'n':
 							if download == 'y':
-								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)	
+								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber=clobber, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)	
 							elif download == 'n':
 								print('Assuming this is a neighbor... using the same times, fluxes, errors, flags and quarters!')
 								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
@@ -438,12 +444,12 @@ class MoonpyLC(object):
 
 				try:
 					print('first try statement...')
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(self.target, clobber=clobber, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
 				except:
 					try: ### maybe it just wants the number.
 						print('second try statement...')
 						if (type(lc_times) == None) and (type(lc_fluxes) == None) and (type(lc_errors) == None):
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, clobber='n', targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = kplr_target_download(targetID, clobber=clobber, targtype=target_type, quarters=quarters, telescope=telescope, lc_format=lc_format, short_cadence=short_cadence)
 					except:
 						traceback.print_exc()
 
@@ -704,14 +710,14 @@ class MoonpyLC(object):
 		if self.telescope.lower() == 'user':
 			neighbor_dict = {}
 
-		try:
+		#try:
+		if 'neighbor_dict' in dir(self):
 			print(self.neighbor_dict.keys())
 			neighbor_dict = self.neighbor_dict
 			### indicates you're dealing with the target. Therefore:
 			is_neighbor='n'
 		
-		except:
-			print('moved to the exception statement.')
+		else:
 			is_neighbor='y'
 			### you need to generate the neighbor_dict
 			neighbor_dict = {}

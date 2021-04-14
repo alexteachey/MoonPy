@@ -453,7 +453,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 					target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
 
-					print('target_reftimes = ', target_reftimes)
+					#print('target_reftimes = ', target_reftimes)
 
 					### interpolate OCmins! to grab missing transit times -- have to do this in case Mazeh has not cataloged them all.
 					all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs)+1, 1)

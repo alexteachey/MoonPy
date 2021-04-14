@@ -114,7 +114,7 @@ def find_EPIC_alias(target_name):
 
 
 
-def kepler_URL_generator(KIC):
+def kepler_URL_generator(KIC, short_cadence=False):
 	### this function takes in a KIC number (with or without a prefix) and produces a URL and wget script. 
 
 	"""
@@ -154,7 +154,12 @@ def kepler_URL_generator(KIC):
 	else:
 		os.system('mkdir '+download_directory)
 
-	wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R --reject tar --accept fits 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
+	if short_cadence == True:
+		wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R --reject tar --accept fits 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
+	else:
+		wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R --reject tar --accept llc.fits 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
+
+
 
 	return final_URL, wget_command, download_directory
 
@@ -303,7 +308,7 @@ def k2_fits_download(target_name, clobber='n'):
 
 
 
-def kepler_unpack_fits(target_name, short_cadence=False):
+def kepler_unpack_fits(target_name, short_cadence=False, long_cadence=True):
 	#### first thing you have to do is make sure the damn thing exists!
 	KIC_directory = kepler_URL_generator(find_KIC_alias(target_name))[2] 
 	try:
@@ -320,25 +325,32 @@ def kepler_unpack_fits(target_name, short_cadence=False):
 		### if short_cadence=True, you need to check whether there is a slc version!
 		### if short_cadence=False, reject slcs!
 		reject_wrong_cadence_files = []
-
 		for i,ki in enumerate(KIC_directory_files):
-			for j,kj in enumerate(KIC_directory_files):
-				if (i != j) and (ki[:-8] == kj[:-8]) and (ki[-8:] == 'slc.fits') and (kj[-8:] == 'llc.fits'):
-					if short_cadence == True:
-						print('cadence reject: ', kj)
-						reject_wrong_cadence_files.append(kj)
-					else:
-						print('cadence reject: ', ki)
-						reject_wrong_cadence_files.append(ki)
+			if ('slc.fits' in ki) and (short_cadence == False):
+				reject_wrong_cadence_files.append(ki)
+			if ('llc.fits' in ki) and (long_cadence == False):
+				reject_wrong_cadence_files.append(ki)
+			elif (short_cadence == True) and (long_cadence == True):
+				##### now we need to give preference for short_cadence over long_cadence
+				if 'llc.fits' in ki:
+					filename_before_suffix = ki[:ki.find('_llc.fits')]
+					continue
 
+				elif 'slc.fits' in ki:
+					filename_before_suffix = ki[:ki.find('_slc.fits')]
+					reject_wrong_cadence_files.append(filename_before_suffix+'_llc.fits')
+
+
+		print('reject wrong cadence files: ', reject_wrong_cadence_files)
 
 		for Kdf in KIC_directory_files:
 			if Kdf in reject_wrong_cadence_files:
 				continue
 
-			print('reading ', Kdf)
-
 			if ('.fits' in Kdf) and (Kdf not in reject_wrong_cadence_files):
+
+				print('reading ', Kdf)
+
 				KIC_fits_files.append(Kdf)
 
 				kdf_path = KIC_directory+'/'+Kdf	
