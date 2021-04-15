@@ -36,10 +36,23 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='n', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
-	fig, ax = plt.subplots()
+	if detrended == 'n':
+		undetrended = 'y'
+
+	if (undetrended == 'y') and (detrended == 'y'):
+		nplots = 2
+		if folded=='n':
+			fig, ax = plt.subplots(2, sharex=True, figsize=(6,8))
+		elif folded=='y':
+			fig, ax = plt.subplots(2, figsize=(6,8))
+
+	else:
+		#### will be just one or the other
+		nplots = 1
+		fig, ax = plt.subplots()
 
 	try:
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags, self.quarters
@@ -47,7 +60,9 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	except:
 		print("WARNING: light curve has not been detrended yet!")
 		detrended = 'n'
+		undetrended = 'y'
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes, self.errors, self.flags, self.quarters		
+
 
 
 	### first step is to stitch the light curve together
@@ -61,40 +76,65 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = plot_times[qstokeep_idxs], plot_fluxes[qstokeep_idxs], plot_errors[qstokeep_idxs], plot_fluxes_detrend[qstokeep_idxs], plot_errors_detrend[qstokeep_idxs], plot_flags[qstokeep_idxs], plot_quarters[qstokeep_idxs]
 
-	if detrended == 'y':
-		stitched_times, stitched_fluxes, stitched_errors, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes_detrend)), np.hstack((plot_errors_detrend)), np.hstack((plot_flags)), np.hstack((plot_quarters))
-	else:
-		stitched_times, stitched_fluxes, stitched_errors, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_flags)), np.hstack((plot_quarters))			
+	#if detrended == 'y':
+	stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_fluxes_detrend)), np.hstack((plot_errors_detrend)), np.hstack((plot_flags)), np.hstack((plot_quarters))
+	#else:
+	#	stitched_times, stitched_fluxes, stitched_errors, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_flags)), np.hstack((plot_quarters))			
 
 	if include_flagged=='n':
 		### remove all data points with qflag != 0
 		badflag_idxs = np.where(stitched_flags != 0)[0]
-		stitched_times, stitched_fluxes, stitched_errors, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
+		stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_fluxes_detrend, badflag_idxs), np.delete(stitched_errors_detrend, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
 		assert np.all(stitched_flags == 0)
 
 
+	#### IDENTIFY TARGET TIMES
+	target_taus = self.taus 
+	target_dur = self.duration_days
+	target_transit_idxs = []
+	for tt in target_taus:
+		ttidxs = np.where((stitched_times >= (tt - 2.5*target_dur)) & (stitched_times <= (tt + 2.5*target_dur)))[0]
+		target_transit_idxs.append(ttidxs)
+	target_transit_idxs = np.hstack(target_transit_idxs)
+
+
+	### this will highlight all the other transits for the neighbors (if any)
+	try:
+		neighbors = self.neighbor_dict.keys()
+	except:
+		print('NEIGHBOR DICTIONARY UNAVAILABLE.')
+		self.neighbor_dict = {}
+		self.neighbors = []
+		neighbors = np.array([])
+
+	if time_format == 'native':
+		plot_stitched_times = stitched_times
+	elif time_format == 'bjd':
+		if self.telescope == 'kepler':
+			plot_stitched_times = stitched_times + 2454833
+		elif self.telescope == 'tess':
+			plot_stitched_times = stitched_times + 2457000
+
 	if folded == 'n':
-		if time_format == 'native':
-			plot_stitched_times = stitched_times
-		elif time_format == 'bjd':
-			if self.telescope == 'kepler':
-				plot_stitched_times = stitched_times + 2454833
-			elif self.telescope == 'tess':
-				plot_stitched_times = stitched_times + 2457000
 
-		plt.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-		if show_errors == 'y':
-			plt.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+		if nplots == 2:
+			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 
+			if show_errors == 'y':
+				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+				ax[1].errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
-		### this will highlight all the other transits for the neighbors (if any)
-		try:
-			neighbors = self.neighbor_dict.keys()
-		except:
-			print('NEIGHBOR DICTIONARY UNAVAILABLE.')
-			self.neighbor_dict = {}
-			self.neighbors = []
-			neighbors = np.array([])
+		elif nplots == 1: ### detrended or undetrended, but not both
+			if detrended == 'y':
+				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				if show_errors == 'y':
+					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+			else:
+				ax.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				if show_errors == 'y':
+					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
 
 		for neighbor in neighbors:
@@ -106,29 +146,45 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				ntidxs = np.where((stitched_times >= (nt - 2.5*neighbor_dur)) & (stitched_times <= (nt + 2.5*neighbor_dur)))[0]
 				neighbor_transit_idxs.append(ntidxs)
 			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-			if show_neighbors == 'y':
-				plt.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+			
+			if (nplots == 2) and (show_neighbors == 'y'):
+				ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+				ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+
+			elif (nplots == 1) and (show_neighbors == 'y'):
+				if detrended == 'y':
+					ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+				else:
+					ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
 		
 
 		### PLOT THE TARGET TRANSITS TOO!
-		target_taus = self.taus 
-		target_dur = self.duration_days
-		target_transit_idxs = []
-		for tt in target_taus:
-			ttidxs = np.where((stitched_times >= (tt - 2.5*target_dur)) & (stitched_times <= (tt + 2.5*target_dur)))[0]
-			target_transit_idxs.append(ttidxs)
-		target_transit_idxs = np.hstack(target_transit_idxs)
-		if show_neighbors == 'y':
-			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+		if (nplots == 2) and (show_neighbors == 'y'):
+			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+			ax[1].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')			
+
+		elif (nplots == 1) and (show_neighbors == 'y'):
+			if detrended == 'y':
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')	
+			else:
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+
+
 
 		if (show_batman == 'y') and (detrended == 'y'):
 			try:
 				self.gen_batman(folded='n')
-				plt.plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+				if nplots == 2:
+					ax[1].plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+				elif nplots == 1:
+					ax.plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+
+					
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
 	elif folded == 'y':
+		detrended = 'y' #### it doesn't make any sense to phase-fold an undetrended light curve
 		try:
 			self.fold(detrended=detrended, phase_offset=phase_offset)
 		except:
@@ -136,12 +192,61 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			self.fold(phase_offset=phase_offset)
 
 
+		#### PLOT THE NEIGHBORS 
+		for neighbor in neighbors:
+			neighbor_taus = self.neighbor_dict[neighbor].taus 
+			neighbor_dur = self.neighbor_dict[neighbor].duration_days 
+
+			neighbor_transit_idxs = []
+			for nt in neighbor_taus:
+				ntidxs = np.where((plot_stitched_times >= (nt - 2.5*neighbor_dur)) & (plot_stitched_times <= (nt + 2.5*neighbor_dur)))[0]
+				neighbor_transit_idxs.append(ntidxs)
+			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+			
+			if (nplots == 2) and (show_neighbors == 'y'):
+				ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+				#### DOESN'T MAKE SENSE TO PLOT NEIGHBORS IN THE PHASE FOLD
+				#ax[1].scatter(self.fold_times[neighbor_transit_idxs], self.fold_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+
+			#### DOESN'T MAKE SENSE TO SHOW NEIGHBORS IN THE PHASE FOLD!
+			#elif (nplots == 1) and (show_neighbors == 'y'):
+				#if detrended == 'y':
+				#	ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+				#else:
+				#	ax.scatter(self.fold_times[neighbor_transit_idxs], self.fold_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+		
+
+		### PLOT THE TARGET TRANSITS TOO!
+		if (nplots == 2) and (show_neighbors == 'y'):
+			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+			#ax[1].scatter(self.fold_times[target_transit_idxs], self.fold_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')			
+
+		#elif (nplots == 1) and (show_neighbors == 'y'):
+			#if detrended == 'y':
+			#	ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')	
+			#else:
+			#	ax.scatter(self.fold_times[target_transit_idxs], self.fold_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+
+
 		if binned == 'n':	
-			plt.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-			if show_errors == 'y':
-				plt.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+			if nplots == 2:
+				ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax[1].scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				if show_errors == 'y':
+					ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax[1].errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
+			elif nplots == 1:
+				ax.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				if show_errors == 'y':
+					ax.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+
 
 		elif binned == 'y':
+			detrended = 'y'
+			undetrended = 'n'
+			nplots = 1
+
 			fold_bin_step = 0.0005
 			fold_bins = np.arange(np.nanmin(self.fold_times), np.nanmax(self.fold_times), fold_bin_step)
 			fold_bin_fluxes = []
@@ -153,32 +258,63 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			fold_bin_fluxes, fold_bin_errors = np.array(fold_bin_fluxes), np.array(fold_bin_errors)
 
-			plt.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
-			plt.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
+			ax.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
+			ax.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
 
 		if (show_batman == 'y') and (detrended == 'y'):
 			try:
 				self.gen_batman(folded='y')
-				ax.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+				if nplots == 2:
+					ax[1].plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+				elif nplots == 1:
+					ax.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
 
 
 
+
 	if (self.telescope.lower() == 'kepler') or (self.telescope.lower() == 'k2'):
 		if folded=='y':
-			ax.set_xlabel('Phase')
+			if nplots == 2:
+				ax[1].set_xlabel('Phase')
+			elif nplots == 1:
+				ax.set_xlabel('Phase')
 		else:
-			ax.set_xlabel('BKJD')
+			if nplots == 2:
+				ax[1].set_xlabel('BKJD')
+			elif nplots == 1:
+				ax.set_xlabel('BKJD')
+
 	elif (self.telescope.lower() == 'tess'):
 		if folded=='y':
-			ax.set_xlabel('Phase')
+			if nplots == 2:
+				ax[1].set_xlabel('Phase')
+			elif nplots == 1:
+				ax.set_xlabel('Phase')
 		else:
-			ax.set_xlabel('BTJD')
-	ax.set_ylabel('Flux')
+			if nplots == 2:
+				ax[1].set_xlabel('BTJD')
+			elif nplots == 1:
+				ax.set_xlabel('BTJD')
+
+	if nplots == 2:		
+		ax[0].set_ylabel('Flux')
+		ax[1].set_ylabel('Normalized Flux')
+	elif nplots == 1:
+		if detrended == 'y':
+			ax.set_ylabel('Normalized Flux')
+		elif detrended == 'n':
+			ax.set_ylabel('Flux')
+
+
 	try:
-		ax.set_title(str(self.target))
+		if nplots == 2:
+			ax[0].set_title(str(self.target))
+		elif nplots == 1:
+			ax.set_title(str(self.target))
+
 	except:
 		pass
 
@@ -191,7 +327,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 	##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
 	try:
-		full_LC_residuals = stitched_fluxes-self.bat_fluxes
+		full_LC_residuals = stitched_fluxes_detrend-self.bat_fluxes
 		print('full_LC_residuals = ', full_LC_residuals)
 		full_LC_median = np.nanmedian(full_LC_residuals)
 		print('full_LC_median = ', full_LC_median)
@@ -239,11 +375,13 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		# place a text box in upper left in axes coords
 		#ax.text(0.75, 0.98, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
 		#ax.text(0.65, 0.98, textstr, transform=ax.transAxes, fontsize=10, verticalalignment='top', bbox=props)
-		anchored_text = AnchoredText(textstr, loc='upper left')
-		ax.add_artist(anchored_text)
-
-
-	plt.legend(loc='upper right')	
+		anchored_text = AnchoredText(textstr, loc='lower left')
+		if nplots == 2:
+			ax[0].add_artist(anchored_text)
+			ax[1].legend(loc='lower left')				
+		elif nplots == 1:
+			ax.add_artist(anchored_text)
+			ax.legend(loc='upper right')
 
 	if pltshow == 'y':	
 		plt.show()
@@ -254,8 +392,8 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	if (show_model_residuals == 'y') and (show_batman == 'y') and (folded == 'n'):
 		try:
 			##### plot the light curve with the model removed
-			plt.scatter(plot_stitched_times, stitched_fluxes-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs]-self.bat_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')		
+			plt.scatter(plot_stitched_times, stitched_fluxes_detrend-self.bat_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			plt.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs]-self.bat_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')		
 			plt.xlabel('BKJD')
 			plt.ylabel('fluxes - model')
 			plt.show()
