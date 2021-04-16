@@ -709,8 +709,8 @@ class MoonpyLC(object):
 
 	def get_neighbors(self, clobber_lc='y', save_to_file='y', mask_multiple=None):
 
-		if mask_multiple == None:
-			mask_multiple = self.mask_multiple
+		#if mask_multiple == None:
+		#	mask_multiple = self.mask_multiple
 
 		### this function will download grab all the information about your target's neighbors.
 		if self.telescope.lower() == 'user':
@@ -771,7 +771,7 @@ class MoonpyLC(object):
 			print('neighbor duration = '+str(neighbor_dur))
 
 			for nt in neighbor_taus:
-				ntidxs = np.where((np.hstack(self.times) >= (nt - (mask_multiple/2)*neighbor_dur)) & (np.hstack(self.times) <= (nt + (mask_multiple/2)*neighbor_dur)))[0]
+				ntidxs = np.where((np.hstack(self.times) >= (nt - (self.mask_multiple/2)*neighbor_dur)) & (np.hstack(self.times) <= (nt + (self.mask_multiple/2)*neighbor_dur)))[0]
 				for ntidx in ntidxs:
 					neighbor_transit_idxs.append(ntidx)
 					neighbor_transit_IDs.append(neighbor)
@@ -780,7 +780,7 @@ class MoonpyLC(object):
 		target_taus = self.taus
 		target_dur = self.duration_days
 		for tt in target_taus:
-			ttidxs = np.where((np.hstack(self.times) >= (tt - (mask_multiple/2)*target_dur)) & (np.hstack(self.times) <= (tt + (mask_multiple/2)*target_dur)))[0]
+			ttidxs = np.where((np.hstack(self.times) >= (tt - (self.mask_multiple/2)*target_dur)) & (np.hstack(self.times) <= (tt + (self.mask_multiple/2)*target_dur)))[0]
 			for ttidx in ttidxs:
 				neighbor_transit_idxs.append(ttidx)
 				neighbor_transit_IDs.append(self.target)
