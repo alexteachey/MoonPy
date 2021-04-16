@@ -84,7 +84,7 @@ class MoonpyLC(object):
 	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
 		self.mask_multiple = mask_multiple 
-		
+
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
 		original_target_input = targetID ### keep this around! sometimes you want it!
@@ -707,7 +707,11 @@ class MoonpyLC(object):
 
 
 
-	def get_neighbors(self, clobber_lc='y', save_to_file='y'):
+	def get_neighbors(self, clobber_lc='y', save_to_file='y', mask_multiple=None):
+
+		if mask_multiple == None:
+			mask_multiple = self.mask_multiple
+
 		### this function will download grab all the information about your target's neighbors.
 		if self.telescope.lower() == 'user':
 			neighbor_dict = {}
