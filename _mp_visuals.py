@@ -36,7 +36,7 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=mask_multiple, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=self.mask_multiple, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
 	if detrended == 'n':

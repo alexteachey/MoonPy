@@ -350,7 +350,7 @@ def initialize_priors(self, modelcode):
 
 ### DETRENDING!
 
-def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=mask_multiple, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
+def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=self.mask_multiple, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
 	exceptions_raised = 'n'
 
 	self.dmeth=dmeth
