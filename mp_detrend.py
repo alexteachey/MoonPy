@@ -78,7 +78,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model
 	errors_detrend = errors / fluxes
-	return flux_detrend, errors_detrend 
+	return best_model, flux_detrend, errors_detrend #### best model is the COFIAM
 
 
 
@@ -156,7 +156,7 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model
 	errors_detrend = errors / fluxes
-	return flux_detrend, errors_detrend 
+	return best_model, flux_detrend, errors_detrend 
 
 
 
@@ -237,7 +237,7 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model
 	errors_detrend = errors / fluxes
-	return times, flux_detrend, errors_detrend 
+	return best_model, times, flux_detrend, errors_detrend 
 
 
 
@@ -264,9 +264,11 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 		untrendy_interp = interp1d(unmasked_times, f_detrend, bounds_error=False, fill_value='extrapolate')
 		f_detrend = untrendy_interp(times)
 		sigma_detrend = untrendy.untrend(times, fluxes, errors)[1]
+		best_model = untrendy.fit_trend(times, fluxes, errors)
 	else:
 		f_detrend, sigma_detrend = untrendy.untrend(times, fluxes, errors)
-	return f_detrend, sigma_detrend
+		best_model = untrendy.fit_trend(times, fluxes, errors)
+	return best_model, f_detrend, sigma_detrend
 
 
 
@@ -316,10 +318,11 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 	gp_std = np.sqrt(np.diag(gp_cov))
 	flux_detrend = fluxes / gp_mu 
 	errors_detrend = errors / fluxes 
+	best_model = gp_mu
 	print(' ')
 	print(' ')
 
-	return flux_detrend, errors_detrend
+	return best_model, flux_detrend, errors_detrend
 
 
 
@@ -353,11 +356,12 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 
 	medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
 	flux_trend = medfilt_interp(times)	
+	best_model = flux_trend
 
 	detrend_errors = errors / fluxes 
 	detrend_fluxes = fluxes / flux_trend
 
-	return detrend_fluxes, detrend_errors
+	return best_model, detrend_fluxes, detrend_errors
 
 
 
@@ -407,7 +411,7 @@ def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredK
 
 	methmarg_fluxes = []
 	mathmarg_errors = []
-	
+
 
 	#### IDEALLY THIS DETRENDING IS ALREADY HAPPENING ON A QUARTER BY QUARTER BASIS -- YOU ARE NOT 
 	if include_cofiam == 'y':
@@ -456,6 +460,7 @@ def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredK
 	print('quarter_methmarg_median_fluxes.shape = ', quarter_methmarg_median_fluxes.shape)
 	print('quarter_methmarg_median_errors.shape = ', quarter_methmarg_median_errors.shape)
 
-	return quarter_methmarg_median_fluxes, quarter_methmarg_median_errors
+	#### have to duplicate the fluxes here to take the place of "best_model" output from others
+	return quarter_methmarg_median_fluxes, quarter_methmarg_median_fluxes, quarter_methmarg_median_errors
 
 

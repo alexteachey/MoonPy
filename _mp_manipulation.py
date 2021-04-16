@@ -365,7 +365,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 	### optional values for detrending method (dmeth) are "cofiam", "untrendy", "medfilt", "george", and "polyAM"
 	### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
 
-	master_detrend, master_error_detrend, master_flags_detrend = [], [], []
+	master_detrend_model, master_detrend, master_error_detrend, master_flags_detrend = [], [], [], []
 
 	nquarters = len(self.quarters)
 
@@ -615,9 +615,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					within cofiam.py.
 					"""
 					try:
-						fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 					except:
-						fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
 					flags_detrend = dflags
 
@@ -632,9 +632,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					"""
 					max_degree = max_order(dtimes, self.duration_days)
 					try:
-						fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 					except:
-						fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
 					flags_detrend = dflags
 
@@ -649,8 +649,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 					"""
 
-					fluxes_detrend, errors_detrend = [], []
-					all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], []
+					detrend_model, fluxes_detrend, errors_detrend = [], [], []
+					all_detrend_models, all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], [], []
 					
 
 					for ntau, tau in enumerate(self.taus):
@@ -669,15 +669,17 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 						
 						max_degree = max_order(local_window_duration, self.duration_days)
 
-						transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						detrend_model, transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 						
 						#### APPEND THIS LIST OF VALUES OT A BIGGER LIST
+						all_detrend_models.append(detrend_model)
 						all_transit_times_detrend.append(transit_times_detrend)
 						all_transit_fluxes_detrend.append(transit_fluxes_detrend)
 						all_transit_errors_detrend.append(transit_errors_detrend)
 
 					### MAKE THE BIG LIST A BIG ARRAY
 					try:
+						all_detrend_models = np.concatenate(all_detrend_models)
 						all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
 						all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
 						all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
@@ -688,9 +690,11 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					##### WHY? SO THAT IT IS THE SAME SIZE AS times, fluxes, and errors (for the way it saves in the file).
 					for dtidx, dt in enumerate(dtimes):
 						if dt in all_transit_times_detrend:
+							detrend_model.append(all_detrend_models[dtidx])
 							fluxes_detrend.append(all_transit_fluxes_detrend[dtidx])
 							errors_detrend.append(all_transit_errors_detrend[dtidx])
 						elif dt not in all_transit_times_detrend:
+							detrend_model.append(np.nan)
 							fluxes_detrend.append(np.nan)
 							errors_detrend.append(np.nan)
 						flags_detrend = dflags 
@@ -702,7 +706,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					print("UNTRENDY IMPLEMENTATION IS STILL BUGGY. BEWARE!")
 					mask_transit_idxs = mask_transit_idxs.astype(int)
 					print('mask_transit_idxs = ', mask_transit_idxs)
-					fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+					detrend_model, fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 					#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 					flags_detrend = dflags
 
@@ -710,7 +714,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 				elif dmeth == 'george':
 					print("GEORGE IMPLEMENTATION IS STILL BUGGY. BEWARE!")
-					fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+					detrend_model, fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
 					#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
 					flags_detrend = dflags
 
@@ -718,7 +722,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 				elif dmeth == 'medfilt':
 					print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
-					fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
+					detrend_model, fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
 					flags_detrend = dflags
 
 
@@ -732,7 +736,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 					
 					print('RUNNING METHOD MARGINALIZATION! MAKE SURE YOU CHECK YOUR INPUTS!')
-					fluxes_detrend, errors_detrend = methmarg_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  GP_kernel=GP_kernel, metric=GP_metric, kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+					detrend_model, fluxes_detrend, errors_detrend = methmarg_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  GP_kernel=GP_kernel, metric=GP_metric, kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 					flags_detrend = dflags
 
 
@@ -740,7 +744,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 			except:
 				traceback.print_exc()
 				print('DETRENDING FAILED FOR THIS QUARTER.')
-				fluxes_detrend, errors_detrend = dfluxes, derrors 
+				detrend_model, fluxes_detrend, errors_detrend = dfluxes, dfluxes, derrors 
 				flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
 				exceptions_raised = 'y'
 
@@ -752,16 +756,19 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 
 		if len(self.quarters) > 1:
+			master_detrend_model.append(np.array(detrend_model))
 			master_detrend.append(np.array(fluxes_detrend))
 			master_error_detrend.append(np.array(errors_detrend))
 			master_flags_detrend.append(np.array(flags_detrend))
 		elif len(self.quarters) == 1:
+			master_detrend_model = np.array(master_detrend_model)
 			master_detrend = np.array(fluxes_detrend)
 			master_error_detrend = np.array(errors_detrend)
 			master_flags_detrend = np.array(flags_detrend)
 
 
 	### this is the first initialization of the detrended fluxes.
+	self.detrend_model = master_detrend_model
 	self.fluxes_detrend = master_detrend
 	self.errors_detrend = master_error_detrend
 	self.flags_detrend = master_flags_detrend 
@@ -781,30 +788,31 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 	if save_lc == 'y':
 		lcfile = open(self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 		if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
-			lcfile.write('BKJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			lcfile.write('BKJD\tfluxes\terrors\tdetrend_model\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 		elif self.telescope.lower() == 'tess':
-			lcfile.write('BTJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			lcfile.write('BTJD\tfluxes\terrors\tdetrend_model\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 		elif self.telescope.lower() == 'user':
-			lcfile.write('BJD\tfluxes\terrors\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
+			lcfile.write('BJD\tfluxes\terrors\tdetrend_model\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 		
 		### overwrite the existing file!
+		self.detrend_model = np.array(self.detrend_model, dtype=object)
 		self.fluxes_detrend = np.array(self.fluxes_detrend, dtype=object)
 		self.errors_detrend = np.array(self.errors_detrend, dtype=object)
 		self.flags_detrend = np.array(self.flags_detrend, dtype=object)
-		lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
+		lc_times, lc_fluxes, lc_errors, lc_detrend_model, lc_fluxes_detrend, lc_errors_detrend, lc_flags = self.times, self.fluxes, self.errors, self.detrend_model, self.fluxes_detrend, self.errors_detrend, self.flags_detrend
 
 		if len(self.quarters) > 1:
 			for qidx in np.arange(0,len(self.quarters),1):
 				qtq = self.quarters[qidx]
-				qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
+				qtimes, qfluxes, qerrors, qdetrend_model, qfluxes_detrend, qerrors_detrend, qflags = lc_times[qidx], lc_fluxes[qidx], lc_errors[qidx], lc_detrend_model[qidx], lc_fluxes_detrend[qidx], lc_errors_detrend[qidx], lc_flags[qidx]
 
-				for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
-					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
+				for qt, qf, qe, qdm, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qdetrend_model, qfluxes_detrend, qerrors_detrend, qflags):
+					lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qdm)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(qtq)+'\n')
 
 				print('quarter written to file.')
 
 		elif len(self.quarters) == 1:
-			qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags = lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags
+			qtimes, qfluxes, qerrors, qdetrend_model, qfluxes_detrend, qerrors_detrend, qflags = lc_times, lc_fluxes, lc_errors, lc_detrend_model, lc_fluxes_detrend, lc_errors_detrend, lc_flags
 			
 			if qtimes.shape[0] == 1:
 				qtimes = qtimes[0]
@@ -812,6 +820,13 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 				qfluxes = qfluxes[0]
 			if qerrors.shape == 1:
 				qerrors = qerrors[0]
+
+			try:
+				if qdetrend_model.shape == 1:
+					qdetrend_model = qdetrend_model[0]
+			except:
+				if type(qdetrend_model) == list:
+					qdetrend_model = qdetrend_model[0]
 
 			try:
 				if qfluxes_detrend.shape == 1:
@@ -835,7 +850,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					if type(qflags) == list:
 						qflags = qflags[0]
 
-			for qt, qf, qe, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qfluxes_detrend, qerrors_detrend, qflags):
+			for qt, qf, qe, qdm, qfd, qed, qfl in zip(qtimes, qfluxes, qerrors, qdetrend_model, qfluxes_detrend, qerrors_detrend, qflags):
 				lcfile.write(str(qt)+'\t'+str(qf)+'\t'+str(qe)+'\t'+str(qfd)+'\t'+str(qed)+'\t'+str(qfl)+'\t'+str(self.quarters[0])+'\n')
 
 		lcfile.close()
