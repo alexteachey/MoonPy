@@ -81,7 +81,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
 		### treat the times, fluxes and errors as a single quarter
@@ -765,7 +765,7 @@ class MoonpyLC(object):
 			print('neighbor duration = '+str(neighbor_dur))
 
 			for nt in neighbor_taus:
-				ntidxs = np.where((np.hstack(self.times) >= (nt - 2.5*neighbor_dur)) & (np.hstack(self.times) <= (nt + 2.5*neighbor_dur)))[0]
+				ntidxs = np.where((np.hstack(self.times) >= (nt - (mask_multiple/2)*neighbor_dur)) & (np.hstack(self.times) <= (nt + (mask_multiple/2)*neighbor_dur)))[0]
 				for ntidx in ntidxs:
 					neighbor_transit_idxs.append(ntidx)
 					neighbor_transit_IDs.append(neighbor)
@@ -774,7 +774,7 @@ class MoonpyLC(object):
 		target_taus = self.taus
 		target_dur = self.duration_days
 		for tt in target_taus:
-			ttidxs = np.where((np.hstack(self.times) >= (tt - 2.5*target_dur)) & (np.hstack(self.times) <= (tt + 2.5*target_dur)))[0]
+			ttidxs = np.where((np.hstack(self.times) >= (tt - (mask_multiple/2)*target_dur)) & (np.hstack(self.times) <= (tt + (mask_multiple/2)*target_dur)))[0]
 			for ttidx in ttidxs:
 				neighbor_transit_idxs.append(ttidx)
 				neighbor_transit_IDs.append(self.target)

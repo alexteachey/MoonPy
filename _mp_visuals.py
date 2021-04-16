@@ -36,7 +36,7 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=mask_multiple, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
 	if detrended == 'n':
@@ -93,7 +93,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	target_dur = self.duration_days
 	target_transit_idxs = []
 	for tt in target_taus:
-		ttidxs = np.where((stitched_times >= (tt - 2.5*target_dur)) & (stitched_times <= (tt + 2.5*target_dur)))[0]
+		ttidxs = np.where((stitched_times >= (tt - (mask_multiple/2)*target_dur)) & (stitched_times <= (tt + (mask_multiple/2)*target_dur)))[0]
 		target_transit_idxs.append(ttidxs)
 	target_transit_idxs = np.hstack(target_transit_idxs)
 
@@ -148,7 +148,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			neighbor_transit_idxs = []
 			for nt in neighbor_taus:
-				ntidxs = np.where((stitched_times >= (nt - 2.5*neighbor_dur)) & (stitched_times <= (nt + 2.5*neighbor_dur)))[0]
+				ntidxs = np.where((stitched_times >= (nt - (mask_multiple/2)*neighbor_dur)) & (stitched_times <= (nt + (mask_multiple/2)*neighbor_dur)))[0]
 				neighbor_transit_idxs.append(ntidxs)
 			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 			
@@ -204,7 +204,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			neighbor_transit_idxs = []
 			for nt in neighbor_taus:
-				ntidxs = np.where((plot_stitched_times >= (nt - 2.5*neighbor_dur)) & (plot_stitched_times <= (nt + 2.5*neighbor_dur)))[0]
+				ntidxs = np.where((plot_stitched_times >= (nt - (mask_multiple/2)*neighbor_dur)) & (plot_stitched_times <= (nt + (mask_multiple/2)*neighbor_dur)))[0]
 				neighbor_transit_idxs.append(ntidxs)
 			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 			

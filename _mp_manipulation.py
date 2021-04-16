@@ -258,7 +258,7 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 				neighbor_taus = self.neighbor_dict[neighbor].taus
 				for nt in neighbor_taus:
 					if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
-						ntidxs = np.where((cnn_times >= nt-(2.5*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+(2.5*self.neighbor_dict[neighbor].duration_days)))[0]
+						ntidxs = np.where((cnn_times >= nt-((max_multiple/2)*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+((max_multiple/2)*self.neighbor_dict[neighbor].duration_days)))[0]
 						flag_idxs.append(ntidxs)
 			#try:
 			if len(flag_idxs) > 0:
@@ -350,7 +350,7 @@ def initialize_priors(self, modelcode):
 
 ### DETRENDING!
 
-def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
+def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=mask_multiple, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
 	exceptions_raised = 'n'
 
 	self.dmeth=dmeth
@@ -504,7 +504,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 			for qtt in quarter_transit_taus:
 				#### FOR EACH TRANSIT IN THIS QUARTER.... 
 
-				in_transit_idxs = np.where((dtimes >= qtt - 2.5*self.duration_days) & (dtimes <= qtt + 2.5*self.duration_days))[0]
+				in_transit_idxs = np.where((dtimes >= qtt - (max_multiple/2)*self.duration_days) & (dtimes <= qtt + (max_multiple/2)*self.duration_days))[0]
 				mask_transit_idxs.append(in_transit_idxs)
 			
 			try:

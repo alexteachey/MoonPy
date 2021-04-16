@@ -926,7 +926,7 @@ def find_neighbors(self, is_neighbor='n'):
 
 
 
-def find_TTVs(self, show_plot='n', yvar='OCmins', window=2.5):
+def find_TTVs(self, show_plot='n', yvar='OCmins', mask_multiple=mask_multiple):
 	OC_mins = []
 	OC_days = []
 	OC_over_durs = []
@@ -942,7 +942,7 @@ def find_TTVs(self, show_plot='n', yvar='OCmins', window=2.5):
 			if tau >= np.nanmin(qtimes) and tau <= np.nanmax(qtimes):
 				### this tau is in the quarter
 				### grab times up to 3x the transit duration on either side of the the tau.
-				transit_idxs = np.where((qtimes >= tau - (window*self.duration_days)) & (qtimes <= tau + (window*self.duration_days)))[0]
+				transit_idxs = np.where((qtimes >= tau - ((mask_multiple/2)*self.duration_days)) & (qtimes <= tau + ((mask_multiple/2)*self.duration_days)))[0]
 				transit_times = qtimes[transit_idxs]
 				transit_fluxes = qfluxes[transit_idxs]
 				numerator = np.nansum((1 - transit_fluxes) * transit_times)
