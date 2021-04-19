@@ -333,7 +333,7 @@ class MoonpyLC(object):
 					perrors = np.array(pandafile['errors'])
 					pquarters = np.array(pandafile['quarter'])
 					pflags = np.array(pandafile['flags'])
-					
+
 					try:
 						pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
 						perrors_detrend = np.array(pandafile['errors_detrended'])
@@ -342,14 +342,21 @@ class MoonpyLC(object):
 						pfluxes_detrend = pfluxes
 						perrors_detrend = perrors 
 
+					try:
+						pdetrend_model = np.array(pandafile['detrend_model'])
+					except:
+						print('could not load detrend model.')
+						pdetrend_model = np.linspace(1,1,len(pfluxes))
+
 					unique_quarters = np.unique(pquarters)
-					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], []
+					lc_times, lc_fluxes, lc_errors, lc_detrend_model, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], [], []
 
 					for uq in unique_quarters:
 						uqidxs = np.where(pquarters == uq)[0]
 						lc_times.append(ptimes[uqidxs])
 						lc_fluxes.append(pfluxes[uqidxs])
 						lc_errors.append(perrors[uqidxs])
+						lc_detrend_model.append(pdetrend_model[uqidxs])
 						lc_flags.append(pflags[uqidxs])
 						lc_quarters.append(uq)
 						
@@ -368,10 +375,13 @@ class MoonpyLC(object):
 					try:
 						if len(lc_quarters) > 1:
 							lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend, dtype=object), np.array(lc_errors_detrend, dtype=object)
+							lc_detrend_model = np.array(lc_detrend_model, dtype=object)
 						else:
 							lc_fluxes_detrend, lc_errors_detrend = np.array(lc_fluxes_detrend), np.array(lc_errors_detrend)
+							lc_detrend_model = np.array(lc_detrend_model)
 
 						self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
+						self.detrend_model = lc_detrend_model 
 					except:
 						pass
 
