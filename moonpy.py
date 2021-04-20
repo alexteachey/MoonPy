@@ -83,6 +83,8 @@ class MoonpyLC(object):
 
 	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
+		#targetID = targetID.lower()
+
 		self.mask_multiple = mask_multiple 
 
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
@@ -207,20 +209,20 @@ class MoonpyLC(object):
 
 		### check to see if a file already exists!
 
-		if (clobber == None) and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
-			print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
+		if (clobber == None) and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv exists.')
 			clobber = input('Clobber? y/n: ')
 
-		if (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
-			print(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv exists.')
+		if (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv exists.')
 			load_lc = 'y'
-			print('loading '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')			
+			print('loading '+self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')			
 			
-		elif (clobber == 'y') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv')):
-			print('CLOBBERING '+self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv.')			
+		elif (clobber == 'y') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
+			print('CLOBBERING '+self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv.')			
 			load_lc = 'n'
 
-		elif (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID)+'_'+self.telescope+'_lightcurve.tsv') == False):
+		elif (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv') == False):
 			load_lc = 'n'
 
 		else:
@@ -307,12 +309,12 @@ class MoonpyLC(object):
 
 			try:
 				try:
-					pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+					pandafile = pandas.read_csv(self.savepath+'/'+target_name.lower()+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
 				
 				except:
 				
 					try:
-						pandafile = pandas.read_csv(self.savepath+'/'+target_name+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
+						pandafile = pandas.read_csv(self.savepath+'/'+target_name.lower()+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 					except:
 						print("could not load the light curve from file. Will download.")
 						load_lc = 'n'
@@ -677,7 +679,7 @@ class MoonpyLC(object):
 		try:
 			if save_lc == 'y':
 				### write to a file!
-				lcfile = open(self.savepath+'/'+str(target_name)+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+				lcfile = open(self.savepath+'/'+str(target_name).lower()+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 				if self.telescope.lower() == 'user':
 					lcfile.write('BJD\tfluxes\terrors\tflags\tquarter\n')
 				elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
@@ -814,10 +816,10 @@ class MoonpyLC(object):
 
 		if save_to_file == 'y':
 			try:
-				lcfile = open(self.savepath+'/'+self.target+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+				lcfile = open(self.savepath+'/'+self.target.lower()+"_"+self.telescope+"_lightcurve.tsv", mode='r')
 			except:
-				lcfile = open(self.savepath+'/'+self.target+'_lightcurve.tsv', mode='r') ### for older files.
-			lcfile_new = open(self.savepath+"/"+self.target+"_"+self.telescope+"_lc_temp.tsv", mode='w')
+				lcfile = open(self.savepath+'/'+self.target.lower()+'_lightcurve.tsv', mode='r') ### for older files.
+			lcfile_new = open(self.savepath+"/"+self.target.lower()+"_"+self.telescope+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
@@ -840,7 +842,7 @@ class MoonpyLC(object):
 			lcfile.close()
 			lcfile_new.close()
 			### rename the file.
-			os.system('mv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv')
+			os.system('mv '+self.savepath+'/'+self.target.lower()+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target.lower()+'_'+self.telescope+'_lightcurve.tsv')
 
 		self.neighbor_transit_times = np.array(neighbor_transit_times)
 		self.neighbor_transit_list = neighbor_transit_list
