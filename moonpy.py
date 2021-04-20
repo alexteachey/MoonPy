@@ -339,16 +339,13 @@ class MoonpyLC(object):
 					try:
 						pfluxes_detrend = np.array(pandafile['fluxes_detrended'])
 						perrors_detrend = np.array(pandafile['errors_detrended'])
+						pdetrend_model = np.array(pandafile['detrend_model'])						
+					
 					except:
 						print("could not load detrended fluxes.")
-						pfluxes_detrend = pfluxes
-						perrors_detrend = perrors 
-
-					try:
-						pdetrend_model = np.array(pandafile['detrend_model'])
-					except:
-						print('could not load detrend model.')
-						pdetrend_model = np.linspace(1,1,len(pfluxes))
+						pfluxes_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
+						perrors_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
+						pdetrend_model = np.linspace(np.nan, np.nan, len(pfluxes))
 
 					unique_quarters = np.unique(pquarters)
 					lc_times, lc_fluxes, lc_errors, lc_detrend_model, lc_fluxes_detrend, lc_errors_detrend, lc_flags, lc_quarters = [], [], [], [], [], [], [], []
@@ -358,20 +355,25 @@ class MoonpyLC(object):
 						lc_times.append(ptimes[uqidxs])
 						lc_fluxes.append(pfluxes[uqidxs])
 						lc_errors.append(perrors[uqidxs])
-						lc_detrend_model.append(pdetrend_model[uqidxs])
 						lc_flags.append(pflags[uqidxs])
 						lc_quarters.append(uq)
 						
 						try:
 							lc_fluxes_detrend.append(pfluxes_detrend[uqidxs])
 							lc_errors_detrend.append(perrors_detrend[uqidxs])
+							lc_detrend_model.append(pdetrend_model[uqidxs])	
+
 						except:
-							pass
+							#pass
+							lc_fluxes_detrend.append(np.nan)
+							lc_errors_detrend.append(np.nan)
+							lc_detrend_model.append(np.nan)
 		
 					if len(lc_quarters) > 1:
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object), np.array(lc_quarters, dtype=object)
 					else:
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = np.array(lc_times), np.array(lc_fluxes), np.array(lc_errors), np.array(lc_flags), np.array(lc_quarters)
+					
 					self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters
 
 					try:
@@ -384,6 +386,7 @@ class MoonpyLC(object):
 
 						self.fluxes_detrend, self.errors_detrend = lc_fluxes_detrend, lc_errors_detrend 
 						self.detrend_model = lc_detrend_model 
+					
 					except:
 						pass
 

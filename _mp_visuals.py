@@ -37,8 +37,9 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
-	if 'detrend_model' not in dir(self):
+	if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
 		detrended = 'n'
+		show_model = 'n'
 
 
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
@@ -344,7 +345,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	try:
 		batman_transit_depth = (1 - np.nanmin(self.bat_fluxes))*1e6 #### ppm
 	except:
-		batman_transit_depth = None
+		batman_transit_depth = np.nan
 
 
 	##### ANALYZE WHETHER THE TARGET RESIDUALS ARE OFF
