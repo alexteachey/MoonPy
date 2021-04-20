@@ -37,6 +37,10 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+	if 'detrend_model' not in dir(self):
+		detrended = 'n'
+
+
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
 	#if mask_multiple == None:
@@ -68,7 +72,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = self.times, self.fluxes, self.errors, self.fluxes, self.errors, self.flags, self.quarters		
 
 
-
 	### first step is to stitch the light curve together
 	if type(quarters) != type('all'):
 		### means you want only selected quarters, which should be in an array!
@@ -80,15 +83,19 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		plot_times, plot_fluxes, plot_errors, plot_fluxes_detrend, plot_errors_detrend, plot_flags, plot_quarters = plot_times[qstokeep_idxs], plot_fluxes[qstokeep_idxs], plot_errors[qstokeep_idxs], plot_fluxes_detrend[qstokeep_idxs], plot_errors_detrend[qstokeep_idxs], plot_flags[qstokeep_idxs], plot_quarters[qstokeep_idxs]
 
-	#if detrended == 'y':
-	stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_fluxes_detrend)), np.hstack((plot_errors_detrend)), np.hstack((plot_flags)), np.hstack((plot_quarters))
-	#else:
-	#	stitched_times, stitched_fluxes, stitched_errors, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_flags)), np.hstack((plot_quarters))			
+	if detrended == 'y':
+		stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_fluxes_detrend)), np.hstack((plot_errors_detrend)), np.hstack((plot_flags)), np.hstack((plot_quarters))
+	else:
+		stitched_times, stitched_fluxes, stitched_errors, stitched_flags, stitched_quarters = np.hstack((plot_times)), np.hstack((plot_fluxes)), np.hstack((plot_errors)), np.hstack((plot_flags)), np.hstack((plot_quarters))			
 
 	if include_flagged=='n':
 		### remove all data points with qflag != 0
 		badflag_idxs = np.where(stitched_flags != 0)[0]
-		stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_fluxes_detrend, badflag_idxs), np.delete(stitched_errors_detrend, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
+		if detrended == 'y':
+			stitched_times, stitched_fluxes, stitched_errors, stitched_fluxes_detrend, stitched_errors_detrend, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_fluxes_detrend, badflag_idxs), np.delete(stitched_errors_detrend, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
+		else:
+			stitched_times, stitched_fluxes, stitched_errors, stitched_flags = np.delete(stitched_times, badflag_idxs), np.delete(stitched_fluxes, badflag_idxs), np.delete(stitched_errors, badflag_idxs), np.delete(stitched_flags, badflag_idxs)
+
 		assert np.all(stitched_flags == 0)
 
 
@@ -146,7 +153,10 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				if show_errors == 'y':
 					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 				if show_model == 'y':
-					ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+					try:
+						ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+					except:
+						print('detrend_model not available.')
 
 
 		for neighbor in neighbors:
