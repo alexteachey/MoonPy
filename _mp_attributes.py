@@ -299,7 +299,7 @@ def find_planet_row(self, row_known='n'):
 
 			elif str(self.target).lower().startswith('kic'):
 				NEA_targetname = int(self.target[4:])
-				mast_rowidx = np.where(np.char.lower(mast_data['kepid']) == NEA_targetname.lower())[0]
+				mast_rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
 
 			elif str(self.target).lower().startswith('koi'):
 				NEA_targetname = str(self.target[4:])
