@@ -294,12 +294,12 @@ def find_planet_row(self, row_known='n'):
 					NEA_targetname = self.target
 				else: #### there isn't a space, so add it!
 					NEA_targetname = self.target[:-1]+' '+target_letter
-				mast_rowidx = np.where(mast_data['kepler_name'] == NEA_targetname)[0]
+				mast_rowidx = np.where(np.char.lower(mast_data['kepler_name']) == NEA_targetname.lower())[0]
 
 
 			elif str(self.target).lower().startswith('kic'):
 				NEA_targetname = int(self.target[4:])
-				mast_rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
+				mast_rowidx = np.where(np.char.lower(mast_data['kepid']) == NEA_targetname.lower())[0]
 
 			elif str(self.target).lower().startswith('koi'):
 				NEA_targetname = str(self.target[4:])
@@ -311,7 +311,7 @@ def find_planet_row(self, row_known='n'):
 					NEA_targetname = 'K000'+str(NEA_targetname)
 				elif len(NEA_targetname) == 4: ### of the form 1.01
 					NEA_targetname = 'K0000'+str(NEA_targetname)
-				mast_rowidx = np.where(mast_data['kepoi_name'] == NEA_targetname)[0]
+				mast_rowidx = np.where(np.char.lower(mast_data['kepoi_name']) == NEA_targetname.lower())[0]
 				self.NEA_targetname = NEA_targetname
 
 
@@ -320,7 +320,7 @@ def find_planet_row(self, row_known='n'):
 				try:
 					float(self.target[-1]) ### if this works, query the mast_data['pl_hostname'] because you end with a number!
 					NEA_taretname = self.target 
-					mast_rowidx = np.where(mast_data['pl_hostname'] == self.target)[0]
+					mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == self.target.lower())[0]
 
 				except:
 					### implies the last thing is a number
@@ -329,7 +329,7 @@ def find_planet_row(self, row_known='n'):
 						NEA_targetname = self.target
 					else:
 						NEA_targetname = self.target[:-1]+' '+target_letter
-					mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
+					mast_rowidx = np.where(np.char.lower(mast_data['pl_name']) == NEA_targetname.lower())[0]
 
 			self.mast_rowidx = mast_rowidx 
 
@@ -353,7 +353,7 @@ def find_planet_row(self, row_known='n'):
 					NEA_targetname = self.target
 				else:
 					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
-				mast_rowidx = np.where(mast_data['pl_name'] == NEA_targetname)[0]
+				mast_rowidx = np.where(np.char.lower(mast_data['pl_name']) == NEA_targetname.lower())[0]
 				exofop_rowidx = np.nan
 				print('mast_rowidx = ', mast_rowidx)
 				print('exofop_rowidx = ', exofop_rowidx) 
@@ -366,13 +366,13 @@ def find_planet_row(self, row_known='n'):
 					if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
 						NEA_targetname = NEA_targetname[1:]
 				try:
-					exofop_rowidx = np.where(exofop_data['EPIC ID'] == NEA_targetname)[0]
+					exofop_rowidx = np.where(np.char.lower(exofop_data['EPIC ID']) == NEA_targetname.lower())[0]
 				except:
 					print('unable to extract the exofop_rowidx')
 					exofop_rowidx = np.nan 
 
 				try:
-					mast_rowidx = np.where(mast_data['epic_name'] == NEA_targetname)[0]
+					mast_rowidx = np.where(np.char.lower(mast_data['epic_name']) == NEA_targetname.lower())[0]
 				except:
 					print('unable to extract the mast_rowidx')
 					mast_rowidx = np.nan
@@ -404,7 +404,7 @@ def find_planet_row(self, row_known='n'):
 				ticnum = NEA_targetname[3:]
 				if (ticnum.startswith(' ')) or (ticnum.startswith('-')):
 					ticnum = ticnum[1:]
-				exofop_rowidx = np.where(exofop_data['TIC ID'] == int(ticnum))[0]
+				exofop_rowidx = np.where(np.array(exofop_data['TIC ID']).astype(int) == int(ticnum))[0]
 				print('looking for '+str(ticnum)+' in the exofop database.')
 				#print('rowidx (pre-clean) = ', rowidx)
 				if len(exofop_rowidx) > 1:
@@ -418,13 +418,13 @@ def find_planet_row(self, row_known='n'):
 				if (toinum.startswith(' ')) or (toinum.startswith('-')):
 					toinum = toinum[1:]
 				print('looking for '+str(toinum)+' in the exofop database.')
-				exofop_rowidx = np.where(exofop_data['TOI'] == float(toinum))[0]
+				exofop_rowidx = np.where(np.array(exofop_data['TOI']).astype(float) == float(toinum))[0]
 				print('exofop_rowidx = ', exofop_rowidx)
 				mast_rowidx = np.nan 
 
 			else:
 				### in this case, you have to look in the mast list!
-				mast_rowidx = np.where(mast_data['pl_hostname'] == NEA_targetname)[0] ### in "confirmed" planets.
+				mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == NEA_targetname.lower())[0] ### in "confirmed" planets.
 				nfound = 0
 				exofop_rowidxs = []
 				for idx in np.arange(0,len(exofop_data['Comments']),1): ### have to use a loop here.
@@ -464,7 +464,7 @@ def find_planet_row(self, row_known='n'):
 					exofop_rowidx = np.nan
 					try:
 						for alias in self.aliases:
-							mast_rowidx = np.where(mast_data['pl_hostname'] == alias)[0]
+							mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == alias.lower())[0]
 							if len(mast_rowidx) != 0:
 								break
 					except:
