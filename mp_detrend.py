@@ -64,7 +64,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 			print(' ')
 			print(' ')
 		except:
-			traceback.print_exc()
+			best_model, best_degree, best_DW, max_degree = np.array(unmasked_fluxes, dtype=np.float64), np.nan, np.nan, np.nan
 			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
 
 	### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values

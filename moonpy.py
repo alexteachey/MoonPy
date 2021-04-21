@@ -54,11 +54,11 @@ plt.rcParams["font.family"] = 'serif'
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
-	central_data_dir = '/data/tethys/Documents/Central_Data/'
+	central_data_dir = '/data/tethys/Documents/Central_Data'
 elif ('Alexs-Macbook') in hostname:
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 elif 'umbriel' in hostname:
-	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data'
 else:
 	### store central_data within MoonPy directory
 	if os.path.exists(moonpydir+'/Central_Data'):
@@ -195,6 +195,8 @@ class MoonpyLC(object):
 		elif self.telescope.lower() == 'tess':
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
 
+		savepath = nospaces(savepath)
+
 		if os.path.exists(savepath):
 			pass
 		else:
@@ -209,20 +211,20 @@ class MoonpyLC(object):
 
 		### check to see if a file already exists!
 
-		if (clobber == None) and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
-			print(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv exists.')
+		if (clobber == None) and (os.path.exists(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv exists.')
 			clobber = input('Clobber? y/n: ')
 
-		if (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
-			print(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv exists.')
+		if (clobber == 'n') and (os.path.exists(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv')):
+			print(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv exists.')
 			load_lc = 'y'
-			print('loading '+self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')			
+			print('loading '+self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv')			
 			
-		elif (clobber == 'y') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv')):
-			print('CLOBBERING '+self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv.')			
+		elif (clobber == 'y') and (os.path.exists(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv')):
+			print('CLOBBERING '+self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv.')			
 			load_lc = 'n'
 
-		elif (clobber == 'n') and (os.path.exists(self.savepath+'/'+str(targetID).lower()+'_'+self.telescope+'_lightcurve.tsv') == False):
+		elif (clobber == 'n') and (os.path.exists(self.savepath+'/'+nospaces(str(targetID).lower())+'_'+self.telescope+'_lightcurve.tsv') == False):
 			load_lc = 'n'
 
 		else:
@@ -309,12 +311,12 @@ class MoonpyLC(object):
 
 			try:
 				try:
-					pandafile = pandas.read_csv(self.savepath+'/'+target_name.lower()+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
+					pandafile = pandas.read_csv(self.savepath+'/'+nospaces(target_name.lower())+'_'+self.telescope+'_lightcurve.tsv', delimiter='\t')
 				
 				except:
 				
 					try:
-						pandafile = pandas.read_csv(self.savepath+'/'+target_name.lower()+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
+						pandafile = pandas.read_csv(self.savepath+'/'+nospaces(target_name.lower())+'_lightcurve.tsv', delimiter='\t') ### older files lacked telescope information.
 					except:
 						print("could not load the light curve from file. Will download.")
 						load_lc = 'n'
@@ -408,9 +410,9 @@ class MoonpyLC(object):
 			### USER-INPUT HANDLING
 			if telescope.lower() == 'user':
 				lc_times, lc_fluxes, lc_errors, lc_flags, lcquarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
-				mast_rowidx = np.nan 
-				mast_data = ascii.read('confirmed_planets.txt')
-				mast_columns = mast_data.columns
+				NEA_rowidx = np.nan 
+				NEA_data = ascii.read('confirmed_planets.txt')
+				NEA_columns = NEA_data.columns
 				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
 				exofop_columns = exofop_data.columns
 
@@ -419,7 +421,7 @@ class MoonpyLC(object):
 			### KEPLER HANDLING
 			elif telescope.lower() == 'kepler':
 				print('downloading via kplr...')
-				mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
+				NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
 					if user_supplied == 'n':
@@ -447,15 +449,35 @@ class MoonpyLC(object):
 						traceback.print_exc()
 				print('downloaded.')
 
+				if np.isfinite(NEA_rowidx) == False:
+					try:
+						self.find_aliases()
+						print("LOOKING FOR ALIASES IN NEA data.")
+						for alias in self.aliases:
+							alias_NEA_rowidx = self.find_planet_row(alias=alias, row_known='n')[0] ### exofop data is available for TESS targets without a login.			
+							try:
+								NEA_rowidx = int(alias_NEA_rowidx)
+								break
+							except:
+								continue
+					except:
+						pass
+
+				print('[mp] NEA_rowidx = ', NEA_rowidx)
+				self.NEA_rowidx = NEA_rowidx 
+
+
+
+
 
 
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
 				#try:
-				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
+				NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
 				self.NEA_targetname = NEA_targetname
 
-				print('mast_rowidx = ', mast_rowidx)
+				print('NEA_rowidx = ', NEA_rowidx)
 				print('exofop_rowidx = ', exofop_rowidx)
 				print('NEA_targetname = ', NEA_targetname)
 
@@ -472,46 +494,174 @@ class MoonpyLC(object):
 
 				print('k2 lc_quarters = ', lc_quarters)
 
+				if np.isfinite(NEA_rowidx) == False:
+					try:
+						self.find_aliases()
+						print("LOOKING FOR ALIASES IN NEA data.")
+						for alias in self.aliases:
+							alias_NEA_rowidx = self.find_planet_row(alias=alias, row_known='n')[0] ### exofop data is available for TESS targets without a login.			
+							try:
+								NEA_rowidx = int(alias_NEA_rowidx)
+								break
+							except:
+								continue
+					except:
+						pass
+
+
+				if np.isfinite(exofop_rowidx) == False:
+					try:
+						self.find_aliases()
+						print('LOOKING FOR ALIASES in ExoFOP data.')
+						for alias in self.aliases:
+							alias_exofop_rowidx = self.find_planet_row(alias=alias, row_known='n')[1] ### exofop data is available for TESS targets without a login.			
+							try:
+								exofop_rowidx = int(alias_exofop_rowidx)
+								break
+							except:
+								continue
+					except:
+						pass
+
+
+				print('[mp] NEA_rowidx = ', NEA_rowidx)
+				print('[mp] exofop_rowidx = ', exofop_rowidx)
+				self.NEA_rowidx = NEA_rowidx
+				self.exofop_rowidx = exofop_rowidx
+
+
 
 
 
 
 			### TESS HANDLING
 			elif telescope.lower() == 'tess':
-				mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.
+				NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.			
+				try:
+					NEA_rowidx = int(NEA_rowidx)
+				except:
+					pass
+
+				try:
+					exofop_rowidx = int(exofop_rowidx)
+				except:
+					pass
+
+				if np.isfinite(NEA_rowidx) == False:
+					try:
+						self.find_aliases()
+						print("LOOKING FOR ALIASES IN NEA data.")
+						for alias in self.aliases:
+							alias_NEA_rowidx = self.find_planet_row(alias=alias, row_known='n')[0] ### exofop data is available for TESS targets without a login.			
+							try:
+								NEA_rowidx = int(alias_NEA_rowidx)
+								break
+							except:
+								continue
+					except:
+						pass
+
+				if np.isfinite(exofop_rowidx) == False:
+					try:
+						self.find_aliases()
+						print('LOOKING FOR ALIASES in ExoFOP data.')
+						for alias in self.aliases:
+							alias_exofop_rowidx = self.find_planet_row(alias=alias, row_known='n')[1] ### exofop data is available for TESS targets without a login.			
+							try:
+								exofop_rowidx = int(alias_exofop_rowidx)
+								break
+							except:
+								continue
+					except:
+						pass
+
+
+				print('[mp] NEA_rowidx = ', NEA_rowidx)
+				print('[mp] exofop_rowidx = ', exofop_rowidx)
+				self.NEA_rowidx = NEA_rowidx
+				self.exofop_rowidx = exofop_rowidx
 				self.NEA_targetname = NEA_targetname
+
+
 
 				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 
+
+
 				elif ffi == 'n':
+
 					if self.target.lower().startswith("toi"):
-						ticnum = int(np.array(exofop_data['TIC ID'])[exofop_rowidx]) ### identify the TIC# based on the matching TOI row.
-						ticname = 'TIC '+str(ticnum)
-						print('calling tess_target_download().')
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
-						print('lc_times.shape = ', lc_times.shape)
+						try:
+							ticnum = int(np.array(exofop_data['TIC ID'])[self.exofop_rowidx]) ### identify the TIC# based on the matching TOI row.
+							ticname = 'TIC '+str(ticnum)
+						
+						except:
+							try:
+								ticname = find_TIC_alias(self.target)
+								ticnum = ticname[ticname.find('TIC'):]
+								if ticnum.startswith(' ') or ticnum.startswith('-'):
+									ticnum = ticnum[1:]
+							except:
+								print('Could not access TIC number in NEA catalog.')
+
+						try:
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
+							print('lc_times.shape = ', lc_times.shape)
+						except:
+							print('Unable to download lc with tess_target_download(). Likely missing TIC.')
+
+
 
 					elif self.target.lower().startswith('tic'):
 						print('calling tess_target_download().')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID) ### TIC number -- LACKS the TIC prefix!
 						print('lc_times.shape = ', lc_times.shape)
 
+
+
 					else: 
-						### for targets that don't have a TIC number or a TOI number, have to find the tic number using mast_data!
-						### rowidx corresponds to the mast_data!
+						### for targets that don't have a TIC number or a TOI number, have to find the tic number using NEA_data!
+						### rowidx corresponds to the NEA_data!
 						### first, see if your planet name is in the comments!
+
 						try:
 							### does not provide a TIC number!!!
-							tess_ra, tess_dec = np.array(mast_data['ra'])[mast_rowidx][0], np.array(mast_data['dec'])[mast_rowidx][0]
+							tess_ra, tess_dec = np.array(NEA_data['ra'])[NEA_rowidx][0], np.array(NEA_data['dec'])[NEA_rowidx][0]
+							ticname = find_TIC_alias(self.target)
+							ticnum = ticname[ticname.find('TIC'):]
+							if ticnum.startswith(' ') or ticnum.startswith('-'):
+								ticnum = ticnum[1:]							
 						except:
-							tess_ra, tess_dec = np.array(exofop_data['RA'])[exofop_rowidx], np.array(exofop_data['Dec'])[exofop_rowidx]
-						
-						ticnum = np.array(exofop_data['TIC ID'][exofop_rowidx])
-						ticname = 'TIC '+str(ticnum)
+							try:
+								tess_ra, tess_dec = np.array(NEA_data['ra'])[NEA_rowidx], np.array(NEA_data['dec'])[NEA_rowidx]
+								ticname = find_TIC_alias(self.target)
+								ticnum = ticname[ticname.find('TIC'):]
+								if ticnum.startswith(' ') or ticnum.startswith('-'):
+									ticnum = ticnum[1:]								
+							except:
+								try:
+									tess_ra, tess_dec = np.array(exofop_data['RA'])[exofop_rowidx], np.array(exofop_data['Dec'])[exofop_rowidx]
+									ticnum = np.array(exofop_data['TIC ID'][exofop_rowidx])
+									ticname = 'TIC '+str(ticnum)							
 
-						print('tess_ra, tess_dec ', tess_ra, tess_dec)
-						self.RA, self.Dec = tess_ra, tess_dec 
+								except:								
+									ticname = find_TIC_alias(self.target)
+									ticnum = ticname[ticname.find('TIC'):]
+									if ticnum.startswith(' ') or ticnum.startswith('-'):
+										ticnum = ticnum[1:]
+
+						try:
+							print('tess_ra, tess_dec ', tess_ra, tess_dec)
+							self.RA, self.Dec = tess_ra, tess_dec 
+						except:
+							pass
+
+						try:
+							print("ticname: ", ticname)
+						except:
+							pass
+
 						try:
 							print('calling tess_target_download().')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
@@ -520,8 +670,6 @@ class MoonpyLC(object):
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
 						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
 
-
-			self.mast_rowidx = mast_rowidx
 
 
 
@@ -682,7 +830,7 @@ class MoonpyLC(object):
 		try:
 			if save_lc == 'y':
 				### write to a file!
-				lcfile = open(self.savepath+'/'+str(target_name).lower()+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+				lcfile = open(self.savepath+'/'+nospaces(str(target_name).lower())+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 				if self.telescope.lower() == 'user':
 					lcfile.write('BJD\tfluxes\terrors\tflags\tquarter\n')
 				elif self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
@@ -819,10 +967,10 @@ class MoonpyLC(object):
 
 		if save_to_file == 'y':
 			try:
-				lcfile = open(self.savepath+'/'+self.target.lower()+"_"+self.telescope+"_lightcurve.tsv", mode='r')
+				lcfile = open(self.savepath+'/'+nospaces(self.target.lower())+"_"+self.telescope+"_lightcurve.tsv", mode='r')
 			except:
-				lcfile = open(self.savepath+'/'+self.target.lower()+'_lightcurve.tsv', mode='r') ### for older files.
-			lcfile_new = open(self.savepath+"/"+self.target.lower()+"_"+self.telescope+"_lc_temp.tsv", mode='w')
+				lcfile = open(self.savepath+'/'+nospaces(self.target.lower())+'_lightcurve.tsv', mode='r') ### for older files.
+			lcfile_new = open(self.savepath+"/"+nospaces(self.target.lower())+"_"+self.telescope+"_lc_temp.tsv", mode='w')
 
 			for nline, line in enumerate(lcfile):
 				if nline == 0:
@@ -845,7 +993,7 @@ class MoonpyLC(object):
 			lcfile.close()
 			lcfile_new.close()
 			### rename the file.
-			os.system('mv '+self.savepath+'/'+self.target.lower()+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+self.target.lower()+'_'+self.telescope+'_lightcurve.tsv')
+			os.system('mv '+self.savepath+'/'+nospaces(self.target.lower())+'_'+self.telescope+'_lc_temp.tsv '+self.savepath+'/'+nospaces(self.target.lower())+'_'+self.telescope+'_lightcurve.tsv')
 
 		self.neighbor_transit_times = np.array(neighbor_transit_times)
 		self.neighbor_transit_list = neighbor_transit_list

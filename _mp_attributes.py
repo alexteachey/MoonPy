@@ -124,8 +124,8 @@ def get_coords(self):
 			except:
 				target_in_simbad = 'n'
 				try:
-					self.RA = mast_data['ra'][self.mast_rowidx]
-					self.Dec = mast_data['dec'][self.mast_rowidx]
+					self.RA = NEA_data['ra'][self.NEA_rowidx]
+					self.Dec = NEA_data['dec'][self.NEA_rowidx]
 				except:
 					pass
 
@@ -187,100 +187,49 @@ def get_coords(self):
 
 
 
-def find_planet_row(self, row_known='n'):
+def find_planet_row(self, alias=None, row_known='n'):
+	if alias != None:
+		row_target = alias
+	else:
+		row_target = self.target
+
 	download_new = 'n'
 	if row_known == 'y':
-		mast_rowidx = self.mast_rowidx
+		NEA_rowidx = self.NEA_rowidx
 		if self.telescope.lower() != "kepler":
 			exofop_rowidx = self.exofop_rowidx
 
-
 	#### stolen from "planet_list_and_data_retriever.py"
 	### check the file created times:
-	kep_mast_address = moonpydir+'/cumkois_mast.txt'
-	if os.path.exists(kep_mast_address):
-		kep_mast_fct = os.path.getctime(kep_mast_address) ### file created time
-	else:
-		kep_mast_fct = 0
-	kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
-	if os.path.exists(kep_fop_address):
-		kep_fop_fct = os.path.getctime(kep_fop_address) ### file created time
-	else:
-		kep_fop_fct = 0
-
-	k2_mast_address = moonpydir+'/cumk2ois_mast.txt'
-	if os.path.exists(kep_mast_address):
-		k2_mast_fct = os.path.getctime(kep_mast_address) ### file created time
-	else:
-		k2_mast_fct = 0
-	k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
-	if os.path.exists(k2_fop_address):
-		k2_fop_fct = os.path.getctime(kep_fop_address) ### file created time
-	else:
-		k2_fop_fct = 0
-
-	tess_mast_address = moonpydir+'/mast_cumtois.txt'
-	if os.path.exists(tess_mast_address):
-		tess_mast_fct = os.path.getctime(tess_mast_address) ### file created time
-	else:
-		tess_mast_fct = 0
-	tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
-	if os.path.exists(tess_fop_address):
-		tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
-	else:
-		tess_fop_fct = 0
-
 
 	current_time = time.time()
 
 	#### KEPLER HANDLING
-	if current_time - kep_mast_fct > 86400: ### one day old
-		print("DOWNLOADING Kepler MAST file (once per day)...")
-		os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_mast_address+'"')
+	if self.telescope.lower() == 'kepler':
+		kep_NEA_address = moonpydir+'/cumkois_mast.txt'
+		if os.path.exists(kep_NEA_address):
+			kep_NEA_fct = os.path.getctime(kep_NEA_address) ### file created time
+		else:
+			kep_NEA_fct = 0
+		kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
+		
+		if os.path.exists(kep_fop_address):
+			kep_fop_fct = os.path.getctime(kep_fop_address) ### file created time
+		else:
+			kep_fop_fct = 0
 
-		print(" ")
-	if current_time - kep_fop_fct > 86400:
-		print("DOWNLOADING Kepler ExoFOP file (once per day)...")
-		os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
+		if current_time - kep_NEA_fct > 86400: ### one day old
+			print("DOWNLOADING Kepler MAST file (once per day)...")
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_NEA_address+'"')
+			print(" ")
 
-		print(' ')
+		if current_time - kep_fop_fct > 86400:
+			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
+			os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
+			print(' ')
 
-	#### K2 HANDLING
-	if current_time - k2_mast_fct > 86400:
-		print('DOWNLOADING K2 MAST file (once per day)...')
-		os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+k2_mast_address+'"')
-		print(' ')
-	if current_time - k2_fop_fct > 86400:	
-		print("DOWNLOADING K2 ExoFOP file (once per day)...")
-		os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
-		print(' ')
-
-
-	#### TESS HANDLING
-	if current_time - tess_mast_fct > 86400:
-		print('DOWNLOADING TESS MAST file (once per day)...')
-		os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+tess_mast_address+'"')			
-		print(' ')
-	if current_time - tess_fop_fct > 86400:
-		print('DOWNLOADING TESS ExoFOP file (once per day)...')
-		os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
-		print(' ')
-
-
-	### USER INPUT HANDLING
-	if self.telescope.lower() == 'user':
-		mast_data = ascii.read(kep_mast_address)
-		mast_columns = mast_data.columns
-		exofop_data = pandas.read_csv(kep_fop_address, header=18)
-		exofop_columns = exofop_data.columns
-		row_known = 'y'
-		self.mast_rowidx = np.nan 
-		self.exofop_rowidx = np.nan 
-
-	### KEPLER HANDLING 
-	elif (self.telescope.lower() == 'kepler'):
-		mast_data = ascii.read(kep_mast_address)
-		mast_columns = mast_data.columns
+		NEA_data = ascii.read(kep_NEA_address)
+		NEA_columns = NEA_data.columns
 		try:
 			exofop_data = pandas.read_csv(kep_fop_address, header=18)
 			exofop_columns = exofop_data.columns
@@ -288,21 +237,21 @@ def find_planet_row(self, row_known='n'):
 			pass
 
 		if row_known == 'n':
-			if str(self.target).lower().startswith('kepler'):
-				target_letter = str(self.target)[-1]
-				if ' ' in self.target: ### already in the correct format, with a space between the letter.
-					NEA_targetname = self.target
+			if str(row_target).lower().startswith('kepler'):
+				target_letter = str(row_target)[-1]
+				if ' ' in row_target: ### already in the correct format, with a space between the letter.
+					NEA_targetname = row_target
 				else: #### there isn't a space, so add it!
-					NEA_targetname = self.target[:-1]+' '+target_letter
-				mast_rowidx = np.where(np.char.lower(mast_data['kepler_name']) == NEA_targetname.lower())[0]
+					NEA_targetname = row_target[:-1]+' '+target_letter
+				NEA_rowidx = np.where(np.char.lower(NEA_data['kepler_name']) == NEA_targetname.lower())[0]
 
 
-			elif str(self.target).lower().startswith('kic'):
-				NEA_targetname = int(self.target[4:])
-				mast_rowidx = np.where(mast_data['kepid'] == NEA_targetname)[0]
+			elif str(row_target).lower().startswith('kic'):
+				NEA_targetname = int(row_target[4:])
+				NEA_rowidx = np.where(NEA_data['kepid'] == NEA_targetname)[0]
 
-			elif str(self.target).lower().startswith('koi'):
-				NEA_targetname = str(self.target[4:])
+			elif str(row_target).lower().startswith('koi'):
+				NEA_targetname = str(row_target[4:])
 				if len(NEA_targetname) == 7: ### of the form 5084.01
 					NEA_targetname = 'K0'+str(NEA_targetname)
 				elif len(NEA_targetname) == 6: ### of the form 163.01
@@ -311,33 +260,72 @@ def find_planet_row(self, row_known='n'):
 					NEA_targetname = 'K000'+str(NEA_targetname)
 				elif len(NEA_targetname) == 4: ### of the form 1.01
 					NEA_targetname = 'K0000'+str(NEA_targetname)
-				mast_rowidx = np.where(np.char.lower(mast_data['kepoi_name']) == NEA_targetname.lower())[0]
+				NEA_rowidx = np.where(np.char.lower(NEA_data['kepoi_name']) == NEA_targetname.lower())[0]
 				self.NEA_targetname = NEA_targetname
 
 
 			else: ### was observed by Kepler but you don't know it's KOI/KIC or Kepler name:
-				mast_data = ascii.read(kep_mast_address) ### overwrite before! won't be found in cumkois!
+				NEA_data = ascii.read(kep_NEA_address) ### overwrite before! won't be found in cumkois!
 				try:
-					float(self.target[-1]) ### if this works, query the mast_data['pl_hostname'] because you end with a number!
-					NEA_taretname = self.target 
-					mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == self.target.lower())[0]
+					float(row_target[-1]) ### if this works, query the NEA_data['pl_hostname'] because you end with a number!
+					NEA_targetname = row_target 
+					NEA_rowidx = np.where(np.char.lower(NEA_data['pl_hostname']) == row_target.lower())[0]
 
 				except:
 					### implies the last thing is a number
-					target_letter = self.target[-1]
-					if ' ' in self.target:
-						NEA_targetname = self.target
+					target_letter = row_target[-1]
+					if ' ' in row_target:
+						NEA_targetname = row_target
 					else:
-						NEA_targetname = self.target[:-1]+' '+target_letter
-					mast_rowidx = np.where(np.char.lower(mast_data['pl_name']) == NEA_targetname.lower())[0]
+						NEA_targetname = row_target[:-1]+' '+target_letter
+					NEA_rowidx = np.where(np.char.lower(NEA_data['pl_name']) == NEA_targetname.lower())[0]
 
-			self.mast_rowidx = mast_rowidx 
+			try:
+				#self.exofop_rowidx = int(exofop_rowidx)
+				exofop_rowidx = int(exofop_rowidx)
+			except:
+				exofop_rowidx = np.nan 
+				#self.exofop_rowidx = exofop_rowidx
+
+			try:
+				NEA_rowidx = int(NEA_rowidx)
+			except:
+				NEA_rowidx = np.nan 
+				#self.NEA_rowidx = np.nan 
 
 
-	### K2 HANDLING 
-	elif (self.telescope.lower() == 'k2'):
-		mast_data = ascii.read(k2_mast_address)
-		mast_columns = mast_data.columns
+		try:
+			return NEA_rowidx, NEA_data, NEA_targetname
+		except:
+			return NEA_rowidx, NEA_data, row_target
+
+
+	
+	#### K2 HANDLING
+	elif self.telescope.lower() == 'k2':
+		k2_NEA_address = moonpydir+'/cumk2ois_mast.txt'
+		if os.path.exists(kep_NEA_address):
+			k2_NEA_fct = os.path.getctime(kep_NEA_address) ### file created time
+		else:
+			k2_NEA_fct = 0
+		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
+		if os.path.exists(k2_fop_address):
+			k2_fop_fct = os.path.getctime(kep_fop_address) ### file created time
+		else:
+			k2_fop_fct = 0
+
+		if current_time - k2_NEA_fct > 86400:
+			print('DOWNLOADING K2 MAST file (once per day)...')
+			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+k2_NEA_address+'"')
+			print(' ')
+		if current_time - k2_fop_fct > 86400:	
+			print("DOWNLOADING K2 ExoFOP file (once per day)...")
+			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
+			print(' ')
+
+
+		NEA_data = ascii.read(k2_NEA_address)
+		NEA_columns = NEA_data.columns
 		try:
 			exofop_data = pandas.read_csv(k2_fop_address, header=10)
 			exofop_columns = exofop_data.columns
@@ -347,24 +335,22 @@ def find_planet_row(self, row_known='n'):
 			print('K2 ExoFOP file not loadable. Possibly corrupted. ')
 
 		if row_known == 'n':
-			if str(self.target).startswith('K2-'):
-				target_letter = str(self.target[-1])
-				if ' ' in self.target:
-					NEA_targetname = self.target
+			if str(row_target).lower().startswith('k2'):
+				target_letter = str(row_target[-1])
+				if ' ' in row_target:
+					NEA_targetname = row_target
 				else:
-					NEA_targetname = str(self.target[:-1])+' '+str(self.target[-1])
-				mast_rowidx = np.where(np.char.lower(mast_data['pl_name']) == NEA_targetname.lower())[0]
+					NEA_targetname = str(row_target[:-1])+' '+str(target_letter)
+				NEA_rowidx = np.where(np.char.lower(NEA_data['pl_name']) == NEA_targetname.lower())[0]
 				exofop_rowidx = np.nan
-				print('mast_rowidx = ', mast_rowidx)
+				print('NEA_rowidx = ', NEA_rowidx)
 				print('exofop_rowidx = ', exofop_rowidx) 
+				print("number of rows matching this description = ", len(NEA_rowidx))
 
-				print("number of rows matching this description = ", len(mast_rowidx))
-
-			elif str(self.target).startswith('EPIC'):
-				if self.target.startswith('EPIC'):
-					NEA_targetname = self.target[4:] ### just the numbers!
-					if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
-						NEA_targetname = NEA_targetname[1:]
+			elif str(row_target).lower().startswith('epic'):
+				NEA_targetname = row_target[4:] ### just the numbers!
+				if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
+					NEA_targetname = NEA_targetname[1:]
 				try:
 					exofop_rowidx = np.where(np.char.lower(exofop_data['EPIC ID']) == NEA_targetname.lower())[0]
 				except:
@@ -372,132 +358,207 @@ def find_planet_row(self, row_known='n'):
 					exofop_rowidx = np.nan 
 
 				try:
-					mast_rowidx = np.where(np.char.lower(mast_data['epic_name']) == NEA_targetname.lower())[0]
+					NEA_rowidx = np.where(np.char.lower(NEA_data['epic_name']) == NEA_targetname.lower())[0]
 				except:
-					print('unable to extract the mast_rowidx')
-					mast_rowidx = np.nan
+					print('unable to extract the NEA_rowidx')
+					NEA_rowidx = np.nan
+
+			try:
+				exofop_rowidx = int(exofop_rowidx)
+				#self.exofop_rowidx = int(exofop_rowidx)
+			except:
+				exofop_rowidx = np.nan 
+				#self.exofop_rowidx = exofop_rowidx
+
+			try:
+				#self.NEA_rowidx = int(NEA_rowidx)
+				NEA_rowidx = int(NEA_rowidx)
+			except:
+				NEA_rowidx = np.nan
+				#self.NEA_rowidx = NEA_rowidx 
+
+		try:
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname
+		except:
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, row_target 
 
 
-	### TESS HANDLING 
-	elif (self.telescope.lower() == 'tess'):
-		mast_data = ascii.read(tess_mast_address)
-		mast_columns = mast_data.columns
+
+
+
+	#### TESS HANDLING
+	elif self.telescope.lower() == 'tess':
+
+		##### RESTRUCTURE -- if it starts with TOI, check if it has a number or letter at the e
+		#toi_NEA_address = moonpydir+'/NEA_cumtois.txt' #### ALL THE TOIs that are NOT confirmed as planets. Of the form TOI-XXXX.01
+		NEA_address = moonpydir+'/NEA_confirmed_planets.txt' #### confirmed planets (not limited to TESS)
+		if os.path.exists(NEA_address):
+			NEA_fct = os.path.getctime(NEA_address) ### file created time
+		else:
+			NEA_fct = 0
+
+		tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
+		if os.path.exists(tess_fop_address):
+			tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
+		else:
+			tess_fop_fct = 0
+
+
+		if current_time - NEA_fct > 86400:
+			print('DOWNLOADING NEA confirmed planets file (once per day)...')
+			##### THE COMMAND BELOW HAS TO CHANGE -- NOT THE RIGHT TABLE! NEED TO FIND THE ONE THAT HAS things like TOI-125 b and things like that.
+			#os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+NEA_address+'"')
+			os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=pl_hostname&format=ascii" -O "'+NEA_address+'"')
+		
+			#os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=PS&select=pl_name,hostname,pl_letter,hd_name,hip_name,tic_id,gaia_id,pl_refname,pl_orbper,pl_orbsmax,pl_rade,pl_radj,pl_masse,pl_massj,pl_dens,pl_orbeccen,pl_insol,pl_eqt,pl_orbincl,pl_tranmid,pl_tsystemref,pl_imppar,pl_trandep,pl_ratdor,st_teff,st_rad,st_mass,st_met,st_lum,st_logg,st_age,st_dens,st_rotp,ra,dec,glat,glon&order=pl_name&format=ascii" -O "'+NEA_address+'"')
+			print(' ')
+
+		if current_time - tess_fop_fct > 86400:
+			print('DOWNLOADING TESS ExoFOP file (once per day)...')
+			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
+			print(' ')
+
+		NEA_data = ascii.read(NEA_address)
+		NEA_columns = NEA_data.columns 
+		NEA_data = ascii.read(NEA_address)
+		NEA_columns = NEA_data.columns
 		exofop_data = pandas.read_csv(tess_fop_address)
 		exofop_columns = exofop_data.columns
 
 		if row_known == 'n':
-			try:
-				float(self.target[-1]) 
-				### if the except statement isn't triggered, the last value is a number! Therefore
-				NEA_targetname = str(self.target)
-			except: 
-				target_letter = str(self.target[-1])
+			
+			if str(row_target)[-1] in ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']: 
+				#### WILL WANT TO LOOK IN THE NEA_data.
+				target_letter = str(row_target[-1])
 				### implies the last value is a letter.
-				if ' ' in self.target:
-					NEA_targetname = str(self.target) ### we want a space in here.
-				else: ### put one in!
-					NEA_targetname = str(self.target[:-1])+' '+str(target_letter)
 
-			### FOR TESS TARGETS THE EXOFOP TABLE IS LIKELY BETTER THAN THE NEA table.
+				if ' ' in row_target:
+					NEA_targetname = str(row_target) ### we want a space in here.
+				else: ### put one in!
+					NEA_targetname = str(row_target[:-1])+' '+str(target_letter)
+			else: 
+				#### will want to look in NEA_toi_data.
+				NEA_targetname = str(row_target) #### will be something like TIC or TOI, maybe with a .01 on the end.
+
+
 			if NEA_targetname.lower().startswith('tic'):
-				### search the "TIC ID" column
-				ticnum = NEA_targetname[3:]
-				if (ticnum.startswith(' ')) or (ticnum.startswith('-')):
-					ticnum = ticnum[1:]
+				### search the "TIC ID" column in ExoFOP 
+				ticnum = NEA_targetname[3:] #### start the number after the 'TIC' prefix
+				if (ticnum.startswith(' ')) or (ticnum.startswith('-')): #### make sure you've just got the number.
+					ticnum = ticnum[1:] 
+
+				if NEA_targetname[3] != ' ': ### make sure there's a space!
+					NEA_targetname = NEA_targetname[:3]+' '+NEA_targetname[3:]
+
+				#### QUERY EXOFOP
+				print('looking for '+str(ticnum)+' in the exofop database.')					
 				exofop_rowidx = np.where(np.array(exofop_data['TIC ID']).astype(int) == int(ticnum))[0]
-				print('looking for '+str(ticnum)+' in the exofop database.')
-				#print('rowidx (pre-clean) = ', rowidx)
+				print('found '+str(len(exofop_idx)+' entries.'))
 				if len(exofop_rowidx) > 1:
-					exofop_rowidx = rowidx[0]
+					exofop_rowidx = exofop_rowidx[0]
 				print("exofop_rowidx = ", exofop_rowidx)
-				mast_rowidx = np.nan 
+
+				#### IT'S NOT IN THE NEA database, don't even try.
+				NEA_rowidx = np.nan		
+
+
 
 			elif NEA_targetname.lower().startswith("toi"):
-				### search the TOI column 
-				toinum = NEA_targetname[3:]
-				if (toinum.startswith(' ')) or (toinum.startswith('-')):
+				toinum = NEA_targetname[3:] #### get rid of the intial 'TOI'
+				if (toinum.startswith(' ')) or (toinum.startswith('-')): ### get rid of the blank or hyphen
 					toinum = toinum[1:]
+
 				print('looking for '+str(toinum)+' in the exofop database.')
-				exofop_rowidx = np.where(np.array(exofop_data['TOI']).astype(float) == float(toinum))[0]
-				print('exofop_rowidx = ', exofop_rowidx)
-				mast_rowidx = np.nan 
+
+				if str(toinum[-1]) in ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']:
+					#### WILL BE FOUND IN THE NEA_data, but *not* in the exoFOP data.
+					### search the TOI column 
+					if NEA_targetname[-2] != ' ':
+						#### add the space in there
+						NEA_targetname[:-2]+' '+NEA_targetname[-2:]						
+
+					try:
+						NEA_rowidx = np.where(np.char.lower(np.array(NEA_data['pl_name'])) == NEA_targetname.lower())[0]
+					except:
+						print('TOI value not found in the NEA Confirmed Planets database.')
+						NEA_rowidx = np.nan		
+					print('NEA_rowidx = ', NEA_rowidx)	
+
+
+				else:
+					#### it's of the form TOI-XXXX.01, not TOI-XXXX b.
+
+
+					try:
+						exofop_rowidx = np.where(np.array(exofop_data['TOI']).astype(str) == str(toinum))[0]
+					except:
+						try:
+							exofop_rowidx = np.where(np.array(exofop_data['TOI']).astype(str) == str(nospaces(toinum)))[0]
+						except:
+							print('TOI value not found in ExoFOP.')
+							exofop_rowidx = np.nan
+					print('exofop_rowidx = ', exofop_rowidx)
+
+
 
 			else:
-				### in this case, you have to look in the mast list!
-				mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == NEA_targetname.lower())[0] ### in "confirmed" planets.
-				nfound = 0
-				exofop_rowidxs = []
-				for idx in np.arange(0,len(exofop_data['Comments']),1): ### have to use a loop here.
-					try:
-						float(self.target[-1]) ### if this works, last digit is a number, so use self.target
-						if (self.target in exofop_data['Comments'][idx]):
-							exofop_rowidx = idx
-							exofop_rowidxs.append(exofop_rowidx)
-							print('found a planet in CFOP!, exofop_rowidx, TIC = ', exofop_rowidx, exofop_data['TIC ID'][idx])
-							#print('TIC = ', exofop_data['TIC ID'][exofop_rowidx])
-							nfound += 1
-					except:
-						### last digit is a letter, so get rid of it when searching!
-						try:
-							if (self.target[:-1] in np.array(exofop_data['Comments'])[idx]):
-								exofop_rowidx = idx
-								exofop_rowidxs.append(exofop_rowidx)
-								print('found a planet in CFOP!, exofop_rowidx, TIC = ', exofop_rowidx, exofop_data['TIC ID'][idx])
-								nfound += 1
-						except:
-							pass
+				### NOT A TIC or a TOI.... in this case, you have to look in the mast list! It's not listed in ExoFOP.
+				#### have to find it in NEA_data
+				NEA_rowidx = np.where(np.char.lower(NEA_data['pl_name']) == NEA_targetname.lower())[0] ### in "confirmed" planets.
+				
 
-				print('# CFOP entries: ', nfound)
 
-				if nfound > 1:
-					print('found multiple possible entries for '+self.target)
-					for exfidx in exofop_rowidxs:
-						print("idx, TIC, comment = ", exfidx, exofop_data['TIC ID'][exfidx], exofop_data['Comments'][exfidx])
-					print(' ')
-					exofop_rowidx = int(input('Which is the correct index? ')) 
 
-				elif nfound == 1:
-					exofop_rowidx = exofop_rowidxs[0]
+			try:
+				#self.exofop_rowidx = int(exofop_rowidx)
+				exofop_rowidx = int(exofop_rowidx)
+			except:
+				exofop_rowidx = np.nan
+				#self.exofop_rowidx = exofop_rowidx
 
-				elif nfound == 0:
-					### try aliases!
-					exofop_rowidx = np.nan
-					try:
-						for alias in self.aliases:
-							mast_rowidx = np.where(np.char.lower(mast_data['pl_hostname']) == alias.lower())[0]
-							if len(mast_rowidx) != 0:
-								break
-					except:
-						pass
+			try:
+				#self.NEA_rowidx = int(NEA_rowidx)
+				NEA_rowidx = int(NEA_rowidx)
+			except:
+				NEA_rowidx = np.nan 
+				#self.NEA_rowidx = NEA_rowidx
 
-	if row_known == 'n':
-		try:
-			self.exofop_rowidx = exofop_rowidx
-		except:
-			pass
+		#print('final self.exofop_rowidx: ', self.exofop_rowidx)
+		#print('final self.NEA_rowidx: ', self.NEA_rowidx)
 
 		try:
-			self.mast_rowidx = mast_rowidx
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname
 		except:
-			pass
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, row_target 
 
-	if self.telescope.lower() == 'user':
-		try:
-			return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
-		except:
-			return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 			
 
-	elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
-		try:
-			return mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname
-		except:
-			return mast_rowidx, exofop_rowidx, mast_data, exofop_data, self.target 
 
-	elif self.telescope.lower() == 'kepler':
+
+	### USER INPUT HANDLING
+	elif self.telescope.lower() == 'user':
+		NEA_data = ascii.read(kep_NEA_address)
+		NEA_columns = NEA_data.columns
+		exofop_data = pandas.read_csv(kep_fop_address, header=18)
+		exofop_columns = exofop_data.columns
+		row_known = 'y'
+		#self.NEA_rowidx = np.nan 
+		#self.exofop_rowidx = np.nan
+		NEA_rowidx = np.nan
+		exofop_rowidx = np.nan 
+
+
 		try:
-			return mast_rowidx, mast_data, NEA_targetname
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname
 		except:
-			return mast_rowidx, mast_data, self.target
+			return NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, row_target 		
+
+
+
+
+
+
+
+
 
 
 
@@ -506,7 +567,36 @@ def find_planet_row(self, row_known='n'):
 
 def get_properties(self, locate_neighbor='n'):
 	print("calling 'get_properties()...")
-	if self.telescope.lower() == 'user':
+
+	if self.telescope.lower() == 'kepler':
+		if self.newlc == 'y':
+			NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known='y')
+		elif self.newlc == 'n': 
+			NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known='n')	
+		print('NEA_rowidx = ', NEA_rowidx)
+
+
+	#elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
+	elif self.telescope.lower() == 'k2':
+		if self.newlc == 'y':
+			NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
+		elif self.newlc == 'n':
+			NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n')
+
+		print('NEA_rowidx = ', NEA_rowidx)
+		print('exofop_rowidx = ', exofop_rowidx)
+
+	elif self.telescope.lower() == 'tess':
+		if self.newlc == 'y':
+			NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
+		elif self.newlc == 'n':
+			NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n')	
+
+		print('NEA_rowidx = ', NEA_rowidx)
+		print('exofop_rowidx = ', exofop_rowidx)
+
+
+	elif self.telescope.lower() == 'user':
 		target_period, target_period_uperr, target_period_lowerr = self.period, 0, 0
 		target_tau0, target_tau0_uperr, target_tau0_lowerr = self.tau0, 0, 0
 		target_impact, target_impact_uperr, target_impact_lowerr = self.impact, 0, 0
@@ -516,52 +606,38 @@ def get_properties(self, locate_neighbor='n'):
 		target_insol, target_insol_uperr, target_insol_lowerr = np.nan, 0, 0
 		target_rp, target_rp_uperr, target_rp_lowerr = self.rp_rearth, 0, 0
 
-	elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
-		if self.newlc == 'y':
-			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='y')
-		elif self.newlc == 'n':
-			mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n')
-
-		print('mast_rowidx = ', mast_rowidx)
-		print('exofop_rowidx = ', exofop_rowidx)
-	else:
-		if self.newlc == 'y':
-			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='y')
-		elif self.newlc == 'n': 
-			mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known='n')	
-		print('mast_rowidx = ', mast_rowidx)
 
 	### now with the rowidx we can access the other properties we want!
 	if (self.telescope.lower() == 'kepler'):
-		target_period, target_period_uperr, target_period_lowerr = mast_data['koi_period'][mast_rowidx], mast_data['koi_period_err1'][mast_rowidx], mast_data['koi_period_err2'][mast_rowidx]
-		target_tau0, target_tau0_uperr, target_tau0_lowerr = mast_data['koi_time0bk'][mast_rowidx], mast_data['koi_time0bk_err1'][mast_rowidx], mast_data['koi_time0bk_err2'][mast_rowidx]
-		target_impact, target_impact_uperr, target_impact_lowerr = mast_data['koi_impact'][mast_rowidx], mast_data['koi_impact_err1'][mast_rowidx], mast_data['koi_impact_err2'][mast_rowidx]
-		target_duration, target_duration_uperr, target_duration_lowerr = mast_data['koi_duration'][mast_rowidx], mast_data['koi_duration_err1'][mast_rowidx], mast_data['koi_duration_err2'][mast_rowidx]
-		target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = mast_data['koi_ror'][mast_rowidx], mast_data['koi_ror_err1'][mast_rowidx], mast_data['koi_ror_err2'][mast_rowidx]
-		target_rp, target_rp_uperr, target_rp_lowerr = mast_data['koi_prad'][mast_rowidx], mast_data['koi_prad_err1'][mast_rowidx], mast_data['koi_prad_err2'][mast_rowidx]
-		target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = mast_data['koi_sma'][mast_rowidx], mast_data['koi_sma_err1'][mast_rowidx], mast_data['koi_sma_err2'][mast_rowidx]
-		target_insol, target_insol_uperr, target_insol_lowerr = mast_data['koi_insol'][mast_rowidx], mast_data['koi_insol_err1'][mast_rowidx], mast_data['koi_insol_err2'][mast_rowidx]
-		target_ldm1, target_ldm2 = mast_data['koi_ldm_coeff1'][mast_rowidx], mast_data['koi_ldm_coeff2'][mast_rowidx]
-		target_eccen, target_eccen_uperr, target_eccen_lowerr = mast_data['koi_eccen'][mast_rowidx], mast_data['koi_eccen_err1'][mast_rowidx], mast_data['koi_eccen_err2'][mast_rowidx]
-		target_longp, target_longp_uperr, target_longp_lowerr = mast_data['koi_longp'][mast_rowidx], mast_data['koi_longp_err1'][mast_rowidx], mast_data['koi_longp_err2'][mast_rowidx]
-		target_incl, target_incl_uperr, target_incl_lowerr = mast_data['koi_incl'][mast_rowidx], mast_data['koi_incl_err1'][mast_rowidx], mast_data['koi_incl_err2'][mast_rowidx]	
-		target_smass, target_smass_uperr, target_smass_lowerr = mast_data['koi_smass'][mast_rowidx], mast_data['koi_smass_err1'][mast_rowidx], mast_data['koi_smass_err2'][mast_rowidx]
-		#target_snr = mast_data['koi_model_snr']
+		target_period, target_period_uperr, target_period_lowerr = NEA_data['koi_period'][NEA_rowidx], NEA_data['koi_period_err1'][NEA_rowidx], NEA_data['koi_period_err2'][NEA_rowidx]
+		target_tau0, target_tau0_uperr, target_tau0_lowerr = NEA_data['koi_time0bk'][NEA_rowidx], NEA_data['koi_time0bk_err1'][NEA_rowidx], NEA_data['koi_time0bk_err2'][NEA_rowidx]
+		target_impact, target_impact_uperr, target_impact_lowerr = NEA_data['koi_impact'][NEA_rowidx], NEA_data['koi_impact_err1'][NEA_rowidx], NEA_data['koi_impact_err2'][NEA_rowidx]
+		target_duration, target_duration_uperr, target_duration_lowerr = NEA_data['koi_duration'][NEA_rowidx], NEA_data['koi_duration_err1'][NEA_rowidx], NEA_data['koi_duration_err2'][NEA_rowidx]
+		target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = NEA_data['koi_ror'][NEA_rowidx], NEA_data['koi_ror_err1'][NEA_rowidx], NEA_data['koi_ror_err2'][NEA_rowidx]
+		target_rp, target_rp_uperr, target_rp_lowerr = NEA_data['koi_prad'][NEA_rowidx], NEA_data['koi_prad_err1'][NEA_rowidx], NEA_data['koi_prad_err2'][NEA_rowidx]
+		target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = NEA_data['koi_sma'][NEA_rowidx], NEA_data['koi_sma_err1'][NEA_rowidx], NEA_data['koi_sma_err2'][NEA_rowidx]
+		target_insol, target_insol_uperr, target_insol_lowerr = NEA_data['koi_insol'][NEA_rowidx], NEA_data['koi_insol_err1'][NEA_rowidx], NEA_data['koi_insol_err2'][NEA_rowidx]
+		target_ldm1, target_ldm2 = NEA_data['koi_ldm_coeff1'][NEA_rowidx], NEA_data['koi_ldm_coeff2'][NEA_rowidx]
+		target_eccen, target_eccen_uperr, target_eccen_lowerr = NEA_data['koi_eccen'][NEA_rowidx], NEA_data['koi_eccen_err1'][NEA_rowidx], NEA_data['koi_eccen_err2'][NEA_rowidx]
+		target_longp, target_longp_uperr, target_longp_lowerr = NEA_data['koi_longp'][NEA_rowidx], NEA_data['koi_longp_err1'][NEA_rowidx], NEA_data['koi_longp_err2'][NEA_rowidx]
+		target_incl, target_incl_uperr, target_incl_lowerr = NEA_data['koi_incl'][NEA_rowidx], NEA_data['koi_incl_err1'][NEA_rowidx], NEA_data['koi_incl_err2'][NEA_rowidx]	
+		target_smass, target_smass_uperr, target_smass_lowerr = NEA_data['koi_smass'][NEA_rowidx], NEA_data['koi_smass_err1'][NEA_rowidx], NEA_data['koi_smass_err2'][NEA_rowidx]
+		#target_snr = NEA_data['koi_model_snr']
 
 
 	elif (self.telescope.lower() == 'k2'):
-		target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
-		target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][mast_rowidx])
-		target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr2'][mast_rowidx])
-		target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][mast_rowidx])
-		target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][mast_rowidx])
-		target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr2'][mast_rowidx])
-		target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(mast_data['pl_ratdor'][mast_rowidx]), np.nanmedian(mast_data['pl_ratdorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratdorerr2'][mast_rowidx])
-		target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(mast_data['pl_eqt'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr1'][mast_rowidx]), np.nanmedian(mast_data['pl_eqterr2'][mast_rowidx])
+		target_period, target_period_uperr, target_period_lowerr = np.nanmedian(NEA_data['pl_orbper'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr2'][NEA_rowidx])
+		target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(NEA_data['pl_tranmid'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr2'][NEA_rowidx])
+		target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(NEA_data['pl_imppar'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr2'][NEA_rowidx])
+		target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(NEA_data['pl_trandur'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr2'][NEA_rowidx])
+		target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+		target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(NEA_data['pl_rade'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr2'][NEA_rowidx])
+		target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+		target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr2'][NEA_rowidx])
 
 
 	elif (self.telescope.lower() == "tess"):
-		if (np.isfinite(self.exofop_rowidx) == True) or (np.isfinite(self.exofop_rowidx) == np.array([True])):
+		if (np.isfinite(exofop_rowidx) == True) or (np.isfinite(exofop_rowidx) == np.array([True])):
 			print('searching for target parameters in the exofop database.')
 			print(' ')
 			target_period, target_period_uperr, target_period_lowerr = np.array(exofop_data['Period (days)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
@@ -571,17 +647,16 @@ def get_properties(self, locate_neighbor='n'):
 			target_rp, target_rp_uperr, target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx]
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.array(exofop_data['Epoch (BJD)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
 
-		elif np.isfinite(self.mast_rowidx) == True:
-			print('search for target parameters in the mast database.')
-			print(' ')
-			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(mast_data['pl_orbper'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr1'][mast_rowidx]), np.nanmedian(mast_data['pl_orbpererr2'][mast_rowidx])
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(mast_data['pl_tranmid'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr1'][mast_rowidx]), np.nanmedian(mast_data['pl_tranmiderr2'][mast_rowidx])
-			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(mast_data['pl_imppar'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_impparerr2'][mast_rowidx])
-			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(mast_data['pl_trandur'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_trandurerr2'][mast_rowidx])
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(mast_data['pl_ratror'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_ratrorerr2'][mast_rowidx])
-			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(mast_data['pl_rade'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr1'][mast_rowidx]), np.nanmedian(mast_data['pl_radeerr2'][mast_rowidx])
-		else:
-			pass
+		elif (np.isfinite(NEA_rowidx) == True) or (np.isfinite(NEA_rowidx) == np.array([True])):
+			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(NEA_data['pl_orbper'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr2'][NEA_rowidx])
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(NEA_data['pl_tranmid'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr2'][NEA_rowidx])
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(NEA_data['pl_imppar'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr2'][NEA_rowidx])
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(NEA_data['pl_trandur'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr2'][NEA_rowidx])
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(NEA_data['pl_rade'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr2'][NEA_rowidx])
+			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr2'][NEA_rowidx])
+
 
 	### update properties!
 	try:
@@ -733,6 +808,7 @@ def find_taus(self):
 	try:
 		print("calling 'find_taus()'.")
 		transit_midtimes = [self.tau0]
+		print('tau0 = ', self.tau0)
 		while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
 			print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
 			### the transit_midtime you just added isn't the first transit!
@@ -783,6 +859,8 @@ def mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neigh
 
 def find_neighbors(self, is_neighbor='n'):
 	print('is_neighbor = ', is_neighbor)
+
+
 	if is_neighbor == 'y':
 		row_known = 'n'
 	else:
@@ -791,37 +869,55 @@ def find_neighbors(self, is_neighbor='n'):
 	if self.telescope.lower() == 'user':
 		pass 
 
-	elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
-		mast_rowidx, exofop_rowidx, mast_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-		if mast_rowidx < 10:
-			check_mast_rows = np.arange(0,mast_rowidx+11,1)
+
+	elif self.telescope.lower() == 'k2':
+		NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+		if NEA_rowidx < 10:
+			check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
 		else:
-			check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
+			check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
 
 		if exofop_rowidx < 10:
 			check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
 		else:
 			check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
-		print('mast_rowidx, exofop_rowidx = ', mast_rowidx, exofop_rowidx)
+		print('NEA_rowidx, exofop_rowidx = ', NEA_rowidx, exofop_rowidx)
 	
-	else:
-		mast_rowidx, mast_data, NEA_targetname = self.find_planet_row(row_known=row_known)
-		print('mast_rowidx, NEA_targetname = ', mast_rowidx, NEA_targetname)
 
-		if len(mast_rowidx) == 0:
+
+	elif self.telescope.lower() == 'tess':
+		NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+		if np.isfinite(NEA_rowidx) and (NEA_rowidx < 10):
+			check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
+		elif np.isfinite(NEA_rowidx) and (NEA_rowidx >= 10):
+			check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
+
+		if np.isfinite(exofop_rowidx) and (exofop_rowidx < 10):
+			check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
+		elif np.isfinite(exofop_rowidx) and (exofop_rowidx >= 10):
+			check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+		
+		print('NEA_rowidx, exofop_rowidx = ', NEA_rowidx, exofop_rowidx)
+
+
+
+	elif self.telescope.lower() == 'kepler':
+		NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known=row_known)
+		print('NEA_rowidx, NEA_targetname = ', NEA_rowidx, NEA_targetname)
+
+		if len(NEA_rowidx) == 0:
 			### means this object is not in the cumulative KOI list.
 			print('It appears this object is not in the cumulative KOI list.')
-			print('checking all '+str(len(mast_data['kepoi_name']))+' MAST rows...')
+			print('checking all '+str(len(NEA_data['kepoi_name']))+' MAST rows...')
 			#### you're going to need to check all mast rows!
-			check_mast_rows = np.arange(0,len(mast_data['kepoi_name']),1)
+			check_NEA_rows = np.arange(0,len(NEA_data['kepoi_name']),1)
 		else:
-			if mast_rowidx < 10:
-				check_mast_rows = np.arange(0,mast_rowidx+11,1)
+			if NEA_rowidx < 10:
+				check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
 			else:
-				check_mast_rows = np.arange(mast_rowidx-10,mast_rowidx+10,1)
+				check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
 
-			print('mast_rowidx = ', mast_rowidx)
-
+			print('NEA_rowidx = ', NEA_rowidx)
 
 
 	neighbor_rows = []
@@ -833,13 +929,13 @@ def find_neighbors(self, is_neighbor='n'):
 	elif self.target.lower().startswith('koi'):
 		print("looking for neighbors in MAST for this KOI.")
 
-		for cr in check_mast_rows:
-			if cr <= len(mast_data['kepoi_name']) - 1:
+		for cr in check_NEA_rows:
+			if cr <= len(NEA_data['kepoi_name']) - 1:
 				target_term = self.NEA_targetname[:-1]
-				search_term = np.array(mast_data['kepoi_name'])[cr][:-1]
-				if (search_term == target_term) and (cr != mast_rowidx):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepoi_name'][cr]))
-					neighbor = str(mast_data['kepoi_name'][cr])
+				search_term = np.array(NEA_data['kepoi_name'])[cr][:-1]
+				if (search_term == target_term) and (cr != NEA_rowidx):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(NEA_data['kepoi_name'][cr]))
+					neighbor = str(NEA_data['kepoi_name'][cr])
 					while neighbor.startswith('K') or neighbor.startswith('0'):
 						neighbor = neighbor[1:]
 					neighbor = 'KOI-'+str(neighbor)
@@ -849,13 +945,13 @@ def find_neighbors(self, is_neighbor='n'):
 
 	elif self.target.lower().startswith('kepler'):
 		print("looking for neighbors in MAST for this Kepler target.")
-		for cr in check_mast_rows:
-			if cr <= len(mast_data['kepler_name']) - 1:
+		for cr in check_NEA_rows:
+			if cr <= len(NEA_data['kepler_name']) - 1:
 				target_term = self.target[7:-1]
-				search_term = np.array(mast_data['kepler_name'])[cr][7:-2]
-				if ((len(mast_rowidx) == 0) and (search_term == target_term)) or ((search_term == target_term) and (cr != mast_rowidx)):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['kepler_name'][cr]))
-					neighbor = str(mast_data['kepler_name'][cr])
+				search_term = np.array(NEA_data['kepler_name'])[cr][7:-2]
+				if ((len(NEA_rowidx) == 0) and (search_term == target_term)) or ((search_term == target_term) and (cr != NEA_rowidx)):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(NEA_data['kepler_name'][cr]))
+					neighbor = str(NEA_data['kepler_name'][cr])
 					if ' ' in neighbor:
 						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
 					neighbor_rows.append(cr)
@@ -863,13 +959,13 @@ def find_neighbors(self, is_neighbor='n'):
 
 	elif self.target.lower().startswith('k2'):
 		print("looking for neighbors in MAST for this K2 target.")
-		for cr in check_mast_rows:
-			if cr <= len(mast_data['pl_name']) - 1:
+		for cr in check_NEA_rows:
+			if cr <= len(NEA_data['pl_name']) - 1:
 				target_term = NEA_targetname[3:-2]
-				search_term = np.array(mast_data['pl_name'])[cr][3:-2]
-				if (search_term == target_term) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
-					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
-					neighbor = str(mast_data['pl_name'][cr])
+				search_term = np.array(NEA_data['pl_name'])[cr][3:-2]
+				if (search_term == target_term) and (np.array(NEA_data['pl_name'])[cr] != NEA_targetname):
+					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(NEA_data['pl_name'][cr]))
+					neighbor = str(NEA_data['pl_name'][cr])
 					if ' ' in neighbor:
 						neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
 					neighbor_rows.append(cr)
@@ -904,11 +1000,11 @@ def find_neighbors(self, is_neighbor='n'):
 			else:
 				try:
 					print('looking fore neighbors in MAST for this TESS target.')
-					for cr in check_mast_rows:
-						if cr <= len(mast_data['pl_name']) - 1:
-							if (np.array(mast_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(mast_data['pl_name'])[cr] != NEA_targetname):
-								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(mast_data['pl_name'][cr]))
-								neighbor = str(mast_data['pl_name'][cr])
+					for cr in check_NEA_rows:
+						if cr <= len(NEA_data['pl_name']) - 1:
+							if (np.array(NEA_data['pl_name'])[cr][3:-2] == NEA_targetname[3:-2]) and (np.array(NEA_data['pl_name'])[cr] != NEA_targetname):
+								print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(NEA_data['pl_name'][cr]))
+								neighbor = str(NEA_data['pl_name'][cr])
 								if ' ' in neighbor:
 									neighbor = neighbor[:-2]+neighbor[-1] ### removes the space
 								neighbor_rows.append(cr)

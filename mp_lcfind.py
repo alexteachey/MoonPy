@@ -80,7 +80,7 @@ def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
 		while search_idx < 10: ### maximum tries
 			try:
 				alias = alias_query[search_idx]
-				if alias.startswith('KOI') or alias.statswith('Kepler') or alias.startswith("KIC"):
+				if alias.lower().startswith('koi') or alias.lower().statswith('kepler') or alias.lower().startswith("kic"):
 					best_hit = alias
 					break
 				else:
@@ -91,19 +91,19 @@ def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
 		print("alias = ", alias)
 		best_hit = alias
 
-		if best_hit.startswith('KOI'):
+		if best_hit.lower().startswith('koi'):
 			object_number = float(best_hit[4:]) ### strips off "KOI-"
 			### it's valuable to keep the quarters separated like this, because they should be detrended separately!
 			targtype = 'koi'
 			object_name = "KOI-"+str(object_number)
 
-		elif best_hit.startswith('Kepler'):
+		elif best_hit.lower().startswith('kepler'):
 			object_number = str(int(best_hit[7:]))+'b' ### strips off "Kepler-", adds b because we don't care which planet it is.
 			#object_number = object_number+'b'
 			targtype = 'planet'
 			object_name = 'Kepler-'+str(object_number)
 
-		elif best_hit.startswith("KIC"):
+		elif best_hit.lower().startswith("kic"):
 			object_number = int(best_hit[4:])
 			targtype = 'kic'
 			object_name = 'KIC'+str(object_number)
@@ -119,7 +119,7 @@ def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
 			try:
 				alias = alias_query[search_idx]
 				print('potential alias: ', alias)
-				if alias.startswith('TOI') or alias.statswith('TIC'):
+				if alias.lower().startswith('toi') or alias.lower().startswith('tic'):
 					best_hit = alias
 					break
 				else:
@@ -130,14 +130,14 @@ def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
 		print("alias = ", alias)
 		best_hit = alias
 
-		if best_hit.startswith('TOI'):
+		if best_hit.lower().startswith('toi'):
 			object_number = float(best_hit[4:]) ### strips off "KOI-"
 			### it's valuable to keep the quarters separated like this, because they should be detrended separately!
 			targtype = 'toi'
 			object_name = "TOI-"+str(object_number)
 
 
-		elif best_hit.startswith("TIC"):
+		elif best_hit.lower().startswith("tic"):
 			object_number = int(best_hit[4:])
 			targtype = 'tic'
 			object_name = 'TIC'+str(object_number)
@@ -178,6 +178,31 @@ def find_KIC_alias(target_name):
 		return kic_number
 	except:		
 		return target_aliases
+
+
+def find_TIC_alias(target_name):
+	#### FOR USE WITH TESS LIGHT CURVES
+	### in order to return a KIC number, you need to remove final letters and decimals.
+	star_number = target_name
+	if '.' in star_number:
+		star_number = star_number[:star_number.find('.')] ### this will remove the decimal and final numbers
+	if star_number[-1] in ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']:
+		star_number = star_number[:-1]
+
+	target_aliases = []
+	alias_search_results = Simbad.query_objectids(star_number)
+	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+		target_alias = alias_search_results[alidx][0]
+		target_aliases.append(target_alias)
+
+		if target_alias.lower().startswith('tic'):
+			tic_number = target_alias
+			break
+	try:
+		return tic_number
+	except:		
+		return target_aliases
+
 
 
 def find_EPIC_alias(target_name):
@@ -724,10 +749,11 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 	lcfiles = []
 
 	try:
-		if targID.startswith('TIC'):
+		if targID.lower().startswith('tic'):
 			ticnum = str(targID)[3:]
 			if ticnum.startswith(' '):
 				ticnum = str(ticnum)[1:]
+		
 		else:
 			ticnum = str(targID) ### you've already handled the TOI already!
 			if ticnum.startswith(' '):
@@ -804,8 +830,14 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				os.system('mkdir '+download_directory)
 
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
+			print('attempting to download: ', lcdownload_name)
 			os.system('curl -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
-			print('downloading the light curve for '+str(targID)+' in sector ', sector)
+			if os.path.exists(download_directory+'/'+lcdownload_name):
+				print('file downloaded or already exists.')
+			else:
+				print('file was not downloaded.')
+			print(' ')
+			#print('downloading the light curve for '+str(targID)+' in sector ', sector)
 
 			try:
 				lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)
@@ -837,7 +869,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 	except:
 		traceback.print_exc()
-		time.sleep(60)
+		print('EXCEPTION RAISED FOR tess_target_download().')
+		time.sleep(10)
 
 		obsTable = Observations.query_object(targID, radius='0.001 deg')
 		TESS_idxs = np.where(np.array(obsTable['obs_collection']) == 'TESS')[0]

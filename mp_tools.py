@@ -229,3 +229,8 @@ def lc_fold(times, fluxes, errors, tau0, period, phase_offset=0.0):
 	fold_times, fold_fluxes, folded_errors = fold_times[fold_sort_idxs], fold_fluxes[fold_sort_idxs], fold_errors[fold_sort_idxs]
 
 	return fold_times, fold_fluxes, fold_errors
+
+
+def nospaces(string):
+	newstring = string.replace(' ', '')
+	return newstring 
