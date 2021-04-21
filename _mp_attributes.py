@@ -905,19 +905,23 @@ def find_neighbors(self, is_neighbor='n'):
 		NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known=row_known)
 		print('NEA_rowidx, NEA_targetname = ', NEA_rowidx, NEA_targetname)
 
-		if len(NEA_rowidx) == 0:
-			### means this object is not in the cumulative KOI list.
-			print('It appears this object is not in the cumulative KOI list.')
-			print('checking all '+str(len(NEA_data['kepoi_name']))+' MAST rows...')
-			#### you're going to need to check all mast rows!
-			check_NEA_rows = np.arange(0,len(NEA_data['kepoi_name']),1)
+		if (type(NEA_rowidx) == list) and (len(NEA_rowidx) == 0):
+				### means this object is not in the cumulative KOI list.
+				print('It appears this object is not in the cumulative KOI list.')
+				print('checking all '+str(len(NEA_data['kepoi_name']))+' MAST rows...')
+				#### you're going to need to check all mast rows!
+				check_NEA_rows = np.arange(0,len(NEA_data['kepoi_name']),1)
+
+		elif np.isfinite(NEA_rowidx) == False:
+			check_NEA_rows = np.arange(0,len(NEA_data['kepoi_name']),1)			
+
 		else:
 			if NEA_rowidx < 10:
 				check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
 			else:
 				check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
 
-			print('NEA_rowidx = ', NEA_rowidx)
+		print('NEA_rowidx = ', NEA_rowidx)
 
 
 	neighbor_rows = []
@@ -949,7 +953,8 @@ def find_neighbors(self, is_neighbor='n'):
 			if cr <= len(NEA_data['kepler_name']) - 1:
 				target_term = self.target[7:-1]
 				search_term = np.array(NEA_data['kepler_name'])[cr][7:-2]
-				if ((len(NEA_rowidx) == 0) and (search_term == target_term)) or ((search_term == target_term) and (cr != NEA_rowidx)):
+				#if ((len(NEA_rowidx) == 0) and (search_term == target_term)) or ((search_term == target_term) and (cr != NEA_rowidx)):
+				if ((search_term == target_term)) or ((search_term == target_term) and (cr != NEA_rowidx)):				
 					print('FOUND A NEIGHBOR FOR '+str(NEA_targetname)+': '+str(NEA_data['kepler_name'][cr]))
 					neighbor = str(NEA_data['kepler_name'][cr])
 					if ' ' in neighbor:
