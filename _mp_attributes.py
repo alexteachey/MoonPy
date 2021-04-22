@@ -645,24 +645,67 @@ def get_properties(self, locate_neighbor='n'):
 
 	elif (self.telescope.lower() == "tess"):
 		if (np.isfinite(exofop_rowidx) == True) or (np.isfinite(exofop_rowidx) == np.array([True])):
+			exofop_entry_present = 'y'
 			print('searching for target parameters in the exofop database.')
 			print(' ')
-			target_period, target_period_uperr, target_period_lowerr = np.array(exofop_data['Period (days)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
-			target_impact, target_impact_uperr, target_impact_lowerr = np.nan, np.nan, np.nan 
-			target_duration, target_duration_uperr, target_duration_lowerr = np.array(exofop_data['Duration (hours)'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx]
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.sqrt(1e-6*np.array(exofop_data['Depth (ppm)'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx])
-			target_rp, target_rp_uperr, target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx]
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.array(exofop_data['Epoch (BJD)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
+			exofop_target_period, exofop_target_period_uperr, exofop_target_period_lowerr = np.array(exofop_data['Period (days)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
+			exofop_target_impact, exofop_target_impact_uperr, exofop_target_impact_lowerr = np.nan, np.nan, np.nan 
+			exofop_target_duration, exofop_target_duration_uperr, exofop_target_duration_lowerr = np.array(exofop_data['Duration (hours)'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx], np.array(exofop_data['Duration (hours) err'])[exofop_rowidx]
+			exofop_target_rprstar, exofop_target_rprstar_uperr, exofop_target_rprstar_lowerr = np.sqrt(1e-6*np.array(exofop_data['Depth (ppm)'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx]), np.sqrt(1e-6*np.array(exofop_data['Depth (ppm) err'])[exofop_rowidx])
+			exofop_target_rp, exofop_target_rp_uperr, exofop_target_rp_lowerr = np.array(exofop_data['Planet Radius (R_Earth)'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx], np.array(exofop_data['Planet Radius (R_Earth) err'])[exofop_rowidx]
+			exofop_target_tau0, exofop_target_tau0_uperr, exofop_target_tau0_lowerr = np.array(exofop_data['Epoch (BJD)'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx], np.array(exofop_data['Epoch (BJD) err'])[exofop_rowidx]
+		else:
+			exofop_entry_present = 'n'
 
-		elif (np.isfinite(NEA_rowidx) == True) or (np.isfinite(NEA_rowidx) == np.array([True])):
-			target_period, target_period_uperr, target_period_lowerr = np.nanmedian(NEA_data['pl_orbper'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr2'][NEA_rowidx])
-			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nanmedian(NEA_data['pl_tranmid'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr2'][NEA_rowidx])
-			target_impact, target_impact_uperr, target_impact_lowerr = np.nanmedian(NEA_data['pl_imppar'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr2'][NEA_rowidx])
-			target_duration, target_duration_uperr, target_duration_lowerr = np.nanmedian(NEA_data['pl_trandur'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr2'][NEA_rowidx])
-			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
-			target_rp, target_rp_uperr, target_rp_lowerr = np.nanmedian(NEA_data['pl_rade'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr2'][NEA_rowidx])
-			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
-			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nanmedian(NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr2'][NEA_rowidx])
+
+		if (np.isfinite(NEA_rowidx) == True) or (np.isfinite(NEA_rowidx) == np.array([True])):
+			NEA_entry_present = 'y'
+			NEA_target_period, NEA_target_period_uperr, NEA_target_period_lowerr = np.nanmedian(NEA_data['pl_orbper'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_orbpererr2'][NEA_rowidx])
+			NEA_target_tau0, NEA_target_tau0_uperr, NEA_target_tau0_lowerr = np.nanmedian(NEA_data['pl_tranmid'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_tranmiderr2'][NEA_rowidx])
+			NEA_target_impact, NEA_target_impact_uperr, NEA_target_impact_lowerr = np.nanmedian(NEA_data['pl_imppar'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_impparerr2'][NEA_rowidx])
+			NEA_target_duration, NEA_target_duration_uperr, NEA_target_duration_lowerr = np.nanmedian(NEA_data['pl_trandur'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_trandurerr2'][NEA_rowidx])
+			NEA_target_rprstar, NEA_target_rprstar_uperr, NEA_target_rprstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+			NEA_target_rp, NEA_target_rp_uperr, NEA_target_rp_lowerr = np.nanmedian(NEA_data['pl_rade'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_radeerr2'][NEA_rowidx])
+			NEA_target_a_rstar, NEA_target_a_rstar_uperr, NEA_target_a_rstar_lowerr = np.nanmedian(NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_ratrorerr2'][NEA_rowidx])
+			NEA_target_Teq, NEA_target_Teq_uperr, NEA_target_Teq_lowerr = np.nanmedian(NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(NEA_data['pl_eqterr2'][NEA_rowidx])
+		else:
+			NEA_entry_present = 'n'
+
+
+		if ((exofop_entry_present == 'y') and (NEA_entry_present == 'y')) or ((exofop_entry_present == 'n') and (NEA_entry_present == 'y')):
+			#### prioritize the NEA entries
+			print("USING / PRIORITIZING NEA PARAMETERS.")
+			target_period, target_period_uperr, target_period_lowerr = NEA_target_period, NEA_target_period_uperr, NEA_target_period_lowerr
+			target_impact, target_impact_uperr, target_impact_lowerr = NEA_target_impact, NEA_target_impact_uperr, NEA_target_impact_lowerr 
+			target_duration, target_duration_uperr, target_duration_lowerr = NEA_target_duration, NEA_target_duration_uperr, NEA_target_duration_lowerr
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = NEA_target_rprstar, NEA_target_rprstar_uperr, NEA_target_rprstar_lowerr
+			target_rp, target_rp_uperr, target_rp_lowerr = NEA_target_rp, NEA_target_rp_uperr, NEA_target_rp_lowerr
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = NEA_target_tau0, NEA_target_tau0_uperr, NEA_target_tau0_lowerr
+			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = NEA_target_a_rstar, NEA_target_a_rstar_uperr, NEA_target_a_rstar_lowerr
+			target_Teq, target_Teq_uperr, target_Teq_lowerr = NEA_target_Teq, NEA_target_Teq_uperr, NEA_target_Teq_lowerr
+
+		elif (exofop_entry_present == 'y') and (NEA_entry_present == 'n'):
+			print("USING EXOFOP PARAMETERS.")
+			target_period, target_period_uperr, target_period_lowerr = exofop_target_period, exofop_target_period_uperr, exofop_target_period_lowerr
+			target_impact, target_impact_uperr, target_impact_lowerr = exofop_target_impact, exofop_target_impact_uperr, exofop_target_impact_lowerr 
+			target_duration, target_duration_uperr, target_duration_lowerr = exofop_target_duration, exofop_target_duration_uperr, exofop_target_duration_lowerr
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = exofop_target_rprstar, exofop_target_rprstar_uperr, exofop_target_rprstar_lowerr
+			target_rp, target_rp_uperr, target_rp_lowerr = exofop_target_rp, exofop_target_rp_uperr, exofop_target_rp_lowerr
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = exofop_target_tau0, exofop_target_tau0_uperr, exofop_target_tau0_lowerr
+			#target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = exofop_target_a_rstar, exofop_target_a_rstar_uperr, exofop_target_a_rstar_lowerr
+			#target_Teq, target_Teq_uperr, target_Teq_lowerr = exofop_target_Teq, exofop_target_Teq_uperr, exofop_target_Teq_lowerr		
+
+		elif (exofop_entry_present == 'n') and (NEA_entry_present == 'n'):
+			print('EXOFOP AND NEA ENTRIES BOTH MISSING. SETTING PARAMETERS TO NaN.')
+			target_period, target_period_uperr, target_period_lowerr = np.nan, np.nan, np.nan
+			target_impact, target_impact_uperr, target_impact_lowerr = np.nan, np.nan, np.nan
+			target_duration, target_duration_uperr, target_duration_lowerr = np.nan, np.nan, np.nan
+			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = np.nan, np.nan, np.nan
+			target_rp, target_rp_uperr, target_rp_lowerr = np.nan, np.nan, np.nan
+			target_tau0, target_tau0_uperr, target_tau0_lowerr = np.nan, np.nan, np.nan
+			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = np.nan, np.nan, np.nan
+			target_Teq, target_Teq_uperr, target_Teq_lowerr = np.nan, np.nan, np.nan					
+
 
 
 	### update properties!

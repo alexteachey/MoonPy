@@ -883,6 +883,7 @@ class MoonpyLC(object):
 
 		#try:
 		if 'neighbor_dict' in dir(self):
+			#### indicates that you're dealing with the target, not its neighbors.
 			print(self.neighbor_dict.keys())
 			neighbor_dict = self.neighbor_dict
 			### indicates you're dealing with the target. Therefore:
@@ -916,7 +917,7 @@ class MoonpyLC(object):
 					### for now, just delete them after downloading... should come up with a better solution.
 					print('calling MoonpyLC for neighbor: ', neighbor)
 
-					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', download='y', clobber='n')
+					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', download='n', clobber='n')
 
 				except:
 					traceback.print_exc()
@@ -928,7 +929,7 @@ class MoonpyLC(object):
 		neighbor_transit_idxs = []
 		neighbor_transit_IDs = []
 		
-		for neighbor in neighbor_dict.keys():
+		for neighbor in neighbor_dict.keys():			
 			neighbor_taus = neighbor_dict[neighbor].taus 
 			neighbor_dur = neighbor_dict[neighbor].duration_days 
 

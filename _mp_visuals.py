@@ -162,6 +162,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 		for neighbor in neighbors:
+			
 			neighbor_taus = self.neighbor_dict[neighbor].taus 
 			neighbor_dur = self.neighbor_dict[neighbor].duration_days 
 
