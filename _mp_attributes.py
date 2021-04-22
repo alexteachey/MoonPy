@@ -38,6 +38,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
 
 
 def find_transit_quarters(self, locate_neighbor='n'):
+	print('calling _mp_attributes.py/find_transit_quarters().')
 	self.get_properties(locate_neighbor=locate_neighbor)
 	quarter_transit_dict = {}
 	print('self.quarters = ', self.quarters)
@@ -85,21 +86,26 @@ def find_transit_quarters(self, locate_neighbor='n'):
 			quarter_transit_dict[0] = 'y'
 			
 	self.quarter_transit_dict = quarter_transit_dict 
-
+	print(self.quarter_transit_dict)
+	print(' ')
 
 
 def find_aliases(self):
+	print('calling _mp_attributes.py/find_aliases().')
 	target_aliases = []
 	alias_search_results = Simbad.query_objectids(self.target)
 	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
 		target_alias = alias_search_results[alidx][0]
 		target_aliases.append(target_alias)
 	self.aliases = np.array(target_aliases)
+	print(self.aliases)
+	print( )
 
 
 
 
 def get_coords(self):
+	print('calling _mp_attributes.py/get_coords().')
 	targetID = self.targetID
 	try:
 		print(self.RA, self.Dec)
@@ -183,11 +189,12 @@ def get_coords(self):
 							self.Dec = np.array(exofop_data['Dec'][self.exofop_rowidx])[0]
 						except:
 							pass
-			
+
 
 
 
 def find_planet_row(self, alias=None, row_known='n'):
+	print('calling _mp_attributes.py/find_planet_row().')
 	if alias != None:
 		row_target = alias
 	else:
@@ -566,7 +573,7 @@ def find_planet_row(self, alias=None, row_known='n'):
 
 
 def get_properties(self, locate_neighbor='n'):
-	print("calling 'get_properties()...")
+	print("calling _mp_attributes.py/get_properties()...")
 
 	if self.telescope.lower() == 'kepler':
 		if self.newlc == 'y':
@@ -805,15 +812,16 @@ def get_properties(self, locate_neighbor='n'):
 
 
 def find_taus(self):
+	print("calling _mp_attributes.py/find_taus().")	
 	try:
-		print("calling 'find_taus()'.")
 		transit_midtimes = [self.tau0]
 		print('tau0 = ', self.tau0)
 		while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
-			print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
+			#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
 			### the transit_midtime you just added isn't the first transit!
 			transit_midtimes.append(transit_midtimes[-1] - self.period)
 		transit_midtimes = np.sort(transit_midtimes).tolist()
+		print('appended '+str(len(transit_midtimes))+' transit midtimes.')
 
 		next_transit = transit_midtimes[-1]+self.period
 		nquarters = len(self.quarters)
@@ -832,6 +840,7 @@ def find_taus(self):
 
 
 def mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neighbor_period=None, neighbor_duration_hours=None, neighbor_name='None'):
+	print('calling _mp_attributes.py/mystery_solver().')
 	### this function will generate essential 
 	self.tau0 = tau0
 	self.period = period
@@ -858,6 +867,7 @@ def mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neigh
 
 
 def find_neighbors(self, is_neighbor='n'):
+	print('calling _mp_attributes.py/find_neighbors().')
 	print('is_neighbor = ', is_neighbor)
 
 
@@ -1028,6 +1038,7 @@ def find_neighbors(self, is_neighbor='n'):
 
 
 def find_TTVs(self, show_plot='n', yvar='OCmins', mask_multiple=None):
+	print('calling _mp_attributes.py/find_TTVs().')
 	#if mask_multiple == None:
 	#	mask_multiple = self.mask_multiple 
 
@@ -1095,6 +1106,7 @@ def find_TTVs(self, show_plot='n', yvar='OCmins', mask_multiple=None):
 
 
 def get_future_transits(self, num_transits=20, output_format='datetime', native_format=None):
+	print('calling _mp_attributes.py/get_future_transits().')
 	#### uses last tau to project future transit times
 	#### format can be 'BJD', 'BKJD', 'BTJD', or 'datetime'
 	last_tau = self.taus[-1]

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 
 def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=np.array([]), max_degree=30):
+	print('calling mp_detrend.py/cofiam_detrend().')
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
 
 	if type(mask_idxs) != type(None):
@@ -84,6 +85,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 
 def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=20):
+	print('calling mp_detrend.py/polyAM_detrend().')
 	if type(mask_idxs) != type(None):
 
 		if len(mask_idxs) > 0:
@@ -163,7 +165,7 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 
 def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', outsig=3, window=19, local_window_duration_multiple=10, Tmid=None, Tdur_days=None, mask_idxs=None, max_degree=20):
-
+	print('calling mp_detrend.py/polyLOC_detrend().')
 	#### THIS DETRENDING HAS TO BE USED ON A TRANSIT BY TRANSIT BASIS, *NOT* A QUARTER BY QUARTER BASIS.
 
 	#### use the local_window_duration_multiple to use only times from transit midtime
@@ -244,6 +246,7 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 
 
 def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
+	print('calling mp_detrend.py/untrendy_detrend().')
 	import untrendy
 
 	print('BEWARE: Untrendy is failing because of a strange bug within scipy.')
@@ -275,6 +278,7 @@ def untrendy_detrend(times, fluxes, errors, telescope=None, mask_idxs=None):
 
 
 def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1.0, telescope=None, mask_idxs=None):
+	print('calling mp_detrend.py/george_detrend().')
 	import george
 
 	if GP_kernel != 'ExpSquaredKernel':
@@ -329,6 +333,7 @@ def george_detrend(times, fluxes, errors, GP_kernel='ExpSquaredKernel', metric=1
 
 
 def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_idxs=None):
+	print('calling np_detrend.py/medfilt_detrend().')
 
 	print('kernel_hours = ', kernel_hours)
 
@@ -368,6 +373,7 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 
 
 def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredKernel', metric=1.0, local_window_duration_multiple=10, Tdur_days=None, Tmid=None, telescope=None, mask_idxs=None, max_degree=30):
+	print('calling np_detrend.py/methmarg_detrend().')
 	#### THIS FUNCTION WILL RUN ALL THE OTHER DETRENDERS, and take the median value at every time step.
 	try:
 		cofiam_fluxes, cofiam_errors = cofiam_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=30)

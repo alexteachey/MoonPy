@@ -17,6 +17,7 @@ destination_dir = moonpydir+'/TPFs'
 
 
 def find_kic(targetname):
+	print('calling mp_tpf_examiner.py/find_kic().')
 	target_aliases = []
 	if targetname.startswith('Kepler') and (targetname[-1] in ['a','b','c','d','e','f','g','h','i','j']):
 		targetname = targetname[:-1]
@@ -34,6 +35,7 @@ def find_kic(targetname):
 
 
 def multi_polyfit(times, fluxes, seg_window=25, stagger=0.5, show_plot='n'):
+	print('calling mp_tpf_examiner.py/multi_polyfit().')
 	### seg window is in days... can_should be substitute by some multiple of the transit duration
 	### overlap is also in days... one quarter 
 	seg_except = 'n'
@@ -169,6 +171,7 @@ def lookup_epochs(quarter, cadence):
 
 
 def tpf_downloader(target, quarters, cadence='long', clobber='n'): 
+	print('calling mp_tpf_examiner.py/tpf_downloader().')
 	if target.startswith('KIC') == False:
 		kic = find_kic(target)
 	else:
@@ -254,7 +257,7 @@ def tpf_downloader(target, quarters, cadence='long', clobber='n'):
 
 
 def tpf_examiner(target, quarters, find_alias='n', Tdur=None, time_lims=None, cadence='long', clobber='n', detrend='y', mask_times=None, mask_idxs=None):
-	
+	print('calling mp_tpf_examiner.py/tpf_examiner().')
 	if target.startswith('KIC') == False:
 		kic = find_kic(target)
 		print ('found a KIC number: ', kic)

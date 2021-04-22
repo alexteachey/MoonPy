@@ -37,6 +37,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+	print('calling _mp_visuals.py/plot_lc().')
 	if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
 		detrended = 'n'
 		show_model = 'n'
@@ -432,6 +433,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
+	print('calling _mp_visuals.py/plot_corner().')
 	import corner
 
 	### THIS FUNCTION GENERATES A CORNER PLOT BASED ON YOUR MODEL FITS.
@@ -480,6 +482,7 @@ def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
 
 
 def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
+	print('calling _mp_visuals.py/plot_bestmodel().')
 	### THIS FUNCTION PLOTS YOUR BEST FIT LIGHT CURVE MODEL OVER THE DATA.
 	if folded == True:
 		self.fold()
@@ -524,6 +527,7 @@ def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
 
 
 def fold(self, detrended='y', phase_offset=0.0):
+	print('calling _mp_visuals.py/fold().')
 	### this method will phase fold your light curve. 
 	### first tau in the time series:
 	try:
@@ -560,6 +564,7 @@ def fold(self, detrended='y', phase_offset=0.0):
 
 
 def examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None):
+	print('calling _mp_visuals.py/examine_TPF().')
 	if type(quarters) == type(None):
 		quarters = self.quarters 
 	tpf_examiner(self.target, quarters=quarters, Tdur=self.duration_days, time_lims=time_lims, detrend=detrend, mask_idxs=mask_idxs, find_alias='y')
@@ -569,6 +574,7 @@ def examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None
 
 
 def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
+	print("calling _mp_visuals.py/genLS().")
 	### this function generates a Lomb-Scargle Periodogram!
 	LSperiods = []
 	LSmaxpower_periods = []
@@ -638,6 +644,7 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 
 
 def correlated_noise_detector(self):
+	print('calling _mp_visuals.py/correlated_noise_detector().')
 	#### this function will take the light curve and bin it up in larger and larger bins, to test whether there is correlated noise present.
 	#### must mask transits (use self.mask_transit_idxs, shape=self.times.shape).
 

@@ -6,6 +6,7 @@ from mp_tools import mass_from_density, q1q2_to_u1u2, inc_from_impact, Kep3_afro
 
 
 def run_batman(all_times, RpRstar, Rstar, bplan, Pplan, tau0, q1, q2, long_peri=0, ecc=0, planet_sma=None, Mstar=None, Mplan=None, rhostar=None, rhoplan=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+	print('calling mp_batman.py/run_batman().')
 	import batman
 	#### initial calculations
 	### you may supply planet masses OR densities!

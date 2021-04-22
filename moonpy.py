@@ -671,6 +671,7 @@ class MoonpyLC(object):
 						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
 
 
+				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters		
 
 
 			if (self.telescope.lower() != 'kepler') and (self.telescope.lower() != 'user'):
@@ -871,6 +872,7 @@ class MoonpyLC(object):
 
 
 	def get_neighbors(self, clobber_lc='y', save_to_file='y', mask_multiple=None):
+		print('calling moonpy.py/get_neighbors().')
 
 		#if mask_multiple == None:
 		#	mask_multiple = self.mask_multiple

@@ -57,7 +57,7 @@ else:
 
 
 def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
-
+	print('calling mp_lcfind.py/Simbad_query().')
 	if 'h' in ra or ':' in ra:
 		coord_format == 'sexagesimal'
 		ra = ra.replace(' ', '') ### remove the spaces
@@ -157,6 +157,7 @@ def Simbad_query(ra, dec, coord_format='degrees', telescope='kepler'):
 
 
 def find_KIC_alias(target_name):
+	print('calling mp_lcfind.py/find_KIC_alias().')
 	#### FOR USE WITH KEPLER LIGHT CURVES.
 	### in order to return a KIC number, you need to remove final letters and decimals.
 	star_number = target_name
@@ -181,6 +182,7 @@ def find_KIC_alias(target_name):
 
 
 def find_TIC_alias(target_name):
+	print('calling mp_lcfind.py/find_TIC_alias().')
 	#### FOR USE WITH TESS LIGHT CURVES
 	### in order to return a KIC number, you need to remove final letters and decimals.
 	star_number = target_name
@@ -206,6 +208,7 @@ def find_TIC_alias(target_name):
 
 
 def find_EPIC_alias(target_name):
+	print('calling mp_lcfind.py/find_EPIC_alias().')
 	#### FOR USE WITH k2 LIGHT CURVES.
 	### in order to return a EPIC number, you need to remove final letters and decimals.
 	star_number = target_name
@@ -241,6 +244,7 @@ def find_EPIC_alias(target_name):
 
 
 def kepler_URL_generator(KIC, short_cadence=False):
+	print('calling mp_lcfind.py/kepler_URL_generator()')
 	### this function takes in a KIC number (with or without a prefix) and produces a URL and wget script. 
 
 	"""
@@ -292,6 +296,7 @@ def kepler_URL_generator(KIC, short_cadence=False):
 
 
 def k2_URL_generator(EPIC):
+	print('calling mp_lcfind.py/k2_URL_generator()')
 	### this function takes in a EPIC number (with or without a prefix) and produces a URL and wget script. 
 
 	"""
@@ -383,6 +388,7 @@ def k2_URL_generator(EPIC):
 
 
 def kepler_fits_download(target_name, clobber='n'):
+	print('calling mp_lcfind.py/kepler_fits_downloader().')
 	### first extract the KIC number
 	try:
 		KIC_name = find_KIC_alias(target_name)
@@ -405,6 +411,7 @@ def kepler_fits_download(target_name, clobber='n'):
 
 
 def k2_fits_download(target_name, clobber='n'):
+	print('calling mp_lcfind.py/k2_fits_download().')
 	try:
 		EPIC_name = find_EPIC_alias(target_name)
 
@@ -435,6 +442,7 @@ def k2_fits_download(target_name, clobber='n'):
 
 
 def kepler_unpack_fits(target_name, short_cadence=False, long_cadence=True):
+	print('calling mp_lcfind.py/kepler_unpack_fits().')
 	#### first thing you have to do is make sure the damn thing exists!
 	KIC_directory = kepler_URL_generator(find_KIC_alias(target_name))[2] 
 	try:
@@ -515,6 +523,7 @@ def kepler_unpack_fits(target_name, short_cadence=False, long_cadence=True):
 
 
 def k2_unpack_fits(target_name):
+	print('calling mp_lcfind.py/k2_unpack_fits()')
 
 	#### first thing you have to do is make sure the damn thing exists!
 	EPIC_directory = k2_URL_generator(find_EPIC_alias(target_name))[2] 
@@ -568,6 +577,7 @@ def k2_unpack_fits(target_name):
 
 
 def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc', telescope='kepler', clobber='n', short_cadence=False):
+	print('calling mp_lcfind.py/kplr_target_download().')
 	#### using the functions developed above
 	### first, try unpacking without downloading.
 		
@@ -683,6 +693,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 
 
 def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', clobber='n', short_cadence=False):
+	print('calling mp_lcfind.py/kplr_coord_download().')
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	print('ra,dec = ', ra, dec)	
@@ -708,6 +719,7 @@ def kplr_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_radius=5, lc_format='pdc', short_cadence=False):
+	print('calling mp_lcfind.py/tess_coord_download().')
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	print('ra,dec = ', ra, dec)
@@ -733,6 +745,7 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='pdc', delete_fits='n'):
+	print('calling mp_lcfind.py/tess_target_download().')
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
 		pass
@@ -790,7 +803,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				### now read the first line of that 
 				sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
 				if len(sector_prefix) > 0:
-					print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
+					#print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
 					nactual_sectors += 1
 				else:
 					break
@@ -831,7 +844,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			print('attempting to download: ', lcdownload_name)
-			os.system('curl -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
+			os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 			if os.path.exists(download_directory+'/'+lcdownload_name):
 				print('file downloaded or already exists.')
 			else:
@@ -840,9 +853,11 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			#print('downloading the light curve for '+str(targID)+' in sector ', sector)
 
 			try:
-				lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)
+				#lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)
+				lcfile = pyfits.open(download_directory+'/'+lcdownload_name)
 			except:
-				os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				#os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				os.system('rm -rf '+download_directory+'/'+lcdownload_name)
 				continue
 
 			lcfiles.append(lcfile)
@@ -864,7 +879,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			sectors.append(sector)
 
 			if delete_fits == 'y':
-				os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				#os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				os.system('rm -rf '+download_directory+'/'+lcdownload_name)
 
 
 	except:
@@ -933,6 +949,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 
 def eleanor_target_download(targID, sectors='all', short_cadence=False, lc_format='pdc'):
+	print('calling mp_lcfind.py/eleanor_target_download().')
 	import eleanor
 	if sectors=='all':
 		sector_array = np.array([1,2])
@@ -963,5 +980,6 @@ def eleanor_target_download(targID, sectors='all', short_cadence=False, lc_forma
 
 
 def eleanor_coord_download(ra,dec, sectors='all', short_cadence=False):
+	print('calling mp_lcfind.py/eleanor_coord_download().')
 	print("nothing doing right now.")
 

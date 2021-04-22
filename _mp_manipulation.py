@@ -38,6 +38,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_manipulation.py')]
 
 
 def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
+	print('calling _mp_manipulation.py/fit().')
 	### optional values for code are "multinest" and "emcee"
 
 	### FOUR MODELS MAY BE RUN: a planet-only model (P) with no TTVs, a TTV model (T), freely fitting the transit times, 
@@ -218,6 +219,7 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 
 
 def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', extra_path_info=None, cnnlc_path=moonpydir+'/cnn_lcs'):
+	print('calling _mp_manipulation.py/prep_for_CNN().')
 	### this function will produce an arrayy that's ready to be fed to a CNN for moon finding. 
 	if os.path.exists(cnnlc_path) == False:
 		os.system('mkdir '+cnnlc_path)
@@ -302,6 +304,7 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 
 
 def initialize_priors(self, modelcode):
+	print('calling _mp_manipulation.py/intialize_priors().')
 	param_uber_dict = {}
 
 	param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
@@ -351,6 +354,7 @@ def initialize_priors(self, modelcode):
 ### DETRENDING!
 
 def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
+	print('calling _mp_manipulation.py/detrend().')
 	#if mask_multiple == None:
 	#	mask_multiple = self.mask_multiple
 
@@ -868,6 +872,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 
 
 def gen_batman(self, folded='n'):
+	print('calling _mp_manipulation.py/gen_batman().')
 	from mp_batman import run_batman 
 
 	"""
