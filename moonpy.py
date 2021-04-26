@@ -536,7 +536,14 @@ class MoonpyLC(object):
 
 			### TESS HANDLING
 			elif telescope.lower() == 'tess':
-				NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.			
+				try:
+					NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.			
+				except:
+					print('UNABLE TO FIND NEA_rowidx and/or exofop_rowidx. May not exist.')
+					NEA_rowidx = np.nan 
+					exofop_rowidx = np.nan 
+					NEA_targetname = targetID
+
 				try:
 					NEA_rowidx = int(NEA_rowidx)
 				except:
@@ -584,12 +591,7 @@ class MoonpyLC(object):
 
 
 
-				if ffi == 'y': ### eleanor is designed to download FFI light curves.
-					lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
-
-
-
-				elif ffi == 'n':
+				if ffi == 'n':
 
 					if self.target.lower().startswith("toi"):
 						try:
@@ -666,9 +668,16 @@ class MoonpyLC(object):
 							print('calling tess_target_download().')
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)
 						except:
-							print('calling tess_coord_download().')
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
-						#### if lc_times is empty, you need to find its alias and query via tess_coord_download
+							try:
+								print('calling tess_coord_download().')
+								lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters, simbad_name = tess_coord_download(tess_ra, tess_dec)
+							except:
+								ffi = 'y' #### try to find it in the FULL FRAME IMAGES!
+
+
+				if ffi == 'y': ### eleanor is designed to download FFI light curves.
+					#lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
+					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = TESS_QLP_load(targetID, sectors=quarters, clobber=clobber)
 
 
 				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters		
@@ -815,6 +824,7 @@ class MoonpyLC(object):
 				self.get_properties(locate_neighbor='n')
 				self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
 				traceback.print_exc()
+			
 			elif is_neighbor == 'n':
 				self.find_transit_quarters(locate_neighbor='y') ### ditto above.
 				traceback.print_exc()
