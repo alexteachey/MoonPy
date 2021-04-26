@@ -10,19 +10,21 @@ from astropy.io import fits as pyfits
 import time
 import traceback
 import socket
+from urllib.request import urlretrieve
+import requests 
 
 moonpydir = os.getcwd()
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
 	#moonpydir = '/data/tethys/Documents/Software/MoonPy'
-	central_data_dir = '/data/tethys/Documents/Central_Data/'
+	central_data_dir = '/data/tethys/Documents/Central_Data'
 elif ('Alexs-Macbook') in hostname:
 	#moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 elif 'umbriel' in hostname:
 	#moonpydir = '/home/cal/ateachey/Documents/MoonPy'
-	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+	central_data_dir = '/home/cal/ateachey/Documents/Central_Data'
 else:
 	#moonpydir = input('Please specify the MoonPy directory (or hard-code this into moonpy.py): ')
 	#central_data_dir = input("Please specify a 'central data' directory (or hard-code this into moonpy.py): ")
@@ -278,7 +280,7 @@ def kepler_URL_generator(KIC, short_cadence=False):
 	#http://archive.stsci.edu/pub/kepler/lightcurves/0047/004760478/kplr004760478-2010078095331_llc.fits
 	final_URL = 'http://archive.stsci.edu/pub/kepler/lightcurves/'+first_four_numbers+'/'+query_format_number+'/'
 
-	download_directory = central_data_dir+'Kepler_lightcurves/KIC'+str(query_format_number)
+	download_directory = central_data_dir+'/Kepler_lightcurves/KIC'+str(query_format_number)
 	if os.path.exists(download_directory):
 		pass
 	else:
@@ -340,7 +342,7 @@ def k2_URL_generator(EPIC):
 	#final_URL = 'http://archive.stsci.edu/pub/kepler/lightcurves/'+first_four_numbers+'/'+query_format_number+'/'
 	#final_URL = 'https://archive.stsci.edu/pub/k2/lightcurves/c3/212200000/35000/'
 
-	download_directory = central_data_dir+'K2_lightcurves/EPIC'+str(query_format_number)
+	download_directory = central_data_dir+'/K2_lightcurves/EPIC'+str(query_format_number)
 	if os.path.exists(download_directory):
 		pass
 	else:
@@ -836,7 +838,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 		for sector in np.arange(1,nsectors+1,1):
 
-			download_directory = central_data_dir+'TESS_lightcurves/TIC'+str(ticnum)
+			download_directory = central_data_dir+'/TESS_lightcurves/TIC'+str(ticnum)
 			if os.path.exists(download_directory):
 				pass
 			else:
@@ -982,4 +984,114 @@ def eleanor_target_download(targID, sectors='all', short_cadence=False, lc_forma
 def eleanor_coord_download(ra,dec, sectors='all', short_cadence=False):
 	print('calling mp_lcfind.py/eleanor_coord_download().')
 	print("nothing doing right now.")
+
+
+
+
+
+def TESS_QLP_download(tic, sectors='all', clobber='n'):
+	TESSdir = central_data_dir+'/TESS_lightcurves'
+	TIC_FFI_LCs = TESSdir+'/TIC_FFI_LCs'
+
+	if tic.lower().startswith('tic'):
+		tic = tic[3:]
+	if tic.lower().startswith('-') or tic.lower().startswith(' '):
+		tic = tic[1:]
+
+	TIC_filedir = TIC_FFI_LCs+'/TIC'+str(tic)
+
+	if os.path.exists(TIC_filedir):
+		nfiles_present = len(os.listdir(TIC_filedir))
+		if  nfiles_present > 0:
+			#### files exist already
+			if clobber == 'n':
+				print(str(nfiles_present)+" already present. Set clobber='y' if you think there should be more.")
+				proceed_to_download = 'n'
+			else:
+				proceed_to_download = 'y'
+
+		else:
+			proceed_to_download = 'y'
+	else:
+		proceed_to_download = 'y'
+
+	if proceed_to_download == 'y':
+		if sectors == 'all':
+			sector_nums = np.array([1, 14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
+		else:
+			sector_nums = sectors 
+
+		files_exist = '?'
+
+		skip_sectors = np.array([])
+
+		for sn in sector_nums:
+			if sn in skip_sectors:
+				continue
+
+			print('sn = ', sn)
+
+			sector_string = str(sn) #### will be of the form S0001 for sector 1 or S0026 for sector 26, etc.
+			while len(sector_string) < 4:
+				sector_string = '0'+sector_string
+			assert len(sector_string) == 4
+			sector_string = 's'+sector_string
+
+			tid_string = str(tic)
+			### from Huang et al, tid_string must be 16 digits, zero-padded.	
+			tid_string = (16-len(tid_string))*'0'+tid_string
+			assert len(tid_string) == 16
+			
+			txt_lcfilename = 'hlsp_qlp_tess_ffi_'+sector_string+'-'+tid_string+'_tess_v01_llc.txt'
+			fits_lcfilename = 'hlsp_qlp_tess_ffi_'+sector_string+'-'+tid_string+'_tess_v01_llc.fits'
+
+			#### here's the formatting:
+			#https://mast.stsci.edu/api/v0.1/Download/file?uri=mast:HLSP/qlp/s0026/0000/0001/6554/9165/hlsp_qlp_tess_ffi_s0026-0000000165549165_tess_v01_llc.fits
+
+			uri = 'mast:HLSP/qlp/'+sector_string+'/0000/0001/'+str(tic)[-8:-4]+'/'+str(tic)[-4:]+'/'+fits_lcfilename 
+			download_URL = 'https://mast.stsci.edu/api/v0.1/Download/file?uri='+uri
+
+			#if download_all == 'n':
+			request = requests.get(download_URL)
+			if request.status_code == 200:
+				#### file exists!
+				print('uri exists: '+str(uri))
+				uri_exists = 'y'
+				files_exist = 'y'	
+
+				if (sn > 0) and (sn < 14):
+					#### implies the hemisphere
+					skip_sectors = np.arange(14,27,1)
+					print("skipping sectors: ", skip_sectors)
+				elif (sn >= 14) and (sn < 27):
+					#### implies the hemisphere
+					skip_sectors = np.arange(1,14,1)
+					print('skipping sectors: ', skip_sectors)
+
+			else:
+				uri_exists = 'n'
+
+			if files_exist == 'y':
+				#### make sure there's a place to put the file first!
+				if os.path.exists(TIC_FFI_LCs):
+					pass
+				else:
+					os.system('mkdir '+TIC_FFI_LCs)
+
+				if os.path.exists(TIC_FFI_LCs+'/TIC'+str(tic)):
+					pass
+				else:
+					os.system('mkdir '+TIC_FFI_LCs+'/TIC'+str(tic))
+
+				TIC_filepath = TIC_FFI_LCs+'/TIC'+str(tic)+'/'+fits_lcfilename
+				
+				try:
+					#### get the file!
+					urlretrieve(download_URL, TIC_filepath)	
+				
+				except:				
+					print('URL not found for sector '+str(sn))
+					continue
+
+
 
