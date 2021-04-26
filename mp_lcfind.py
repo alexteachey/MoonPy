@@ -988,6 +988,86 @@ def eleanor_coord_download(ra,dec, sectors='all', short_cadence=False):
 
 
 
+def TESS_QLP_load(tic, sectors='all', clobber='n'):
+	#### first download 
+	TESS_QLP_download(tic, sectors=sectors, clobber=clobber)
+	ticnum = tic 
+	if ticnum.lower().startswith('tic'):
+		ticnum = ticnum[3:]
+	if ticnum.lower().startswith('-') or ticnum.lower().startswith(' '):
+		ticnum = ticnum[1:]
+
+
+	### now load them as you do with the other TESS light curves.
+	all_times = []
+	all_fluxes = []
+	all_errors = []
+	all_flags = []
+	sectors = []
+	lcfiles = []	
+
+	download_directory = central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs/TIC'+str(ticnum)	
+	QLP_files = os.listdir(download_directory)
+
+	#for sector in np.arange(1,nsectors+1,1):
+	for QLP_file in QLP_files:
+		if '.fits' not in QLP_file:
+			continue
+
+		lcdownload_name = QLP_file 
+		### find the sector 
+		sector_number = lcdownload_name[19:23]
+		if sector_number.startswith('0'):
+			sector_number = sector_number[1:]
+		sector = int(sector_number) 
+
+		try:
+			lcfile = pyfits.open(download_directory+'/'+lcdownload_name)
+		except:
+			os.system('rm -rf '+download_directory+'/'+lcdownload_name)
+			continue
+
+		lcfiles.append(lcfile)
+		lcdata = lcfile[1].data
+		lctimes = np.array(lcdata['TIME'])
+		#if lc_format == 'pdc':
+		lcfluxes = np.array(lcdata['SAP_FLUX'])
+		lcerrors = np.array(lcdata['KSPSAP_FLUX_ERR'])
+		#elif lc_format == 'sap':
+		#	lcfluxes = np.array(lcdata['SAP_FLUX'])
+		#	lcerrors = np.array(lcdata['SAP_FLUX_ERR'])
+		lcflags = np.array(lcdata['QUALITY'])
+		#sector = lcfile[0].header['SECTOR']
+
+		all_times.append(lctimes)
+		all_fluxes.append(lcfluxes)
+		all_errors.append(lcerrors)
+		all_flags.append(lcflags)
+		sectors.append(sector)
+
+
+	all_times, all_fluxes, all_errors, all_flags, sectors = np.array(all_times), np.array(all_fluxes), np.array(all_errors), np.array(all_flags), np.array(sectors)
+
+	return all_times, all_fluxes, all_errors, all_flags, sectors 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def TESS_QLP_download(tic, sectors='all', clobber='n'):
 	TESSdir = central_data_dir+'/TESS_lightcurves'
