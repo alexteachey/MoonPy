@@ -914,10 +914,11 @@ def find_neighbors(self, is_neighbor='n'):
 	print('is_neighbor = ', is_neighbor)
 
 
-	if is_neighbor == 'y':
-		row_known = 'n'
-	else:
-		row_known = 'y'
+	#if is_neighbor == 'y':
+	#	row_known = 'n'
+	#else:
+	#	row_known = 'y'
+	row_known = 'n'
 
 	if self.telescope.lower() == 'user':
 		pass 
