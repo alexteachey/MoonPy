@@ -102,8 +102,13 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 	#### IDENTIFY TARGET TIMES
-	target_taus = self.taus 
-	target_dur = self.duration_days
+	try:
+		target_taus = self.taus 
+		target_dur = self.duration_days
+	except:
+		target_taus = np.array([np.nan])
+		target_dur = np.array([np.nan]) 
+
 	target_transit_idxs = []
 	for tt in target_taus:
 		ttidxs = np.where((stitched_times >= (tt - (self.mask_multiple/2)*target_dur)) & (stitched_times <= (tt + (self.mask_multiple/2)*target_dur)))[0]
