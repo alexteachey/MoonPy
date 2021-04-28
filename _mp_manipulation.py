@@ -889,13 +889,15 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 			masked_flags.append(self.flags[i])
 
 
-	self.masked_times = np.array(masked_times)
-	self.masked_fluxes = np.array(masked_fluxes)
-	self.masked_errors = np.array(masked_errors)
-	self.masked_fluxes_detrend = np.array(masked_fluxes_detrend)
-	self.masked_errors_detrend = np.array(masked_errors_detrend)
-	self.masked_flags = np.array(masked_flags)
+	self.masked_times = np.array(masked_times, dtype=object)
+	self.masked_fluxes = np.array(masked_fluxes, dtype=object)
+	self.masked_errors = np.array(masked_errors, dtype=object)
+	self.masked_fluxes_detrend = np.array(masked_fluxes_detrend, dtype=object)
+	self.masked_errors_detrend = np.array(masked_errors_detrend, dtype=object)
+	self.masked_flags = np.array(masked_flags, dtype=object)
 
+	#### NOW CALCULATE THE DURBIN-WATSON STATISTIC! -- using the masked_detrended_fluxes
+	self.DWstat = DWstat(data=np.concatenate(self.masked_fluxes_detrend), model=np.linspace(1,1,len(np.concatenate(self.masked_fluxes_detrend))))
 
 
 
