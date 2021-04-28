@@ -608,6 +608,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		##### update!
 		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs)
 
+
 		if skip_quarter == 'n':
 			try:
 				if dmeth == 'cofiam':
@@ -866,6 +867,35 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		self.get_neighbors(save_to_file='y')
 
 	### finally, run get_neighbors() so that the neighbors will be appended to the end of the file.
+
+
+	#### spit out masked_times, masked_fluxes, masked_errors, masked_fluxes_detrend, masked_errors_detrend, masked_flags
+	masked_times, masked_fluxes, masked_errors, masked_fluxes_detrend, masked_errors_detrend, masked_flags = [], [], [], [], [], []
+	for i in np.arange(0,len(self.quarters),1):
+		if len(self.mask_transit_idxs[i]) > 0:
+			masked_times.append(np.delete(self.times[i], self.mask_transit_idxs[i]))
+			masked_fluxes.append(np.delete(self.fluxes[i], self.mask_transit_idxs[i]))
+			masked_errors.append(np.delete(self.errors[i], self.mask_transit_idxs[i]))
+			masked_fluxes_detrend.append(np.delete(self.fluxes_detrend[i], self.mask_transit_idxs[i]))
+			masked_errors_detrend.append(np.delete(self.errors_detrend[i], self.mask_transit_idxs[i]))
+			masked_flags.append(np.delete(self.flags[i], self.mask_transit_idxs[i]))
+		elif len(self.mask_transit_idxs[i]) == 0:
+			#### nothing to delete!
+			masked_times.append(self.times[i])
+			masked_fluxes.append(self.fluxes[i])
+			masked_errors.append(self.errors[i])
+			masked_fluxes_detrend.append(self.fluxes_detrend[i])
+			masked_errors_detrend.append(self.errors_detrend[i])
+			masked_flags.append(self.flags[i])
+
+
+	self.masked_times = np.array(masked_times)
+	self.masked_fluxes = np.array(masked_fluxes)
+	self.masked_errors = np.array(masked_errors)
+	self.masked_fluxes_detrend = np.array(masked_fluxes_detrend)
+	self.masked_errors_detrend = np.array(masked_errors_detrend)
+	self.masked_flags = np.array(masked_flags)
+
 
 
 
