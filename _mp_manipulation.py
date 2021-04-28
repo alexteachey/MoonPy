@@ -606,7 +606,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		all_quarter_mask_transit_idxs.append(mask_transit_idxs)
 
 		##### update!
-		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs)
+		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
 
 
 		if skip_quarter == 'n':
