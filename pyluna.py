@@ -27,10 +27,12 @@ elif 'umbriel' in hostname:
 #### NEW FUNCTIONALITY -- ALLOWS YOU TO RUN MULTIPLE LUNA runs at once -- your LUNAdir will be based in your CURRENT WORKING DIRECTORY!!!!
 master_LUNAdir = moonpydir+'/LUNA'
 local_LUNAdir = os.getcwd()+'/LUNA'
-if master_LUNAdir != local_LUNAdir:
-	print('COPYING '+master_LUNAdir+' to '+local_LUNAdir)
-	#### COPY master_LUNAdir locally -- that way you can make global changes within the master without doing ad-hoc changes.
-	os.system('cp -r '+master_LUNAdir+' '+local_LUNAdir)
+if (master_LUNAdir != local_LUNAdir):
+	if os.path.exists(local_LUNAdir) == False:
+		print('COPYING '+master_LUNAdir+' to '+local_LUNAdir)
+		#### COPY master_LUNAdir locally -- that way you can make global changes within the master without doing ad-hoc changes.
+		os.system('cp -r '+master_LUNAdir+' '+local_LUNAdir)
+	
 	LUNAdir = local_LUNAdir
 	outputdir = LUNAdir+'/output'
 	if os.path.exists(outputdir) == False:
