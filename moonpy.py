@@ -881,59 +881,43 @@ class MoonpyLC(object):
 
 
 
-	def get_neighbors(self, clobber_lc='y', save_to_file='y', mask_multiple=None):
+	def get_neighbors(self, save_to_file='y', mask_multiple=None):
 		print('calling moonpy.py/get_neighbors().')
 
-		#if mask_multiple == None:
-		#	mask_multiple = self.mask_multiple
+		neighbor_dict = {}
+		for neighbor in self.neighbors:
 
-		### this function will download grab all the information about your target's neighbors.
-		if self.telescope.lower() == 'user':
-			neighbor_dict = {}
+			###
+			try:
+				if (self.telescope.lower() == 'kepler'):
+				
+					if neighbor.lower().startswith('kepler'):
+						neighbor_key = 'K'+str(neighbor[7:])
+					else:
+						### for now this is just a KOI!
+						neighbor_key = neighbor
+						while neighbor_key.lower().startswith('k') or neighbor_key.startswith('0'):
+							neighbor_key = neighbor_key[1:]
+						neighbor_key = 'K'+str(neighbor_key)
+				
+				elif (self.telescope.lower() == 'k2'):
+					neighbor_key = 'K2_'+str(neighbor_key[3:])
 
-		#try:
-		if 'neighbor_dict' in dir(self):
-			#### indicates that you're dealing with the target, not its neighbors.
-			print(self.neighbor_dict.keys())
-			neighbor_dict = self.neighbor_dict
-			### indicates you're dealing with the target. Therefore:
-			is_neighbor='n'
-		
-		else:
-			is_neighbor='y'
-			### you need to generate the neighbor_dict
-			neighbor_dict = {}
-			for neighbor in self.neighbors:
-				###
-				try:
-					if (self.telescope.lower() == 'kepler'):
-					
-						if neighbor.lower().startswith('kepler'):
-							neighbor_key = 'K'+str(neighbor[7:])
-						else:
-							### for now this is just a KOI!
-							neighbor_key = neighbor
-							while neighbor_key.startswith('K') or neighbor_key.startswith('0'):
-								neighbor_key = neighbor_key[1:]
-							neighbor_key = 'K'+str(neighbor_key)
-					
-					elif (self.telescope.lower() == 'k2'):
-						neighbor_key = 'K2_'+str(neighbor_key[3:])
+				elif (self.telescope.lower() == 'tess'):
+					neighbor_key = neighbor 
 
-					elif (self.telescope.lower() == 'tess'):
-						neighbor_key = neighbor 
+				### now generate the LC object -- note that this will download duplicate light curves!
+				### for now, just delete them after downloading... should come up with a better solution.
+				print('calling MoonpyLC for neighbor: ', neighbor)
 
-					### now generate the LC object -- note that this will download duplicate light curves!
-					### for now, just delete them after downloading... should come up with a better solution.
-					print('calling MoonpyLC for neighbor: ', neighbor)
+				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', clobber='n')
 
-					neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', download='n', clobber='n')
-
-				except:
-					traceback.print_exc()
-					print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
+			except:
+				traceback.print_exc()
+				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
 			self.neighbor_dict = neighbor_dict 
+
 
 		final_neighbor_IDs = []		
 		neighbor_transit_idxs = []
