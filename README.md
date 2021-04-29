@@ -180,7 +180,7 @@ mask_multiple: how wide (in units of transit duration) you mask on either side o
 
 
 
-**And some functions that can be called on the light curve object...** The format is *lc_object.function(args)*.
+**And some functions that can be called on the light curve object...** The format is *lc_object.function(args)*. Many of these are called *under the hood*, but you may desire to call them yourself in some situations. The big ones are *detrend()*, *genLS()*, and *plot_lc()*.
 
  'correlated_noise_detector()'
 
