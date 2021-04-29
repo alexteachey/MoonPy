@@ -170,6 +170,16 @@ Proper usage is:
  'telescope',
  'times'
 
+*here's a quick explanation for some of the less obvious ones:*
+DWstat: the Durbin-Watson statistic (measuring autocorrelation post-detrend)
+ldm_a1 and ldm_a2: Limb-darkening coefficients.
+neighbor_dict: a dictionary of any other planets in the system. They should be their own light curve objects complete with attributes.
+smass: stellar mass
+longp: longitude of periapse
+mask_multiple: how wide (in units of transit duration) you mask on either side of the transit midtime, for detrending.
+
+
+
 **And some functions that can be called on the light curve object...** The format is *lc_object.function(args)*.
 
  'correlated_noise_detector()'
