@@ -14,7 +14,7 @@ MoonPy is kind of like a streamlined astro package aggregator, but in time it wi
 In particular, support for modeling exomoon transits is coming! (Hence the name, MoonPy). It's not quite ready for prime time, so stay tuned!
 
 ## Installation
-The easiest way to use MoonPy is to clone the directory, and then create a .pth file that will link this directory such that it will be included in your python path for importing. I've always found this terribly confusing, personally; the best instructions are in [the accepted answer to this question on StackOverflow](https://stackoverflow.com/questions/37006114/anaconda-permanently-include-external-packages-like-in-pythonpath). Basically, create a text file called ```moonpy.pth```, and place it in ```site-packages``` directory of the python you're using. For example: ```$HOME/path/to/anaconda/lib/pythonX.X/site-packages``` or ```~/anaconda3/envs/{NAME_OF_ENVIRONMENT}/lib/pythonX.X/site-packages/```. Then you should be able to do ```from moonpy import *``` from any working directory.
+The easiest way to use MoonPy is to clone the directory, and then create a .pth file that will link this directory such that it will be included in your python path for importing. I've always found this terribly confusing, personally; the best instructions are in [the accepted answer to this question on StackOverflow](https://stackoverflow.com/questions/37006114/anaconda-permanently-include-external-packages-like-in-pythonpath). Basically, create a text file called ```moonpy.pth```, containing the path to MoonPy (wherever you've saved it), and place it in ```site-packages``` directory of the python you're using. For example: ```$HOME/path/to/anaconda/lib/pythonX.X/site-packages``` or ```~/anaconda3/envs/{NAME_OF_ENVIRONMENT}/lib/pythonX.X/site-packages/```. Then you should be able to do ```from moonpy import *``` from any working directory.
 
 
 ## Prerequisites
@@ -24,8 +24,6 @@ This code requires a number of packages, including:
 * [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - standard parameter estimator and Bayesian evidence calculator, developed by Johannes Buchner as a wrapper to the standard MultiNest code (Feroz and Hobson)
 * [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey (DFM) et al
 * [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - Standard transit-modeling code by L. Kreidberg
-* ~~[kplr](http://dfm.io/kplr/) - for downloading Kepler light curves, developed by DFM~~
-* ~~[k2plr](https://github.com/rodluger/k2plr) -- a modification of the kplr code for downloading K2 data, by Rodrigo Luger~~
 * [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by DFM
 * [george](https://george.readthedocs.io/en/latest/) -- a Gaussian process regression tool developed by (you guessed it) DFM
 * [untrendy](https://github.com/dfm/untrendy) -- another DFM package for fast and easy detrending (currently having difficulties here)
@@ -33,18 +31,6 @@ This code requires a number of packages, including:
 As well as several standard packages (numpy, scipy, astropy, matplotlib, pandas, etc) that likely came with your python distribution.
 
 Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
-
-
-## USAGE:
-
-Eventually this package will come with a pip install, or something along those lines. For now however, you'll just want to clone this repository and run everything locally. If you keep all these scripts together they ought to talk to each other. 
-
-Within the MoonPy directory, simply use 
-
-```
-from moonpy import *
-```
-and that ought to get you going. The first time you start up the code a savepath will be generated, which is a subdirectory of the current working directory. That is: MoonPy/saved_lcs. If you wish to change this you'll want to go in and alter the code manually.
 
 
 ## OVERVIEW
@@ -55,20 +41,23 @@ Below you will find the details of some of these tools. At present the user will
 * **generate a Lomb-Scargle** periodogram using *genLS()*.
 * **Detrend the light curve** using *detrend()*
 * **fit a transit model** to the light curve using *fit()*.
+* **plot a transit model from fiducial parameters** taken from the NASA Exoplanet Archive.
 * **plot the best fitting model** over the light curve using *plot_bestmodel()*.
 * **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
 * **get target neighbor attributes** using *get_neighbors()*.
 * **identify possible TTVs** using *find_TTVs()*.
 
-Most of the above take keyword arguments that are described below.
+Most of the above take keyword arguments that are described below. 
 
 
 
 ## INITIALIZE A LIGHT CURVE OBJECT.
 
+The core functionality of MoonPy revolves around generating and manipulating a **light curve object**. A large number of attributes are either initially associated with this object, or can be generated after calling functions for the object.
+
 Proper usage is:
 
-*>>> lc_object = MoonpyLC(targetID=None, target_type=None, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', sc=False, ffi='y', save_lc='y', load_lc='n', clobber=None)*
+*>>> lc_object = MoonpyLC(targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None)*
 
 
 ### KEYWORDS
@@ -77,9 +66,21 @@ Proper usage is:
 
 *target_type*: May be "kic", "koi", "planet", "toi", "tic", or "epic". The code will attempt to intuit this.
 
-*quarters*: acceptable values are "all" or an array of quarters.
+*lc_times*: a time series can be provided, if desired, to utilize MoonPy functionality without downloading from a catalog. Format should either be a single array, or an array of arrays (one for each quarter / segment).
 
-*telescope*: may be "Kepler" / "kepler", "K2" / "k2", and eventually "TESS" / "Tess" / "tess".
+*lc_fluxes*: must have same shape as *lc_times*.
+
+*lc_errors*: Must have same shape as *lc_times*.
+
+*lc_flags*: Must have same shape as *lc_times*.
+
+*lc_quarters*: acceptable values are "all" or an array of quarters. Should have same shape as *lc_times* if there is more than one quarter / segment.
+
+*usr_dict*: a dictionary of object attributes that can be provided for a user-provided lightcurve.
+
+*mask_multiple*: how many times the transit duration on either side of transit midtime that is masked for detrending.
+
+*telescope*: may be "Kepler" / "kepler", "K2" / "k2", "TESS" / "Tess" / "tess", or 'user'.
 
 *RA*: sexagesimal of the form 12h34m14.5s or decimal form.
 
@@ -93,25 +94,137 @@ Proper usage is:
 
 *remove_flagged*: automatically removes data points that have quality flags != 0.
 
+*ffi*: can be 'y' or 'n', indicates whether you want to download a full-frame image light curve (probably from TESS).
+
 *save_lc*: option to save your light curve once you've generated it as a .tsv file.
 
 *load_lc*: if 'y', an attempt is made to load a light curve file you have already generated through this code.
+
+*attributes_only*: when set to 'y', this downloads a planet's attributes without downloading the light curve.
 
 *clobber*: if 'y', any light curve file for the target will be overwritten. Sets *load_lc = 'n'*. If neither *load_lc* nor *clobber* are specified and a light curve for this target already exists, the user will be asked to decide whether the file should be clobbered.
 
 
 ### ATTRIBUTES
 
-*times*: call *lc_object.times* for an array of arrays, each quarter / sector with its own nested array.
+**The following attributes are available upon successfully downloading a light curve** (or in some cases after detrending). Hopefully their meanings are mostly self explanatory:
 
-*fluxes*: the *fluxes* attribute is structured just like *times* as an array of arrays, providing the raw fluxes for each quarter/sector.
+ 'Dec',
+ 'DWstat',
+ 'NEA_rowidx',
+ 'NEA_targetname',
+ 'RA',
+ 'a_rstar',
+ 'aliases',
+ 'depth',
+ 'duration_days',
+ 'duration_days_err',
+ 'duration_hours',
+ 'duration_hours_err',
+ 'eccen',
+ 'eccen_err',
+ 'errors',
+ 'flags',
+ 'fluxes',
+ 'impact',
+ 'impact_err',
+ 'incl',
+ 'incl_err',
+ 'insol',
+ 'insol_err',
+ 'ldm_a1',
+ 'ldm_a2',
+ 'longp',
+ 'longp_err',
+ 'mask_multiple',
+ 'neighbor_dict',
+ 'neighbor_transit_IDs',
+ 'neighbor_transit_list',
+ 'neighbor_transit_times',
+ 'neighbors',
+ 'newlc',
+ 'period',
+ 'period_err',
+ 'q1',
+ 'q2',
+ 'quarter_transit_dict',
+ 'quarters',
+ 'rp_meters',
+ 'rp_rearth',
+ 'rp_rearth_err',
+ 'rp_rjup',
+ 'rprstar',
+ 'rprstar_err',
+ 'rstar_meters',
+ 'rstar_rsol',
+ 'savepath',
+ 'sma_AU',
+ 'smass',
+ 'smass_err',
+ 'target',
+ 'targetID',
+ 'target_type',
+ 'tau0',
+ 'tau0_err',
+ 'taus',
+ 'telescope',
+ 'times'
 
-*errors*: another array of arrays, providing the photometric errors.
+**And some functions that can be called on the light curve object...** The format is *lc_object.function(args)*.
 
-**After you have detrended** using the *detrend()* method, you can call the *fluxes_detrend* and *errors_detrend* attributes, which are as before but now provide normalized fluxes and associated errors.
+ 'correlated_noise_detector()'
+
+ 'detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_holczer='y')'
+
+ 'examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None)',
+
+ 'find_TTVs(self, show_plot='n', yvar='OCmins', mask_multiple=None)',
+
+ 'find_aliases()',
+
+ 'find_neighbors(self, is_neighbor='n')',
+
+ 'find_planet_row(self, alias=None, row_known='n')',
+
+ 'find_taus()',
+
+ 'find_transit_quarters(self, locate_neighbor='n')',
+
+ 'fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False)',
+
+ 'fold(self, detrended='y', phase_offset=0.0)',
+
+ 'genLS(self, show_plot = 'y', compute_fap='n', use_detrend='n', minP=None, maxP=None, LSquarters=None)',
+
+ 'gen_batman(self, folded='n')',
+
+ 'get_coords()',
+
+ 'get_future_transits(self, num_transits=20, output_format='datetime', native_format=None), 
+
+ 'get_neighbors(self, save_to_file='y', mask_multiple=None)',
+
+ 'get_properties(self, locate_neighbor='n')',
+
+ 'initialize_priors(self, modelcode)',
+
+ 'mystery_solver(self, tau0, period, duration_hours, neighbor_tau0=None, neighbor_period=None, neighbor_duration_hours=None, neighbor_name='None')',
+
+ 'plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1)',
+
+ 'plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1)',
+
+ 'plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y',
+ show_neighbors='y', mask_multiple=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n')',
+
+ 'prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', extra_path_info=None, cnnlc_path=moonpydir+'/cnn_lcs')'.
+
+
+**additional functions that will work independent of a light curve object can be found in mp_tools.py**. If you sniff around in the source code you may find other useful functions to be utilized in your workflow. For example, *mp_lcfind.py* contains all the functions utilized in downloading the light curves. 
+
 
 **NOTES:**
-This object is designed to be versatile. You can either
+The light curve object is designed to be versatile. You can either
 a) supply a targetID -- either a KOI, Kepler planet, KIC, K2 planet or EPIC target, or a planet observed by TESS -- and the name of the telescope; or 
 b) supply coordinates for an object search
 
