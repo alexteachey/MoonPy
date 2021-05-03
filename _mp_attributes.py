@@ -311,13 +311,13 @@ def find_planet_row(self, alias=None, row_known='n'):
 	#### K2 HANDLING
 	elif self.telescope.lower() == 'k2':
 		k2_NEA_address = moonpydir+'/cumk2ois_mast.txt'
-		if os.path.exists(kep_NEA_address):
-			k2_NEA_fct = os.path.getctime(kep_NEA_address) ### file created time
+		if os.path.exists(k2_NEA_address):
+			k2_NEA_fct = os.path.getctime(k2_NEA_address) ### file created time
 		else:
 			k2_NEA_fct = 0
 		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
 		if os.path.exists(k2_fop_address):
-			k2_fop_fct = os.path.getctime(kep_fop_address) ### file created time
+			k2_fop_fct = os.path.getctime(k2_fop_address) ### file created time
 		else:
 			k2_fop_fct = 0
 
