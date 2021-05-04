@@ -816,8 +816,8 @@ def get_properties(self, locate_neighbor='n'):
 		elif self.newlc == 'n':
 			NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='n')	
 
-		print('NEA_rowidx = ', NEA_rowidx)
-		print('exofop_rowidx = ', exofop_rowidx)
+		print('[gp] NEA_rowidx = ', NEA_rowidx)
+		print('[gp] exofop_rowidx = ', exofop_rowidx)
 
 
 	elif self.telescope.lower() == 'user':
@@ -1196,6 +1196,8 @@ def find_neighbors(self, is_neighbor='n'):
 			check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
 		elif np.isfinite(exofop_rowidx) and (exofop_rowidx >= 10):
 			check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+		else:
+			check_exofop_rows = np.arange(self.exofop_rowidx-10,self.exofop_rowidx+11,1)
 		
 		print('NEA_rowidx, exofop_rowidx = ', NEA_rowidx, exofop_rowidx)
 
@@ -1311,6 +1313,7 @@ def find_neighbors(self, is_neighbor='n'):
 
 	else:
 		if (self.telescope.lower() == "tess"):
+
 			if self.target.lower().startswith("tic"):
 				print("looking for neighbors in exofop for this TIC target.")
 				for cr in check_exofop_rows:
