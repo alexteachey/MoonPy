@@ -579,7 +579,7 @@ def examine_TPF(self, quarters=None, time_lims=None, detrend='y', mask_idxs=None
 
 
 
-def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
+def genLS(self, show_plot = 'y', compute_fap='n', use_detrend='n', minP=None, maxP=None, LSquarters=None):
 	print("calling _mp_visuals.py/genLS().")
 	### this function generates a Lomb-Scargle Periodogram!
 	LSperiods = []
@@ -598,11 +598,24 @@ def genLS(self, show_plot = 'y', compute_fap='n', LSquarters=None):
 
 		print("processing LS for ", this_quarter)
 		if nquarters != 1:
-			qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			if use_detrend == 'n':
+				qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes[qidx], self.errors[qidx]
+			elif use_detrend == 'y':
+				qtimes, qfluxes, qerrors = self.times[qidx], self.fluxes_detrend[qidx], self.errors_detrend[qidx]
 		else:
-			qtimes, qfluxes, qerrors = self.times, self.fluxes, self.errors 
-		maxperiod = 0.5 * (np.nanmax(qtimes) - np.nanmin(qtimes))
-		minperiod = 0.5
+			if use_detrend == 'n':
+				qtimes, qfluxes, qerrors = self.times, self.fluxes, self.errors 
+			elif use_use_detrend == 'y':
+				qtimes, qfluxes, qerrors = self.times, self.fluxes_detrend, self.errors_detrend
+		if maxP == None:
+			maxperiod = 0.5 * (np.nanmax(qtimes) - np.nanmin(qtimes))
+		else:
+			maxperiod = maxP
+
+		if minP == None:
+			minperiod = 0.5
+		else:
+			minperiod = minP 
 		minfreq, maxfreq = 1/maxperiod, 1/minperiod
 		qls = LombScargle(qtimes, qfluxes, qerrors)
 		qfreq, qpower = qls.autopower(minimum_frequency=minfreq, maximum_frequency=maxfreq)

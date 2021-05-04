@@ -353,7 +353,7 @@ def initialize_priors(self, modelcode):
 
 ### DETRENDING!
 
-def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_mazeh='y'):
+def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_holczer='y'):
 	print('calling _mp_manipulation.py/detrend().')
 	#if mask_multiple == None:
 	#	mask_multiple = self.mask_multiple
@@ -365,7 +365,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 	self.get_neighbors()
 
 	if self.telescope.lower() != 'kepler':
-		use_mazeh == 'n' ### mazeh is only for Kepler targets!
+		use_holczer == 'n' ### mazeh is only for Kepler targets!
 
 	if mask_neighbors == 'y':
 		mask_transits = 'y' 
@@ -410,7 +410,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 			### find out which transit midtimes, if any, are in this quarter
 			mask_transit_idxs = []
 
-			if use_mazeh == 'y':
+			if use_holczer == 'y':
 
 				print("Using TTV Catalog to identify transit times for detrending...")
 				### taus should be calculated based on the Mazeh table.
@@ -437,7 +437,11 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 						pass
 
 				if len(target_idxs) == 0:
-					self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
+					try:
+						self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
+					except:
+						print('self.taus not available for detrending. setting self.mask_taus = np.array([np.nan])')
+						self.mask_taus = np.array([np.nan])
 
 				else:
 					target_epochs = [] ### a list of all the epochs in the Mazeh catalog.
@@ -503,7 +507,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 					if len(self.mask_taus.shape) > 1:
 						self.mask_taus = self.mask_taus.reshape(self.mask_taus.shape[0])
 
-			elif use_mazeh == 'n':
+			elif use_holczer == 'n':
 				self.mask_taus = self.taus 
 
 			quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]

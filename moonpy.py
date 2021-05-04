@@ -44,7 +44,10 @@ This package is designed to do the following:
 """
 
 
-
+first_kepler = 'y'
+first_koi = 'y'
+first_k2 = 'y'
+first_tess = 'y'
 
 
 moonpydir = os.path.realpath(__file__)
@@ -73,7 +76,7 @@ print('Light curves will be stored in '+central_data_dir)
 
 class MoonpyLC(object):
 	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector
-	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, find_taus, mystery_solver, find_neighbors, find_TTVs
+	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs
 	from _mp_manipulation import fit, prep_for_CNN, initialize_priors, detrend, gen_batman
 
 
@@ -83,7 +86,8 @@ class MoonpyLC(object):
 
 	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
-		#targetID = targetID.lower()
+
+		global first_kepler, first_k2, first_tess, first_koi
 
 		self.mask_multiple = mask_multiple 
 
@@ -206,6 +210,74 @@ class MoonpyLC(object):
 		self.savepath = savepath
 
 
+		if self.target.lower().startswith('kepler') or self.target.lower().startswith('koi') or self.target.lower().startswith('kic'):
+			if self.target.lower().startswith('kepler'):
+				if first_kepler == 'y':
+					global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
+					kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = self.get_databases()
+					self.NEA_data = kepler_NEA_data
+					self.NEA_columns = kepler_NEA_columns
+					self.exofop_data = kepler_exofop_data
+					self.exofop_columns = kepler_exofop_columns
+					first_kepler = 'n'
+
+				elif first_kepler == 'n':
+					self.NEA_data = kepler_NEA_data
+					self.NEA_columns = kepler_NEA_columns
+					self.exofop_data = kepler_exofop_data
+					self.exofop_columns = kepler_exofop_columns			
+
+			elif (self.target.lower().startswith('koi')) or (self.target.lower().startswith('kic')):
+				if first_koi == 'y':
+					global koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns 
+					koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = self.get_databases()
+					self.NEA_data = koi_NEA_data
+					self.NEA_columns = koi_NEA_columns
+					self.exofop_data = koi_exofop_data
+					self.exofop_columns = koi_exofop_columns
+					first_koi = 'n'
+
+				elif first_koi == 'n':
+					self.NEA_data = koi_NEA_data
+					self.NEA_columns = koi_NEA_columns
+					self.exofop_data = koi_exofop_data
+					self.exofop_columns = koi_exofop_columns			
+
+
+
+		elif self.target.lower().startswith('k2') or self.target.lower().startswith('epic'):
+			if first_k2 == 'y':
+				global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
+				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = self.get_databases()
+				self.NEA_data = k2_NEA_data
+				self.NEA_columns = k2_NEA_columns
+				self.exofop_data = k2_exofop_data
+				self.exofop_columns = k2_exofop_columns
+				first_k2 = 'n'
+
+			elif first_k2 == 'n':
+				self.NEA_data = k2_NEA_data
+				self.NEA_columns = k2_NEA_columns
+				self.exofop_data = k2_exofop_data
+				self.exofop_columns = k2_exofop_columns			
+		
+
+		
+		elif self.target.lower().startswith('tess') or self.target.lower().startswith('tic') or self.target.lower().startswith('toi'):
+			if first_tess == 'y':
+				global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
+				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = self.get_databases()
+				self.NEA_data = tess_NEA_data
+				self.NEA_columns = tess_NEA_columns
+				self.exofop_data = tess_exofop_data
+				self.exofop_columns = tess_exofop_columns
+				first_tess = 'n'
+
+			elif first_tess == 'n':
+				self.NEA_data = tess_NEA_data
+				self.NEA_columns = tess_NEA_columns
+				self.exofop_data = tess_exofop_data
+				self.exofop_columns = tess_exofop_columns			
 
 
 
@@ -421,7 +493,7 @@ class MoonpyLC(object):
 			### KEPLER HANDLING
 			elif telescope.lower() == 'kepler':
 				print('downloading via kplr...')
-				NEA_rowidx, NEA_data, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
+				NEA_rowidx, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
 				try:
 					if user_supplied == 'n':
@@ -474,7 +546,7 @@ class MoonpyLC(object):
 			### K2 HANDLING
 			elif telescope.lower() == 'k2':
 				#try:
-				NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
+				NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for K2 targets without a login.
 				self.NEA_targetname = NEA_targetname
 
 				print('NEA_rowidx = ', NEA_rowidx)
@@ -537,7 +609,7 @@ class MoonpyLC(object):
 			### TESS HANDLING
 			elif telescope.lower() == 'tess':
 				try:
-					NEA_rowidx, exofop_rowidx, NEA_data, exofop_data, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.			
+					NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='n') ### exofop data is available for TESS targets without a login.			
 				except:
 					print('UNABLE TO FIND NEA_rowidx and/or exofop_rowidx. May not exist.')
 					NEA_rowidx = np.nan 
@@ -937,8 +1009,16 @@ class MoonpyLC(object):
 					neighbor_transit_IDs.append(neighbor)
 
 		### include the target here!
-		target_taus = self.taus
-		target_dur = self.duration_days
+		try:
+			target_taus = self.taus
+		except:
+			print('self.taus not available. Setting target_taus = np.array([np.nan])')
+			target_taus = np.array([np.nan])
+		try:
+			target_dur = self.duration_days
+		except:
+			print('self.duration_days not available. Setting target_dur = np.nan')
+			target_dur = np.nan 
 		for tt in target_taus:
 			ttidxs = np.where((np.hstack(self.times) >= (tt - (self.mask_multiple/2)*target_dur)) & (np.hstack(self.times) <= (tt + (self.mask_multiple/2)*target_dur)))[0]
 			for ttidx in ttidxs:
