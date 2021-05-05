@@ -1132,7 +1132,7 @@ def find_taus(self):
 			transit_midtimes.append(next_transit)
 			next_transit = transit_midtimes[-1]+self.period
 		self.taus = np.array(transit_midtimes)
-		
+
 	except:
 		traceback.print_exc()
 		raise Exception('an exception was raised while calling find_taus().')
@@ -1170,7 +1170,6 @@ def find_neighbors(self, is_neighbor='n'):
 	print('calling _mp_attributes.py/find_neighbors().')
 	print('is_neighbor = ', is_neighbor)
 
-
 	if is_neighbor == 'y':
 		row_known = 'n'
 	else:
@@ -1179,7 +1178,6 @@ def find_neighbors(self, is_neighbor='n'):
 
 	if self.telescope.lower() == 'user':
 		pass 
-
 
 	elif self.telescope.lower() == 'k2':
 		NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known=row_known)
@@ -1265,6 +1263,8 @@ def find_neighbors(self, is_neighbor='n'):
 
 		print('NEA_rowidx = ', NEA_rowidx)
 
+
+	print('checking '+str(len(check_NEA_rows))+' rows.')
 
 	neighbor_rows = []
 	neighbor_targets = []
@@ -1364,6 +1364,7 @@ def find_neighbors(self, is_neighbor='n'):
 				except:
 					pass							
 
+	neighbor_targets.remove(self.target)
 	self.neighbors = neighbor_targets
 
 

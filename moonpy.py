@@ -84,10 +84,14 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=5, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=4, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
-
 		global first_kepler, first_k2, first_tess, first_koi
+		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
+		global koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns 
+		global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
+		global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
+
 
 		self.mask_multiple = mask_multiple 
 
@@ -213,7 +217,7 @@ class MoonpyLC(object):
 		if self.target.lower().startswith('kepler') or self.target.lower().startswith('koi') or self.target.lower().startswith('kic'):
 			if self.target.lower().startswith('kepler'):
 				if first_kepler == 'y':
-					global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
+
 					kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = self.get_databases()
 					self.NEA_data = kepler_NEA_data
 					self.NEA_columns = kepler_NEA_columns
@@ -229,7 +233,6 @@ class MoonpyLC(object):
 
 			elif (self.target.lower().startswith('koi')) or (self.target.lower().startswith('kic')):
 				if first_koi == 'y':
-					global koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns 
 					koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = self.get_databases()
 					self.NEA_data = koi_NEA_data
 					self.NEA_columns = koi_NEA_columns
@@ -247,7 +250,6 @@ class MoonpyLC(object):
 
 		elif self.target.lower().startswith('k2') or self.target.lower().startswith('epic'):
 			if first_k2 == 'y':
-				global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
 				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = self.get_databases()
 				self.NEA_data = k2_NEA_data
 				self.NEA_columns = k2_NEA_columns
@@ -265,7 +267,6 @@ class MoonpyLC(object):
 		
 		elif self.target.lower().startswith('tess') or self.target.lower().startswith('tic') or self.target.lower().startswith('toi'):
 			if first_tess == 'y':
-				global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
 				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = self.get_databases()
 				self.NEA_data = tess_NEA_data
 				self.NEA_columns = tess_NEA_columns
@@ -964,6 +965,8 @@ class MoonpyLC(object):
 
 		neighbor_dict = {}
 		for neighbor in self.neighbors:
+			if neighbor == self.target:
+				continue
 
 			###
 			try:
