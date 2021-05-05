@@ -614,9 +614,10 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 				#### remove out of bounds transit idxs:
 				OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
 				print("# Out of Bounds: ", len(OoB_mask_transit_idxs))
+				mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
 			else:
 				print('len(mask_transit_idxs) = 0')
-			mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
+
 
 
 		elif mask_transits == 'n':
