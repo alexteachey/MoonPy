@@ -39,11 +39,13 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
 
 def find_transit_quarters(self, locate_neighbor='n'):
 	print('calling _mp_attributes.py/find_transit_quarters().')
-	self.get_properties(locate_neighbor=locate_neighbor)
+	self.get_properties(locate_neighbor=locate_neighbor) ### calls find_planet_row() within.
 	quarter_transit_dict = {}
+	
 	print('self.quarters = ', self.quarters)
 	if len(self.quarters) > 1:
 		print('option 1.')
+
 		for qidx,quarter in enumerate(self.quarters):
 			print('quarter = ', quarter)
 			skip_this_quarter = 'n'
@@ -70,6 +72,8 @@ def find_transit_quarters(self, locate_neighbor='n'):
 					### there's a transit in this quarter!
 					quarter_transit = 'y'
 					break
+
+			quarter_transit_dict[quarter] = quarter_transit
 
 	elif len(self.quarters) == 1:
 		print('option 2.')
@@ -273,6 +277,8 @@ def get_databases(self):
 	       'pl_nnotes', 'sy_pm', 'sy_pmerr1', 'sy_pmerr2', 'sy_pmra',
 	       'sy_pmraerr1', 'sy_pmraerr2', 'x', 'y', 'z', 'htm20'],
 	      dtype='<U20')
+
+		print('number of desired columns: ', len(desired_columns))
 		
 		desired_cols = ''
 		for ndc,dc in enumerate(desired_columns):
@@ -1091,6 +1097,7 @@ def get_properties(self, locate_neighbor='n'):
 
 	if locate_neighbor=='y':
 		self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
+	
 	try:
 		self.find_taus()
 	except:
@@ -1113,15 +1120,19 @@ def find_taus(self):
 		print('appended '+str(len(transit_midtimes))+' transit midtimes.')
 
 		next_transit = transit_midtimes[-1]+self.period
+		
 		nquarters = len(self.quarters)
 		if nquarters != 1:
 			maxtime = np.nanmax(np.concatenate((self.times)))
+
 		elif nquarters == 1:
 			maxtime = np.nanmax(self.times)
+
 		while next_transit < maxtime:
 			transit_midtimes.append(next_transit)
 			next_transit = transit_midtimes[-1]+self.period
 		self.taus = np.array(transit_midtimes)
+		
 	except:
 		traceback.print_exc()
 		raise Exception('an exception was raised while calling find_taus().')

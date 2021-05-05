@@ -24,6 +24,7 @@ NOW FOR THE MATRIX REPRESENTATION, YOU NEED TO DO THIS FOR EVERY TIMESTEP! The m
 def max_order(times, duration, baseline=0, kmaximum=30):
 	if baseline == 0:
 		baseline = np.nanmax(times) - np.nanmin(times)
+	assert duration > 0
 	kmax = int((2*baseline) / (12*duration))
 	if kmax > kmaximum:
 		kmax = kmaximum
@@ -41,8 +42,9 @@ def DurbinWatson(residuals):
 		except:
 			pass
 	residual_terms = np.array(residual_terms)
-	numerator = np.sum(residual_terms**2)
-	denominator = np.sum(residuals**2)
+	numerator = np.nansum(residual_terms**2)
+	denominator = np.nansum(residuals**2)
+	assert denominator != 0.
 	return numerator / denominator
 
 
@@ -54,6 +56,7 @@ def DurbinWatson(residuals):
 @jit(debug=True, fastmath=True, nopython=True, cache=True)
 def cofiam_matrix_gen(times, degree):
 	baseline = np.nanmax(times) - np.nanmin(times)
+	assert baseline > 0
 	rows = len(times)
 	cols = 2 * (degree+1)
 	X_matrix = np.ones(shape=(rows,cols))

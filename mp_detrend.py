@@ -10,12 +10,11 @@ import traceback
 import matplotlib.pyplot as plt 
 
 
-def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=np.array([]), max_degree=30):
+def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
 	print('calling mp_detrend.py/cofiam_detrend().')
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
 
 	if type(mask_idxs) != type(None):
-
 		if len(mask_idxs) > 0:
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		elif len(mask_idxs) == 0:
@@ -30,6 +29,8 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 				outlier_idxs.append(flidx)
 		outlier_idxs = np.array(outlier_idxs)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
+
+
 
 	if telescope.lower() == 'tess':
 		### you need to detrend the two halves separately!
@@ -49,17 +50,33 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
 		try:
-			best_model1, best_degree1, best_DW1, max_degree1 = cofiam_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			best_model2, best_degree2, best_DW2, max_degree2 = cofiam_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			best_model = np.concatenate((best_model1, best_model2))
-			best_degree = np.nanmean((best_degree1, best_degree2))
-			best_DW = np.nanmean((best_DW1, best_DW2))
-			max_degree = np.nanmax((max_degree1, max_degree2))
+			if len(first_half_idxs) > 2:
+				print('detrending first half of the quarter / section.')
+				best_model1, best_degree1, best_DW1, max_degree1 = cofiam_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			if len(second_half_idxs) > 2:
+				print('detrending second half of the quarter / section.')
+				best_model2, best_degree2, best_DW2, max_degree2 = cofiam_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			
+			if (len(first_half_idxs) > 2) and (len(second_half_idxs) > 2):
+				best_model = np.concatenate((best_model1, best_model2))
+				best_degree = np.nanmean((best_degree1, best_degree2))
+				best_DW = np.nanmean((best_DW1, best_DW2))
+				max_degree = np.nanmax((max_degree1, max_degree2))
+
+			else:
+				if len(first_half_idxs) < 2:
+					best_model, best_degree, best_DW, max_degree = best_model2, best_degree2, best_DW2, max_degree2
+					unmasked_times, unmasked_fluxes = unmasked_times[second_half_idxs], unmasked_fluxes[second_half_idxs]
+				elif len(second_half_idxs) < 2:
+					best_model, best_degree, best_DW, max_degree = best_model1, best_degree1, best_DW1, max_degree1		
+					unmasked_times, unmasked_fluxes = unmasked_times[first_half_idxs], unmasked_fluxes[first_half_idxs]		
+
+
 		except:
 			traceback.print_exc()
 			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
 
-	else:
+	else: ### self.telescope != 'tess'
 		try:
 			best_model, best_degree, best_DW, max_degree = cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree))
 			print(' ')
@@ -94,8 +111,6 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		else:
 			unmasked_times, unmasked_fluxes, unmasked_errors = times, fluxes, errors
 
-
-
 	if remove_outliers == 'y':
 		outlier_idxs = []
 		movmed = medfilt(unmasked_fluxes, kernel_size=window)
@@ -125,12 +140,30 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
 		try:
-			best_model1, best_degree1, best_DW1, max_degree1 = polyAM_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			best_model2, best_degree2, best_DW2, max_degree2 = polyAM_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			best_model = np.concatenate((best_model1, best_model2))
-			best_degree = np.nanmean((best_degree1, best_degree2))
-			best_DW = np.nanmean((best_DW1, best_DW2))
-			max_degree = np.nanmax((max_degree1, max_degree2))
+			if len(first_half_idxs) > 2:
+				print('detrending first section.')
+				best_model1, best_degree1, best_DW1, max_degree1 = polyAM_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			
+			if len(second_half_idxs) > 2:
+				print('detrending second section.')
+				best_model2, best_degree2, best_DW2, max_degree2 = polyAM_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			
+			if (len(first_half_idxs) > 2) and (len(second_half_idxs) > 2):
+				best_model = np.concatenate((best_model1, best_model2))
+				best_degree = np.nanmean((best_degree1, best_degree2))
+				best_DW = np.nanmean((best_DW1, best_DW2))
+				max_degree = np.nanmax((max_degree1, max_degree2))
+
+			else:
+				if len(first_half_idxs) < 2:
+					best_model, best_degree, best_DW, max_degree = best_model2, best_degree2, best_DW2, max_degree2
+					unmasked_times, unmasked_fluxes = unmasked_times[second_half_idxs], unmasked_fluxes[second_half_idxs]
+				elif len(second_half_idxs) < 2:
+					best_model, best_degree, best_DW, max_degree = best_model1, best_degree1, best_DW1, max_degree1		
+					unmasked_times, unmasked_fluxes = unmasked_times[first_half_idxs], unmasked_fluxes[first_half_idxs]						
+
+
+
 		except:
 			traceback.print_exc()
 			print('unable to call polyAM_iterative. Data points likely reduced to zero.')

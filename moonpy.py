@@ -891,16 +891,22 @@ class MoonpyLC(object):
 
 		### calculate which quarters have transits!
 		try:
-			self.find_transit_quarters()
+			#self.find_transit_quarters()
 			if is_neighbor == 'y':
-				self.get_properties(locate_neighbor='n')
-				self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
+				#self.get_properties(locate_neighbor='n')
+				self.find_transit_quarters(locate_neighbor='y')
+				#self.get_properties()
+				#self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
+				#self.find_transit_quarters()
 				traceback.print_exc()
 			
 			elif is_neighbor == 'n':
 				self.find_transit_quarters(locate_neighbor='y') ### ditto above.
+				#self.find_transit_quarters()
 				traceback.print_exc()
 				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
+
+
 		except:
 			traceback.print_exc()
 			print(" ")
