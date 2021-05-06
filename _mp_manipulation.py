@@ -822,7 +822,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		self.flags_detrend = final_flags
 
 	if save_lc == 'y':
-		lcfile = open(self.savepath+'/'+self.target+'_'+self.telescope+'_lightcurve.tsv', mode='w')
+		lcfile = open(self.savepath+'/'+self.target.lower()+'_'+self.telescope+'_lightcurve.tsv', mode='w')
 		if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 			lcfile.write('BKJD\tfluxes\terrors\tdetrend_model\tfluxes_detrended\terrors_detrended\tflags\tquarter\n')
 		elif self.telescope.lower() == 'tess':

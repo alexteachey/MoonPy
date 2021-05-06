@@ -417,6 +417,7 @@ class MoonpyLC(object):
 						pdetrend_model = np.array(pandafile['detrend_model'])						
 					
 					except:
+						traceback.print_exc()
 						print("could not load detrended fluxes.")
 						pfluxes_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
 						perrors_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
