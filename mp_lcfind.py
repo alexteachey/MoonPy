@@ -746,7 +746,7 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 
 
 
-def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='pdc', delete_fits='n'):
+def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='pdc', delete_fits='n', is_neighbor='n'):
 	print('calling mp_lcfind.py/tess_target_download().')
 	### this function interfaces with MASS to download light curves based on the TIC #.
 	if os.path.exists(moonpydir+'/TESS_lcs'):
@@ -845,12 +845,15 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				os.system('mkdir '+download_directory)
 
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
-			print('attempting to download: ', lcdownload_name)
-			os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 			if os.path.exists(download_directory+'/'+lcdownload_name):
-				print('file downloaded or already exists.')
+				print('file already exists.')	
 			else:
-				print('file was not downloaded.')
+				print('attempting to download: ', lcdownload_name)
+				os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
+				if os.path.exists(download_directory+'/'+lcdownload_name):
+					print('file downloaded or already exists.')
+				else:
+					print('file was not downloaded.')
 			print(' ')
 			#print('downloading the light curve for '+str(targID)+' in sector ', sector)
 

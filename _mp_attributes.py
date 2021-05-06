@@ -1034,45 +1034,59 @@ def get_properties(self, locate_neighbor='n'):
 			target_a_rstar = (self.sma_AU * au.value) / self.rstar_meters
 			self.a_rstar = target_a_rstar 
 		except:
-			pass
+			#pass
+			target_a_rstar = np.nan 
+			self.a_rstar = np.nan 
 
 	try:
 		self.insol = float(target_insol) ### insolution in units of Earth insolation
 		self.insol_err = (float(target_insol_lowerr), float(target_insol_uperr))
 	except:
-		pass
+		#pass
+		self.insol = np.nan 
+		self.insol_err = np.nan 
 
 	try:
 		self.Teq = float(target_Teq) ### equilibrium temperature of the planet
 		self.Teq_err = (float(target_Teq_lowerr), float(target_Teq_uperr))
 	except:
-		pass
+		#pass
+		self.Teq = np.nan 
+		self.Teq_err = np.nan 
 
 
 	try:
 		self.eccen = float(target_eccen) ### equilibrium temperature of the planet
 		self.eccen_err = (float(target_eccen_lowerr), float(target_eccen_uperr))
 	except:
-		pass
+		#pass
+		self.eccen = np.nan 
+		self.eccen_err = np.nan 
 
 	try:
 		self.longp = float(target_longp) ### equilibrium temperature of the planet
 		self.longp_err = (float(target_longp_lowerr), float(target_longp_uperr))
 	except:
-		pass
+		#pass
+		self.longp = np.nan 
+		self.longp_err = np.nan 
 
 
 	try:
 		self.incl = float(target_incl) ### equilibrium temperature of the planet
 		self.incl_err = (float(target_incl_lowerr), float(target_incl_uperr))
 	except:
-		pass
+		#pass
+		self.incl = np.nan 
+		self.incl_err = np.nan 
 
 	try:
 		self.smass = float(target_smass)
 		self.smass_err = (float(target_smass_lowerr), float(target_smass_uperr))
 	except:
-		pass
+		#pass
+		self.smass = np.nan 
+		self.smass_err = np.nan 
 
 
 	if np.isfinite(target_duration):
@@ -1200,13 +1214,17 @@ def find_neighbors(self, is_neighbor='n'):
 			check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
 		elif np.isfinite(NEA_rowidx) and (NEA_rowidx >= 10):
 			check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
+		else:
+			check_NEA_rows = np.array([NEA_rowidx])
 
 		if np.isfinite(exofop_rowidx) and (exofop_rowidx < 10):
 			check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
+		
 		elif np.isfinite(exofop_rowidx) and (exofop_rowidx >= 10):
 			check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+		
 		else:
-			check_exofop_rows = np.arange(self.exofop_rowidx-10,self.exofop_rowidx+11,1)
+			check_exofop_rows = np.array([exofop_rowidx])
 		
 		print('NEA_rowidx, exofop_rowidx = ', NEA_rowidx, exofop_rowidx)
 
@@ -1363,8 +1381,11 @@ def find_neighbors(self, is_neighbor='n'):
 								neighbor_targets.append(neighbor)		
 				except:
 					pass							
+	try:
+		neighbor_targets.remove(self.target)
+	except:
+		pass
 
-	neighbor_targets.remove(self.target)
 	self.neighbors = neighbor_targets
 
 
