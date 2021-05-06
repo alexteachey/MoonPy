@@ -1,6 +1,33 @@
 from __future__ import division
 import numpy as np 
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
+import os
+import pandas
+
+
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/mp_tools.py')]
+
+DKS_LDCs = pandas.read_csv(moonpydir+'/DKSing_LDCs_Kepler_Table2_format_mod.csv')
+DKS_TeffK = np.array(DKS_LDCs['Teff_K']).astype(float)
+DKS_Logg = np.array(DKS_LDCs['Logg']).astype(float)
+DKS_MH = np.array(DKS_LDCs['M/H']).astype(float)
+DKS_quada = np.array(DKS_LDCs['quad_a']).astype(float)
+DKS_quadb = np.array(DKS_LDCs['quad_b']).astype(float)
+
+
+def DKS_best_LDCmatch(Teff=np.nan, Logg=np.nan, MH=np.nan):
+	#### find the best match in the limb-darkening catalog
+	Teff_diffsq = (DKS_TeffK - Teff)**2
+	Logg_diffsq = (DKS_Logg - Logg)**2
+	MH_diffsq = (DKS_MH - MH)**2
+	absolute_distances = np.sqrt(np.nansum(np.array([Teff_diffsq, Logg_diffsq, MH_diffsq]), axis=0))
+
+	best_match_idx = np.nanargmin(absolute_distances)
+	best_match_quada, best_match_quadb = DKS_quada[best_match_idx], DKS_quadb[best_match_idx]
+	return best_match_quada, best_match_quadb  
+
+
 
 
 ### FROM ASTROPY
