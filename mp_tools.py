@@ -8,12 +8,24 @@ import pandas
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/mp_tools.py')]
 
+#### KEPLER LIMB DARKENING COEFFICIENTS
+#### FROM HERE: https://arxiv.org/pdf/0912.2274.pdf 
 DKS_LDCs = pandas.read_csv(moonpydir+'/DKSing_LDCs_Kepler_Table2_format_mod.csv')
 DKS_TeffK = np.array(DKS_LDCs['Teff_K']).astype(float)
 DKS_Logg = np.array(DKS_LDCs['Logg']).astype(float)
 DKS_MH = np.array(DKS_LDCs['M/H']).astype(float)
 DKS_quada = np.array(DKS_LDCs['quad_a']).astype(float)
 DKS_quadb = np.array(DKS_LDCs['quad_b']).astype(float)
+
+
+#### TESS LIMB DARKENING COEFFICIENTS
+#### FROM HERE: https://arxiv.org/pdf/1804.10295.pdf 
+Claret_LDCs = pandas.read_csv(moonpydir+'/Claret_table25.csv')
+Claret_TeffK = np.array(Claret_LDCs['Teff']).astype(float)
+Claret_Logg = np.array(Claret_LDCs['logg_cms2']).astype(float)
+Claret_Z = np.array(Claret_LDCs["Z_sun"]).astype(float)
+Claret_quada = np.array(Claret_LDCs['aLSM']).astype(float)
+Claret_quadb = np.array(Claret_LDCs['bLSM']).astype(float)
 
 
 def DKS_best_LDCmatch(Teff=np.nan, Logg=np.nan, MH=np.nan):
@@ -27,6 +39,17 @@ def DKS_best_LDCmatch(Teff=np.nan, Logg=np.nan, MH=np.nan):
 	best_match_quada, best_match_quadb = DKS_quada[best_match_idx], DKS_quadb[best_match_idx]
 	return best_match_quada, best_match_quadb  
 
+
+def Claret_best_LDCmatch(Teff=np.nan, Logg=np.nan, MH=np.nan):
+	#### find the best match in the limb-darkening catalog
+	Teff_diffsq = (Claret_TeffK - Teff)**2
+	Logg_diffsq = (Claret_Logg - Logg)**2
+	MH_diffsq = (Claret_Z - MH)**2
+	absolute_distances = np.sqrt(np.nansum(np.array([Teff_diffsq, Logg_diffsq, MH_diffsq]), axis=0))
+
+	best_match_idx = np.nanargmin(absolute_distances)
+	best_match_quada, best_match_quadb = DKS_quada[best_match_idx], DKS_quadb[best_match_idx]
+	return best_match_quada, best_match_quadb  
 
 
 

@@ -934,7 +934,7 @@ def get_properties(self, locate_neighbor='n'):
 			target_teff, target_teff_uperr, target_teff_lowerr = self.NEA_data['st_teff'][NEA_rowidx], self.NEA_data['st_tefferr1'][NEA_rowidx], self.NEA_data['st_tefferr2'][NEA_rowidx]
 			target_metal, target_metal_uperr, target_metal_lowerr = self.NEA_data['st_met'][NEA_rowidx], self.NEA_data['st_meterr1'][NEA_rowidx], self.NEA_data['st_meterr2'][NEA_rowidx]
 			target_logg, target_logg_uperr, target_logg_lowerr = self.NEA_data['st_logg'][NEA_rowidx], self.NEA_data['st_loggerr1'][NEA_rowidx], self.NEA_data['st_loggerr2'][NEA_rowidx]
-			target_ldm1, target_ldm2 = DKS_best_LDCmatch(Teff=target_teff, Logg=target_logg, MH=target_metal)
+			target_ldm1, target_ldm2 = Claret_best_LDCmatch(Teff=target_teff, Logg=target_logg, MH=target_metal)
 
 
 
