@@ -864,15 +864,24 @@ def get_properties(self, locate_neighbor='n'):
 			target_duration, target_duration_uperr, target_duration_lowerr = self.NEA_data['pl_trandur'][NEA_rowidx], self.NEA_data['pl_trandurerr1'][NEA_rowidx], self.NEA_data['pl_trandurerr2'][NEA_rowidx]
 			target_rprstar, target_rprstar_uperr, target_rprstar_lowerr = self.NEA_data['pl_ratror'][NEA_rowidx], self.NEA_data['pl_ratrorerr1'][NEA_rowidx], self.NEA_data['pl_ratrorerr2'][NEA_rowidx]
 			target_rp, target_rp_uperr, target_rp_lowerr = self.NEA_data['pl_rade'][NEA_rowidx], self.NEA_data['pl_radeerr1'][NEA_rowidx], self.NEA_data['pl_radeerr2'][NEA_rowidx]
+			NEA_target_a_rstar, NEA_target_a_rstar_uperr, NEA_target_a_rstar_lowerr = np.nanmedian(self.NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_ratrorerr2'][NEA_rowidx])
+			NEA_target_Teq, NEA_target_Teq_uperr, NEA_target_Teq_lowerr = np.nanmedian(self.NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_eqterr2'][NEA_rowidx])
 			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = self.NEA_data['pl_orbsmax'][NEA_rowidx], self.NEA_data['pl_orbsmaxerr1'][NEA_rowidx], self.NEA_data['pl_orbsmaxerr2'][NEA_rowidx]
 			target_insol, target_insol_uperr, target_insol_lowerr = self.NEA_data['pl_insol'][NEA_rowidx], self.NEA_data['pl_insolerr1'][NEA_rowidx], self.NEA_data['pl_insolerr2'][NEA_rowidx]
-			target_ldm1, target_ldm2 = np.nan, np.nan #### will need to define these elsewhere!
+			#target_ldm1, target_ldm2 = np.nan, np.nan #### will need to define these elsewhere!
 			#target_ldm1, target_ldm2 = self.NEA_data['koi_ldm_coeff1'][NEA_rowidx], self.NEA_data['koi_ldm_coeff2'][NEA_rowidx]
 			target_eccen, target_eccen_uperr, target_eccen_lowerr = self.NEA_data['pl_orbeccen'][NEA_rowidx], self.NEA_data['pl_orbeccenerr1'][NEA_rowidx], self.NEA_data['pl_orbeccenerr2'][NEA_rowidx]
 			#target_longp, target_longp_uperr, target_longp_lowerr = self.NEA_data['koi_longp'][NEA_rowidx], self.NEA_data['koi_longp_err1'][NEA_rowidx], self.NEA_data['koi_longp_err2'][NEA_rowidx]
 			target_argp, target_argp_uperr, target_argp_lowerr = self.NEA_data['pl_orblper'][NEA_rowidx], self.NEA_data['pl_orblpererr1'][NEA_rowidx], self.NEA_data['pl_orbpererr2'][NEA_rowidx]
 			target_incl, target_incl_uperr, target_incl_lowerr = self.NEA_data['pl_orbincl'][NEA_rowidx], self.NEA_data['pl_orbinclerr1'][NEA_rowidx], self.NEA_data['pl_orbinclerr2'][NEA_rowidx]	
 			target_smass, target_smass_uperr, target_smass_lowerr = self.NEA_data['st_mass'][NEA_rowidx], self.NEA_data['st_masserr1'][NEA_rowidx], self.NEA_data['st_masserr2'][NEA_rowidx]
+			target_teff, target_teff_uperr, target_teff_lowerr = self.NEA_data['st_teff'][NEA_rowidx], self.NEA_data['st_tefferr1'][NEA_rowidx], self.NEA_data['st_tefferr2'][NEA_rowidx]
+			target_metal, target_metal_uperr, target_metal_lowerr = self.NEA_data['st_met'][NEA_rowidx], self.NEA_data['st_meterr1'][NEA_rowidx], self.NEA_data['st_meterr2'][NEA_rowidx]
+			target_logg, target_logg_uperr, target_logg_lowerr = self.NEA_data['st_logg'][NEA_rowidx], self.NEA_data['st_loggerr1'][NEA_rowidx], self.NEA_data['st_loggerr2'][NEA_rowidx]
+			target_ldm1, target_ldm2 = DKS_best_LDCmatch(Teff=target_teff, Logg=target_logg, MH=target_metal)
+
+
+
 			#target_snr = self.NEA_data['koi_model_snr']
 
 
@@ -913,6 +922,23 @@ def get_properties(self, locate_neighbor='n'):
 			NEA_target_rp, NEA_target_rp_uperr, NEA_target_rp_lowerr = np.nanmedian(self.NEA_data['pl_rade'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_radeerr1'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_radeerr2'][NEA_rowidx])
 			NEA_target_a_rstar, NEA_target_a_rstar_uperr, NEA_target_a_rstar_lowerr = np.nanmedian(self.NEA_data['pl_ratror'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_ratrorerr1'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_ratrorerr2'][NEA_rowidx])
 			NEA_target_Teq, NEA_target_Teq_uperr, NEA_target_Teq_lowerr = np.nanmedian(self.NEA_data['pl_eqt'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_eqterr1'][NEA_rowidx]), np.nanmedian(self.NEA_data['pl_eqterr2'][NEA_rowidx])
+			target_sma_AU, target_sma_uperr_AU, target_sma_lowerr_AU = self.NEA_data['pl_orbsmax'][NEA_rowidx], self.NEA_data['pl_orbsmaxerr1'][NEA_rowidx], self.NEA_data['pl_orbsmaxerr2'][NEA_rowidx]
+			target_insol, target_insol_uperr, target_insol_lowerr = self.NEA_data['pl_insol'][NEA_rowidx], self.NEA_data['pl_insolerr1'][NEA_rowidx], self.NEA_data['pl_insolerr2'][NEA_rowidx]
+			#target_ldm1, target_ldm2 = np.nan, np.nan #### will need to define these elsewhere!
+			#target_ldm1, target_ldm2 = self.NEA_data['koi_ldm_coeff1'][NEA_rowidx], self.NEA_data['koi_ldm_coeff2'][NEA_rowidx]
+			target_eccen, target_eccen_uperr, target_eccen_lowerr = self.NEA_data['pl_orbeccen'][NEA_rowidx], self.NEA_data['pl_orbeccenerr1'][NEA_rowidx], self.NEA_data['pl_orbeccenerr2'][NEA_rowidx]
+			#target_longp, target_longp_uperr, target_longp_lowerr = self.NEA_data['koi_longp'][NEA_rowidx], self.NEA_data['koi_longp_err1'][NEA_rowidx], self.NEA_data['koi_longp_err2'][NEA_rowidx]
+			target_argp, target_argp_uperr, target_argp_lowerr = self.NEA_data['pl_orblper'][NEA_rowidx], self.NEA_data['pl_orblpererr1'][NEA_rowidx], self.NEA_data['pl_orbpererr2'][NEA_rowidx]
+			target_incl, target_incl_uperr, target_incl_lowerr = self.NEA_data['pl_orbincl'][NEA_rowidx], self.NEA_data['pl_orbinclerr1'][NEA_rowidx], self.NEA_data['pl_orbinclerr2'][NEA_rowidx]	
+			target_smass, target_smass_uperr, target_smass_lowerr = self.NEA_data['st_mass'][NEA_rowidx], self.NEA_data['st_masserr1'][NEA_rowidx], self.NEA_data['st_masserr2'][NEA_rowidx]
+			target_teff, target_teff_uperr, target_teff_lowerr = self.NEA_data['st_teff'][NEA_rowidx], self.NEA_data['st_tefferr1'][NEA_rowidx], self.NEA_data['st_tefferr2'][NEA_rowidx]
+			target_metal, target_metal_uperr, target_metal_lowerr = self.NEA_data['st_met'][NEA_rowidx], self.NEA_data['st_meterr1'][NEA_rowidx], self.NEA_data['st_meterr2'][NEA_rowidx]
+			target_logg, target_logg_uperr, target_logg_lowerr = self.NEA_data['st_logg'][NEA_rowidx], self.NEA_data['st_loggerr1'][NEA_rowidx], self.NEA_data['st_loggerr2'][NEA_rowidx]
+			target_ldm1, target_ldm2 = DKS_best_LDCmatch(Teff=target_teff, Logg=target_logg, MH=target_metal)
+
+
+
+
 		else:
 			NEA_entry_present = 'n'
 
@@ -928,6 +954,10 @@ def get_properties(self, locate_neighbor='n'):
 			target_tau0, target_tau0_uperr, target_tau0_lowerr = NEA_target_tau0, NEA_target_tau0_uperr, NEA_target_tau0_lowerr
 			target_a_rstar, target_a_rstar_uperr, target_a_rstar_lowerr = NEA_target_a_rstar, NEA_target_a_rstar_uperr, NEA_target_a_rstar_lowerr
 			target_Teq, target_Teq_uperr, target_Teq_lowerr = NEA_target_Teq, NEA_target_Teq_uperr, NEA_target_Teq_lowerr
+
+
+
+
 
 		elif (exofop_entry_present == 'y') and (NEA_entry_present == 'n'):
 			print("USING EXOFOP PARAMETERS.")
@@ -1010,7 +1040,7 @@ def get_properties(self, locate_neighbor='n'):
 	self.rstar_rsol = (float(target_rp) * (1/float(target_rprstar))) * (R_earth.value / R_sun.value)
 	self.rstar_meters = self.rstar_rsol * eq_RSun
 	self.depth = self.rprstar**2
-	if self.telescope == 'kepler':
+	if self.telescope.lower() == 'kepler':
 		self.ldm_a1 = float(target_ldm1)
 		self.ldm_a2 = float(target_ldm2)
 		self.q1, self.q2 = u1u2_to_q1q2(self.ldm_a1, self.ldm_a2)
