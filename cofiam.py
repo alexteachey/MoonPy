@@ -2,7 +2,10 @@ from __future__ import division
 import numpy as np
 #from numba.core.decorators import jit
 #from numba import float64, i8, jit
-from numba.core.decorators import jit
+try:
+	from numba.core.decorators import jit
+except:
+	from numba import jit 
 
 """
 we need to solve the problem

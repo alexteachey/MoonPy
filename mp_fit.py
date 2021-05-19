@@ -7,7 +7,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from mp_batman import run_batman
-import pyluna
+try:
+	import pyluna
+except:
+	print('Unable to load pyluna.')
 
 
 ### MULTINEST CUBE TRANSFORMATIONS

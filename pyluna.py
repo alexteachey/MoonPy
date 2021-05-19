@@ -11,7 +11,7 @@ hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
 	moonpydir = '/data/tethys/Documents/Software/MoonPy'
 	central_data_dir = '/data/tethys/Documents/Central_Data/'
-elif ('Alexs-Macbook') in hostname:
+elif ('Alexs-MacBook') in hostname:
 	moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
 elif 'umbriel' in hostname:
