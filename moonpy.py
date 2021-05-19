@@ -44,6 +44,9 @@ This package is designed to do the following:
 """
 
 
+print('NOTE TO ALEX: ')
+print('MAKE SURE YOU CLONE LATEST VERSION OF MOONPY BEFORE MAKING LOCAL CHANGES.')
+
 first_kepler = 'y'
 first_koi = 'y'
 first_k2 = 'y'
