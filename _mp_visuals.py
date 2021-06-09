@@ -36,12 +36,14 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	print('calling _mp_visuals.py/plot_lc().')
 	if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
 		detrended = 'n'
 		show_model = 'n'
 
+	if period == None:
+		period = self.period 
 
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
@@ -216,10 +218,10 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	elif folded == 'y':
 		detrended = 'y' #### it doesn't make any sense to phase-fold an undetrended light curve
 		try:
-			self.fold(detrended=detrended, phase_offset=phase_offset)
+			self.fold(detrended=detrended, phase_offset=phase_offset, period=period)
 		except:
 			self.get_properties(locate_neighbor='n')
-			self.fold(phase_offset=phase_offset)
+			self.fold(phase_offset=phase_offset, period=period)
 
 
 		#### PLOT THE NEIGHBORS 
@@ -487,11 +489,15 @@ def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
 
 
 
-def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
+def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1, period=None):
 	print('calling _mp_visuals.py/plot_bestmodel().')
 	### THIS FUNCTION PLOTS YOUR BEST FIT LIGHT CURVE MODEL OVER THE DATA.
+
+	if period == None:
+		period = self.period 
+
 	if folded == True:
-		self.fold()
+		self.fold(period=period)
 
 	if modelcode == "LUNA":
 		folded = False ### should not be generating a folded light curve for a moon fit.
@@ -532,10 +538,14 @@ def plot_bestmodel(self, fitter, modelcode, folded=False, burnin_pct=0.1):
 
 
 
-def fold(self, detrended='y', phase_offset=0.0):
+def fold(self, detrended='y', phase_offset=0.0, period=None):
 	print('calling _mp_visuals.py/fold().')
 	### this method will phase fold your light curve. 
 	### first tau in the time series:
+
+	if period == None:
+		period = self.period 
+
 	try:
 		first_tau = self.taus[0]
 	except:
@@ -547,7 +557,7 @@ def fold(self, detrended='y', phase_offset=0.0):
 		ftidx += 1
 		first_tau = self.taus[ftidx]
 
-	fold_times = ((((np.hstack(self.times) - first_tau - 0.5*self.period - phase_offset*self.period) % self.period) / self.period)) ### yields the remainder!
+	fold_times = ((((np.hstack(self.times) - first_tau - 0.5*period - phase_offset*period) % period) / period)) ### yields the remainder!
 	fold_times = fold_times - 0.5
 
 	if detrended == 'y':
