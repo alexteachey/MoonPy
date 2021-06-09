@@ -10,6 +10,59 @@ import traceback
 import matplotlib.pyplot as plt 
 
 
+
+def phasma_detrend(times, fluxes, errors, period):
+	print('calling mp.detrend.py/phasma_detrend().')
+
+	#### gonna using a moving median filter with a box equal to HALF THE PERIOD.
+	#### NOT A NUMBER OF DATA POINTS -- HAS TO BE EXACTLY THE WIDTH OF THE PERIOD
+	time_diffs = [times[ni+1] - times[ni] for ni in np.arange(0,len(times)-1,1)]
+	median_timestep = np.nanmedian(np.array(time_diffs))
+	first_box_center_time_target = np.nanmin(times) + (period/2) #### closest time to first box center
+	last_box_center_time_target = np.nanmax(times) - (period/2) #### closest time to last box center
+	first_box_center_idx = np.argmin(np.abs(first_box_center_time_target - times)) ### closest index
+	last_box_center_idx = np.argmin(np.abs(last_box_center_time_target - times)) 
+
+	print('median_timestep: ', median_timestep)
+	print('time range: '+str(times[0])+' - '+str(times[-1]))
+	print('first_box_center_time_target: ', first_box_center_time_target)
+	print('first_box_center_idx: ', first_box_center_idx)
+	print('last_box_center_time_target: ', last_box_center_time_target)
+	print('last_box_center_idx: ', last_box_center_idx)
+	#### can't use canned routines because the kernel needs to be time based
+	
+	#### initialize the moving_medians with a bunch of NaNs, equal to the number of spaces to the first idx.
+	#### if first idx is 10, you need 0-9 (or 10 in all) nans.
+	moving_medians = np.linspace(np.nan, np.nan, first_box_center_idx).tolist()
+	print('len(moving_medians) (to start): ', len(moving_medians))
+
+	for mmidx in np.arange(first_box_center_idx, last_box_center_idx,1):
+		#### grab all the indices in the window
+		box_start_time = times[mmidx] - (period/2)
+		box_end_time = times[mmidx] + (period/2)
+		box_start_idx = np.argmin(np.abs(box_start_time - times))
+		box_end_idx = np.argmin(np.abs(box_end_time - times))
+		box_idxs = np.arange(box_start_idx, box_end_idx+1,1)
+		box_times, box_fluxes, box_errors = times[box_idxs], fluxes[box_idxs], errors[box_idxs]
+		box_median = np.nanmedian(box_fluxes)
+		moving_medians.append(box_median)
+	print('len(moving_medians) (after the crawl): ', len(moving_medians))
+
+	#### now you need to append NaNs on the back end, to make moving_medians have same length as times
+	ntoadd = len(times) - len(moving_medians)
+	moving_medians = np.concatenate((moving_medians, np.linspace(np.nan, np.nan, ntoadd)))
+	best_model = moving_medians	
+
+	flux_detrend = fluxes / best_model 
+	errors_detrend = errors / fluxes 
+
+	return best_model, flux_detrend, errors_detrend #### best model is the COFIAM
+
+
+
+
+
+
 def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
 	print('calling mp_detrend.py/cofiam_detrend().')
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))

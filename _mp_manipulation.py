@@ -18,7 +18,7 @@ import socket
 #### BELOW ARE MOONPY PACKAGES
 from mp_tools import *
 from mp_lcfind import *
-from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
+from mp_detrend import phasma_detrend, untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from mp_plotter import *
@@ -372,435 +372,476 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 	### optional values for detrending method (dmeth) are "cofiam", "untrendy", "medfilt", "george", and "polyAM"
 	### EACH QUARTER SHOULD BE DETRENDED INDIVIDUALLY!
 
-	master_detrend_model, master_detrend, master_error_detrend, master_flags_detrend = [], [], [], []
-
 	nquarters = len(self.quarters)
 
+	
+
+	master_detrend_model, master_detrend, master_error_detrend, master_flags_detrend = [], [], [], []
+
+	if dmeth == 'phasma':
+		mask_transit_idxs = []
+		all_quarter_mask_transit_idxs = []	
+		#### PHASMA HAS TO WORK ON THE FULL LIGHT CURVE! NOT ON INDIVIDUAL SEGMENTS!
+		#### SO DO IT HERE
+
+		norm_fluxes = []
+		norm_errors = []
+		#### have to normalize fluxes on a quarter by quarter basis first!
+		for nq,q in enumerate(self.fluxes):
+			norm_fluxes.append(self.fluxes[nq] / np.nanmedian(self.fluxes[nq]))
+			norm_errors.append(self.errors[nq] / self.fluxes[nq])
+		norm_fluxes = np.array(norm_fluxes)
+
+		cctimes, ccfluxes, ccerrors = np.concatenate(self.times), np.concatenate(norm_fluxes), np.concatenate(norm_errors)
+
+		try:
+			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=cctimes, fluxes=ccfluxes, errors=ccerrors, period=self.period)
+		except:
+			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=np.array(cctimes, dtype=np.float64), fluxes=np.array(ccfluxes, dtype=np.float64), errors=np.array(ccerrors, dtype=np.float64), period=self.period)
+
+		#flags_detrend = np.concatenate(self.flags)
+		flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
+
+		### now need to stitch this back together as master_detrend_model
+		for nq,q in enumerate(self.quarters):
+			qmin_idx, qmax_idx = np.where(cctimes == np.nanmin(self.times[nq]))[0][0], np.where(cctimes == np.nanmax(self.times[nq]))[0][0]
+			print('qmin_idx, qmax_idx: ', qmin_idx, qmax_idx)
+			dmodel, dfluxes_detrend, derrors_detrend = detrend_model[qmin_idx:qmax_idx+1], fluxes_detrend[qmin_idx:qmax_idx+1], errors_detrend[qmin_idx:qmax_idx+1]
+			dflags = flags_detrend[qmin_idx:qmax_idx+1]
+
+			master_detrend_model.append(dmodel)
+			master_detrend.append(dfluxes_detrend)
+			master_error_detrend.append(derrors_detrend)
+			master_flags_detrend.append(dflags)
+
+			#### dummy append.
+			all_quarter_mask_transit_idxs.append(mask_transit_idxs)
+
+		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)					
 
 
+	else:
+		#### FOR ALL OTHER METHODS -- DETREND ON A QUARTER BY QUARTER BASIS.
 
-	all_quarter_mask_transit_idxs = []			
-	for qidx in np.arange(0,nquarters,1):
-		skip_quarter = 'n'
-		print('quarter = ', self.quarters[qidx])
-		if nquarters != 1:
-			dtimes, dfluxes, derrors, dflags = self.times[qidx], self.fluxes[qidx], self.errors[qidx], self.flags[qidx]
-		elif nquarters == 1:
-			dtimes, dfluxes, derrors, dflags = self.times, self.fluxes, self.errors, self.flags
-		
-		if dtimes.shape[0] == 0:
-			exceptions_raised = 'y'
-			fluxes_detrend, errors_detrend = dfluxes, derrors
-			flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
-			master_detrend.append(np.array(fluxes_detrend))
-			master_error_detrend.append(np.array(errors_detrend))
-			master_flags_detrend.append(np.array(flags_detrend))
-			continue
+		all_quarter_mask_transit_idxs = []			
+		for qidx in np.arange(0,nquarters,1):
+			skip_quarter = 'n'
+			print('quarter = ', self.quarters[qidx])
+			if nquarters != 1:
+				dtimes, dfluxes, derrors, dflags = self.times[qidx], self.fluxes[qidx], self.errors[qidx], self.flags[qidx]
+			elif nquarters == 1:
+				dtimes, dfluxes, derrors, dflags = self.times, self.fluxes, self.errors, self.flags
+			
+			if dtimes.shape[0] == 0:
+				exceptions_raised = 'y'
+				fluxes_detrend, errors_detrend = dfluxes, derrors
+				flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
+				master_detrend.append(np.array(fluxes_detrend))
+				master_error_detrend.append(np.array(errors_detrend))
+				master_flags_detrend.append(np.array(flags_detrend))
+				continue
 
-		dtimesort = np.argsort(dtimes)
-		dtimes, dfluxes, derrors, dflags = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort], dflags[dtimesort]
+			dtimesort = np.argsort(dtimes)
+			dtimes, dfluxes, derrors, dflags = dtimes[dtimesort], dfluxes[dtimesort], derrors[dtimesort], dflags[dtimesort]
 
-		for ndt,dt in enumerate(dtimes):
-			try:
-				timediff = dtimes[ndt+1] - dtimes[ndt]
-				if timediff <= 0:
-					print("WARNING: timestamps are not sorted.")
-			except:
-				pass
+			for ndt,dt in enumerate(dtimes):
+				try:
+					timediff = dtimes[ndt+1] - dtimes[ndt]
+					if timediff <= 0:
+						print("WARNING: timestamps are not sorted.")
+				except:
+					pass
 
-		### identify in-transit idxs, and mask them!
-		if mask_transits == 'y':
-			### find out which transit midtimes, if any, are in this quarter
-			mask_transit_idxs = []
+			### identify in-transit idxs, and mask them!
+			if mask_transits == 'y':
+				### find out which transit midtimes, if any, are in this quarter
+				mask_transit_idxs = []
 
-			if use_holczer == 'y':
+				if use_holczer == 'y':
 
-				print("Using TTV Catalog to identify transit times for detrending...")
-				### taus should be calculated based on the Mazeh table.
-				mazeh = pandas.read_csv(moonpydir+'/Table3_O-C.csv')
-				maz_koi = np.array(mazeh['KOI']).astype(str)
-				maz_epoch = np.array(mazeh['n'])
-				maz_reftime = np.array(mazeh['ref_time'])
-				maz_reftime = maz_reftime + 2454900 - 2454833 #### adjusts into BKJD -- a difference of 67 days from the Holczer catalog.	
-				maz_OCmin = np.array(mazeh['O-C_min'])
+					print("Using TTV Catalog to identify transit times for detrending...")
+					### taus should be calculated based on the Mazeh table.
+					mazeh = pandas.read_csv(moonpydir+'/Table3_O-C.csv')
+					maz_koi = np.array(mazeh['KOI']).astype(str)
+					maz_epoch = np.array(mazeh['n'])
+					maz_reftime = np.array(mazeh['ref_time'])
+					maz_reftime = maz_reftime + 2454900 - 2454833 #### adjusts into BKJD -- a difference of 67 days from the Holczer catalog.	
+					maz_OCmin = np.array(mazeh['O-C_min'])
 
-				### find the indices of the target!
-				target_idxs = np.where(self.target[4:] == maz_koi)[0]
-				if len(target_idxs) == 0:
-					print('no TTV record under the name '+str(self.target)+'. Checking aliases...')
-					### check for aliases -- your self.target may not be a KOI natively!
-					try:
-						for planet_alias in self.aliases:
-							if planet_alias.lower().startswith('koi'):
-								target_idxs = np.where(planet_alias[4:] == maz_koi)[0]
-								print('found a TTV record for alias: ', planet_alias)
-								break
-					except:
-						print('Could not find any TTV record. Computing transit times from Tau0 and orbital period.')
-						pass
-
-				if len(target_idxs) == 0:
-					try:
-						self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
-					except:
-						print('self.taus not available for detrending. setting self.mask_taus = np.array([np.nan])')
-						self.mask_taus = np.array([np.nan])
-
-				else:
-					target_epochs = [] ### a list of all the epochs in the Mazeh catalog.
-					target_reftimes = [] ### ditto for reftimes
-					target_OCmins = [] #### ditto for O - C (minutes)
-					target_OCdays = [] #### converting above to days
-					for tidx in target_idxs: ### all the indices for this planet -- have to loop through to grab the relevant values.
+					### find the indices of the target!
+					target_idxs = np.where(self.target[4:] == maz_koi)[0]
+					if len(target_idxs) == 0:
+						print('no TTV record under the name '+str(self.target)+'. Checking aliases...')
+						### check for aliases -- your self.target may not be a KOI natively!
 						try:
-							tepoch = int(maz_epoch[tidx])
-							treftime = float(maz_reftime[tidx])
-							tOCmin = float(maz_OCmin[tidx])
-							tOCday = tOCmin / (60 * 24)
+							for planet_alias in self.aliases:
+								if planet_alias.lower().startswith('koi'):
+									target_idxs = np.where(planet_alias[4:] == maz_koi)[0]
+									print('found a TTV record for alias: ', planet_alias)
+									break
 						except:
-							traceback.print_exc()
+							print('Could not find any TTV record. Computing transit times from Tau0 and orbital period.')
+							pass
 
-						target_epochs.append(tepoch)
-						target_reftimes.append(treftime)
-						target_OCmins.append(tOCmin)
-						target_OCdays.append(tOCday)
+					if len(target_idxs) == 0:
+						try:
+							self.mask_taus = self.taus ### it's not in the catalog. Keep moving!
+						except:
+							print('self.taus not available for detrending. setting self.mask_taus = np.array([np.nan])')
+							self.mask_taus = np.array([np.nan])
 
-					target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
+					else:
+						target_epochs = [] ### a list of all the epochs in the Mazeh catalog.
+						target_reftimes = [] ### ditto for reftimes
+						target_OCmins = [] #### ditto for O - C (minutes)
+						target_OCdays = [] #### converting above to days
+						for tidx in target_idxs: ### all the indices for this planet -- have to loop through to grab the relevant values.
+							try:
+								tepoch = int(maz_epoch[tidx])
+								treftime = float(maz_reftime[tidx])
+								tOCmin = float(maz_OCmin[tidx])
+								tOCday = tOCmin / (60 * 24)
+							except:
+								traceback.print_exc()
 
-					#print('target_reftimes = ', target_reftimes)
+							target_epochs.append(tepoch)
+							target_reftimes.append(treftime)
+							target_OCmins.append(tOCmin)
+							target_OCdays.append(tOCday)
 
-					### interpolate OCmins! to grab missing transit times -- have to do this in case Mazeh has not cataloged them all.
-					all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs)+1, 1)
-					all_target_reftimes = [] ### a list of all the transit times (basically linear ephemeris, from which the offset is calculated)
-					all_target_OCmins = []
-					all_target_OCdays = []
+						target_epochs, target_reftimes, target_OCmins, target_OCdays = np.array(target_epochs), np.array(target_reftimes), np.array(target_OCmins), np.array(target_OCdays)
 
-					OCmin_interp = interp1d(target_epochs, target_OCmins, kind='quadratic', bounds_error=False, fill_value='extrapolate')
-					reftime_interp = interp1d(target_epochs, target_reftimes, kind='linear', bounds_error=False, fill_value='extrapolate')
+						#print('target_reftimes = ', target_reftimes)
 
-					### the number of epochs (integer transit numbers) in "all_target_epochs" will *always* be greater or equal to number in target_epochs
-					#### target epochs is the # of epochs recorded in Mazeh, all_target_epochs is every possible one from first transit to last.
-					##### it appears that Mazeh DOES skip numbers when there is a missing transit, so this *ought* to work.
+						### interpolate OCmins! to grab missing transit times -- have to do this in case Mazeh has not cataloged them all.
+						all_target_epochs = np.arange(np.nanmin(target_epochs), np.nanmax(target_epochs)+1, 1)
+						all_target_reftimes = [] ### a list of all the transit times (basically linear ephemeris, from which the offset is calculated)
+						all_target_OCmins = []
+						all_target_OCdays = []
 
-					for ate in all_target_epochs:
-						if ate in target_epochs:
-							#### this value is already recorded by mazeh
-							epoch_idx = np.where(target_epochs == ate)[0]
-							epoch_reftime = target_reftimes[epoch_idx]
-							epoch_OCmins = target_OCmins[epoch_idx]
-							epoch_OCdays = target_OCdays[epoch_idx]
+						OCmin_interp = interp1d(target_epochs, target_OCmins, kind='quadratic', bounds_error=False, fill_value='extrapolate')
+						reftime_interp = interp1d(target_epochs, target_reftimes, kind='linear', bounds_error=False, fill_value='extrapolate')
 
-						elif ate not in target_epochs:
-							#### you still want it! so you're going to interpolate it.
-							epoch_reftime = reftime_interp(ate)
-							epoch_OCmins = OCmin_interp(ate)
-							epoch_OCdays = epoch_OCmins / (60 * 24)
+						### the number of epochs (integer transit numbers) in "all_target_epochs" will *always* be greater or equal to number in target_epochs
+						#### target epochs is the # of epochs recorded in Mazeh, all_target_epochs is every possible one from first transit to last.
+						##### it appears that Mazeh DOES skip numbers when there is a missing transit, so this *ought* to work.
 
-						all_target_reftimes.append(epoch_reftime)
-						all_target_OCmins.append(epoch_OCmins)
-						all_target_OCdays.append(epoch_OCdays)
+						for ate in all_target_epochs:
+							if ate in target_epochs:
+								#### this value is already recorded by mazeh
+								epoch_idx = np.where(target_epochs == ate)[0]
+								epoch_reftime = target_reftimes[epoch_idx]
+								epoch_OCmins = target_OCmins[epoch_idx]
+								epoch_OCdays = target_OCdays[epoch_idx]
 
-					all_target_reftimes, all_target_OCmins, all_target_OCdays = np.array(all_target_reftimes, dtype=object), np.array(all_target_OCmins, dtype=object), np.array(all_target_OCdays, dtype=object)
-					assert len(all_target_epochs) == len(all_target_reftimes)	
-					assert len(all_target_epochs) >= len(target_epochs)
+							elif ate not in target_epochs:
+								#### you still want it! so you're going to interpolate it.
+								epoch_reftime = reftime_interp(ate)
+								epoch_OCmins = OCmin_interp(ate)
+								epoch_OCdays = epoch_OCmins / (60 * 24)
 
-					### FINALLY, calculate the taus!
-					mazeh_taus = all_target_reftimes + all_target_OCdays 
-					self.mask_taus = mazeh_taus
-					if len(self.mask_taus.shape) > 1:
-						self.mask_taus = self.mask_taus.reshape(self.mask_taus.shape[0])
+							all_target_reftimes.append(epoch_reftime)
+							all_target_OCmins.append(epoch_OCmins)
+							all_target_OCdays.append(epoch_OCdays)
 
+						all_target_reftimes, all_target_OCmins, all_target_OCdays = np.array(all_target_reftimes, dtype=object), np.array(all_target_OCmins, dtype=object), np.array(all_target_OCdays, dtype=object)
+						assert len(all_target_epochs) == len(all_target_reftimes)	
+						assert len(all_target_epochs) >= len(target_epochs)
 
-
-			elif use_holczer == 'n':
-				self.mask_taus = self.taus 
-
-
-			quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
-			try:
-				quarter_transit_taus = np.concatenate(quarter_transit_taus)
-			except:
-				pass
-			print('quarter_transit_taus: ', quarter_transit_taus)
-
-			for qtt in quarter_transit_taus:
-				#### FOR EACH TRANSIT IN THIS QUARTER.... 
-
-				in_transit_idxs = np.where((dtimes >= float(qtt) - (self.mask_multiple / 2)*self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple / 2)*self.duration_days))[0]
-				mask_transit_idxs.append(in_transit_idxs)
-			
-			try:
-				mask_transit_idxs = np.concatenate(mask_transit_idxs)
-			except:
-				traceback.print_exc()
-				print('mask_transit_idxs could not be concatenated (probably not needed).')
+						### FINALLY, calculate the taus!
+						mazeh_taus = all_target_reftimes + all_target_OCdays 
+						self.mask_taus = mazeh_taus
+						if len(self.mask_taus.shape) > 1:
+							self.mask_taus = self.mask_taus.reshape(self.mask_taus.shape[0])
 
 
-			#print("BEFORE: ")
-			#print('mask_transit_idxs = ', mask_transit_idxs)
-			#print("mask transit times = ", dtimes[mask_transit_idxs])
-			#mask_transit_idxs = mask_transit_idxs
 
-			### add neighbor transit times to mask_transit_idxs.
-			try:
-				sntt = self.neighbor_transit_times # don't need to print them, just see if they're there!
-			except:
-				pass
-				#try:
-				#	self.mystery_solver(self.tau0, self.period, self.duration_hours)
-				#except:
-				#	pass
-
-			if (mask_neighbors == 'y') and (len(self.neighbors) > 0):
-
-				neighbor_transit_idxs = np.where( (self.neighbor_transit_times > np.nanmin(dtimes)) & (self.neighbor_transit_times < np.nanmax(dtimes)) )[0]	
-
-				if len(neighbor_transit_idxs) > 0:
-					print("NEIGHBORS IN THIS SEGMENT!")	
-					#### THERE WON'T BE THAT MANY, JUST USE A FOR LOOP TO AVOID WEIRD FORMATTING ISSUES
-					try:
-						mask_transit_idxs = mask_transit_idxs.tolist()
-					except:
-						pass
-					n_neighbor_idxs = 0
-					for nti in neighbor_transit_idxs:
-						mask_transit_idxs.append(nti)	
-						n_neighbor_idxs += 1
-					print('appended '+str(n_neighbor_idxs)+' neighbor transit data points for masking.')	
-
-			#try:
-
-			#print('mask_transit_idxs: ', mask_transit_idxs)
-
-			print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
-			
-			if len(quarter_transit_taus) > 0:
-				print(str(len(quarter_transit_taus))+" transit(s) in this quarter.")
+				elif use_holczer == 'n':
+					self.mask_taus = self.taus 
 
 
-			if len(quarter_transit_taus) == 1:
+				quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
+				try:
+					quarter_transit_taus = np.concatenate(quarter_transit_taus)
+				except:
+					pass
+				print('quarter_transit_taus: ', quarter_transit_taus)
+
+				for qtt in quarter_transit_taus:
+					#### FOR EACH TRANSIT IN THIS QUARTER.... 
+
+					in_transit_idxs = np.where((dtimes >= float(qtt) - (self.mask_multiple / 2)*self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple / 2)*self.duration_days))[0]
+					mask_transit_idxs.append(in_transit_idxs)
+				
 				try:
 					mask_transit_idxs = np.concatenate(mask_transit_idxs)
 				except:
-					print('Concatenate not necessary')
-				mask_transit_idxs = np.array(mask_transit_idxs)				
+					traceback.print_exc()
+					print('mask_transit_idxs could not be concatenated (probably not needed).')
 
-			if len(quarter_transit_taus) > 1:
+
+				#print("BEFORE: ")
+				#print('mask_transit_idxs = ', mask_transit_idxs)
+				#print("mask transit times = ", dtimes[mask_transit_idxs])
+				#mask_transit_idxs = mask_transit_idxs
+
+				### add neighbor transit times to mask_transit_idxs.
+				try:
+					sntt = self.neighbor_transit_times # don't need to print them, just see if they're there!
+				except:
+					pass
+					#try:
+					#	self.mystery_solver(self.tau0, self.period, self.duration_hours)
+					#except:
+					#	pass
+
+				if (mask_neighbors == 'y') and (len(self.neighbors) > 0):
+
+					neighbor_transit_idxs = np.where( (self.neighbor_transit_times > np.nanmin(dtimes)) & (self.neighbor_transit_times < np.nanmax(dtimes)) )[0]	
+
+					if len(neighbor_transit_idxs) > 0:
+						print("NEIGHBORS IN THIS SEGMENT!")	
+						#### THERE WON'T BE THAT MANY, JUST USE A FOR LOOP TO AVOID WEIRD FORMATTING ISSUES
+						try:
+							mask_transit_idxs = mask_transit_idxs.tolist()
+						except:
+							pass
+						n_neighbor_idxs = 0
+						for nti in neighbor_transit_idxs:
+							mask_transit_idxs.append(nti)	
+							n_neighbor_idxs += 1
+						print('appended '+str(n_neighbor_idxs)+' neighbor transit data points for masking.')	
+
+				#try:
+
+				#print('mask_transit_idxs: ', mask_transit_idxs)
+
+				print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
+				
+				if len(quarter_transit_taus) > 0:
+					print(str(len(quarter_transit_taus))+" transit(s) in this quarter.")
+
+
+				if len(quarter_transit_taus) == 1:
 					try:
 						mask_transit_idxs = np.concatenate(mask_transit_idxs)
 					except:
 						print('Concatenate not necessary')
-					mask_transit_idxs = np.array(mask_transit_idxs)
+					mask_transit_idxs = np.array(mask_transit_idxs)				
 
-			elif len(quarter_transit_taus) < 1:
+				if len(quarter_transit_taus) > 1:
+						try:
+							mask_transit_idxs = np.concatenate(mask_transit_idxs)
+						except:
+							print('Concatenate not necessary')
+						mask_transit_idxs = np.array(mask_transit_idxs)
 
+				elif len(quarter_transit_taus) < 1:
+
+					mask_transit_idxs = np.array([])
+					print('no transits in this quarter.')
+					if skip_ntqs == 'y':
+						### skip this quarter! there are no transits present.
+						fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
+						skip_quarter = 'y'
+
+				try:
+					np.concatenate(mask_transit_idxs)
+				except:
+					pass
+				mask_transit_idxs = np.unique(mask_transit_idxs)
+
+				if len(mask_transit_idxs) > 0:
+					print('min(mask_transit_idxs): ', np.nanmin(mask_transit_idxs))
+					print('max(mask_transit_idxs): ', np.nanmax(mask_transit_idxs))
+					print('len(dtimes): ', len(dtimes))
+					#### remove out of bounds transit idxs:
+					OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
+					print("# Out of Bounds: ", len(OoB_mask_transit_idxs))
+					mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
+				else:
+					print('len(mask_transit_idxs) = 0')
+
+
+
+			elif mask_transits == 'n':
 				mask_transit_idxs = np.array([])
-				print('no transits in this quarter.')
-				if skip_ntqs == 'y':
-					### skip this quarter! there are no transits present.
-					fluxes_detrend, errors_detrend, flags_detrend = dfluxes, derrors, dflags
-					skip_quarter = 'y'
 
-			try:
-				np.concatenate(mask_transit_idxs)
-			except:
-				pass
-			mask_transit_idxs = np.unique(mask_transit_idxs)
-
+			print(' ')
+			#print("AFTER: ")
+			#print('mask_transit_idxs = ', mask_transit_idxs)
 			if len(mask_transit_idxs) > 0:
-				print('min(mask_transit_idxs): ', np.nanmin(mask_transit_idxs))
-				print('max(mask_transit_idxs): ', np.nanmax(mask_transit_idxs))
-				print('len(dtimes): ', len(dtimes))
-				#### remove out of bounds transit idxs:
-				OoB_mask_transit_idxs = np.where(mask_transit_idxs >= len(dtimes))[0]
-				print("# Out of Bounds: ", len(OoB_mask_transit_idxs))
-				mask_transit_idxs = np.delete(mask_transit_idxs, OoB_mask_transit_idxs)
-			else:
-				print('len(mask_transit_idxs) = 0')
+				print('len(mask_transit_idxs) = '+str(len(mask_transit_idxs)))
+				#print("mask transit times = ", dtimes[mask_transit_idxs])			
 
 
+			all_quarter_mask_transit_idxs.append(mask_transit_idxs)
 
-		elif mask_transits == 'n':
-			mask_transit_idxs = np.array([])
-
-		print(' ')
-		#print("AFTER: ")
-		#print('mask_transit_idxs = ', mask_transit_idxs)
-		if len(mask_transit_idxs) > 0:
-			print('len(mask_transit_idxs) = '+str(len(mask_transit_idxs)))
-			#print("mask transit times = ", dtimes[mask_transit_idxs])			
+			##### update!
+			self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
 
 
-		all_quarter_mask_transit_idxs.append(mask_transit_idxs)
+			if skip_quarter == 'n':
+				try:
+					if dmeth == 'cofiam':
+						max_degree = max_order(dtimes, self.duration_days)
+						print("cofiam maximum k = "+str(max_degree))
+						"""
+						CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
+						specifying a maximum order, above which the algorithm will not fit.
+						This maximum degree should be calculated based on the transit duration, 
+						but in practice going above k=30 is computational impractical. 
+						You can specify "max_degree" below, or calculate it using the max_order function
+						within cofiam.py.
+						"""
+						try:
+							detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						except:
+							detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
-		##### update!
-		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
+						flags_detrend = dflags
 
 
-		if skip_quarter == 'n':
-			try:
-				if dmeth == 'cofiam':
-					max_degree = max_order(dtimes, self.duration_days)
-					print("cofiam maximum k = "+str(max_degree))
-					"""
-					CoFiAM is designed to preserve short-duration (i.e. moon-like) features by
-					specifying a maximum order, above which the algorithm will not fit.
-					This maximum degree should be calculated based on the transit duration, 
-					but in practice going above k=30 is computational impractical. 
-					You can specify "max_degree" below, or calculate it using the max_order function
-					within cofiam.py.
-					"""
-					try:
-						detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
-					except:
-						detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+					elif dmeth == 'polyAM':
+						"""
+						Polynomial detrending is the same basic algorithm as CoFiAM, but instead of using sinusoids, 
+						it uses polynomials, and minimizes autocorrelation.
+						"""
+						max_degree = max_order(dtimes, self.duration_days)
+						try:
+							detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						except:
+							detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 
-					flags_detrend = dflags
+						flags_detrend = dflags
 
 
 
 
 
-				elif dmeth == 'polyAM':
-					"""
-					Polynomial detrending is the same basic algorithm as CoFiAM, but instead of using sinusoids, 
-					it uses polynomials, and minimizes autocorrelation.
-					"""
-					max_degree = max_order(dtimes, self.duration_days)
-					try:
-						detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
-					except:
-						detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64), telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+					elif dmeth == 'polyLOC':
+						"""
+						Like polyAM, except that it's a LOCAL fit that minimizes the BIC... AND it does one transit at a time, 
+						so you need to handle this a bit differently
 
-					flags_detrend = dflags
+						"""
+
+						detrend_model, fluxes_detrend, errors_detrend = [], [], []
+						all_detrend_models, all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], [], []
+						
+
+						for ntau, tau in enumerate(self.taus):
+							if tau < np.nanmin(dtimes) or tau > np.nanmax(dtimes):
+								continue 
+
+							print('tau '+str(ntau)+' of '+str(len(self.taus)))
+							#### FOR EVERY TRANSIT!
+							local_window_duration = 10*self.duration_days
+							lwdm = 10 ### "local window duration multiple"
+							if local_window_duration > 0.5 * self.period:
+								#### you need a shorter duration!
+								local_window_duration = 0.5 * self.period
+								lwdm = local_window_duration / self.duration_days
+							###local_window_duration_multiple
+							
+							max_degree = max_order(local_window_duration, self.duration_days)
+
+							detrend_model, transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+							
+							#### APPEND THIS LIST OF VALUES OT A BIGGER LIST
+							all_detrend_models.append(detrend_model)
+							all_transit_times_detrend.append(transit_times_detrend)
+							all_transit_fluxes_detrend.append(transit_fluxes_detrend)
+							all_transit_errors_detrend.append(transit_errors_detrend)
+
+						### MAKE THE BIG LIST A BIG ARRAY
+						try:
+							all_detrend_models = np.concatenate(all_detrend_models)
+							all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
+							all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
+							all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
+						except:
+							print('could not concatenate (maybe an empty quarter')
+
+						#### now we need to replace all non-transiting fluxes_detrend and errors_detrend with NaNs
+						##### WHY? SO THAT IT IS THE SAME SIZE AS times, fluxes, and errors (for the way it saves in the file).
+						for dtidx, dt in enumerate(dtimes):
+							if dt in all_transit_times_detrend:
+								detrend_model.append(all_detrend_models[dtidx])
+								fluxes_detrend.append(all_transit_fluxes_detrend[dtidx])
+								errors_detrend.append(all_transit_errors_detrend[dtidx])
+							elif dt not in all_transit_times_detrend:
+								detrend_model.append(np.nan)
+								fluxes_detrend.append(np.nan)
+								errors_detrend.append(np.nan)
+							flags_detrend = dflags 
 
 
 
 
+					elif dmeth == 'untrendy':
+						print("UNTRENDY IMPLEMENTATION IS STILL BUGGY. BEWARE!")
+						mask_transit_idxs = mask_transit_idxs.astype(int)
+						print('mask_transit_idxs = ', mask_transit_idxs)
+						detrend_model, fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
-				elif dmeth == 'polyLOC':
-					"""
-					Like polyAM, except that it's a LOCAL fit that minimizes the BIC... AND it does one transit at a time, 
-					so you need to handle this a bit differently
 
-					"""
 
-					detrend_model, fluxes_detrend, errors_detrend = [], [], []
-					all_detrend_models, all_transit_times_detrend, all_transit_fluxes_detrend, all_transit_errors_detrend = [], [], [], []
-					
+					elif dmeth == 'george':
+						print("GEORGE IMPLEMENTATION IS STILL BUGGY. BEWARE!")
+						detrend_model, fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
+						#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
+						flags_detrend = dflags
 
-					for ntau, tau in enumerate(self.taus):
-						if tau < np.nanmin(dtimes) or tau > np.nanmax(dtimes):
-							continue 
 
-						print('tau '+str(ntau)+' of '+str(len(self.taus)))
-						#### FOR EVERY TRANSIT!
+
+					elif dmeth == 'medfilt':
+						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
+						detrend_model, fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
+						flags_detrend = dflags
+
+
+					elif dmeth == 'methmarg':
 						local_window_duration = 10*self.duration_days
 						lwdm = 10 ### "local window duration multiple"
 						if local_window_duration > 0.5 * self.period:
 							#### you need a shorter duration!
 							local_window_duration = 0.5 * self.period
 							lwdm = local_window_duration / self.duration_days
-						###local_window_duration_multiple
+
 						
-						max_degree = max_order(local_window_duration, self.duration_days)
-
-						detrend_model, transit_times_detrend, transit_fluxes_detrend, transit_errors_detrend = polyLOC_detrend(times=np.array(dtimes, dtype=np.float64), fluxes=np.array(dfluxes, dtype=np.float64), errors=np.array(derrors, dtype=np.float64), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
-						
-						#### APPEND THIS LIST OF VALUES OT A BIGGER LIST
-						all_detrend_models.append(detrend_model)
-						all_transit_times_detrend.append(transit_times_detrend)
-						all_transit_fluxes_detrend.append(transit_fluxes_detrend)
-						all_transit_errors_detrend.append(transit_errors_detrend)
-
-					### MAKE THE BIG LIST A BIG ARRAY
-					try:
-						all_detrend_models = np.concatenate(all_detrend_models)
-						all_transit_times_detrend = np.concatenate(all_transit_times_detrend)
-						all_transit_fluxes_detrend = np.concatenate(all_transit_fluxes_detrend)
-						all_transit_errors_detrend = np.concatenate(all_transit_errors_detrend)
-					except:
-						print('could not concatenate (maybe an empty quarter')
-
-					#### now we need to replace all non-transiting fluxes_detrend and errors_detrend with NaNs
-					##### WHY? SO THAT IT IS THE SAME SIZE AS times, fluxes, and errors (for the way it saves in the file).
-					for dtidx, dt in enumerate(dtimes):
-						if dt in all_transit_times_detrend:
-							detrend_model.append(all_detrend_models[dtidx])
-							fluxes_detrend.append(all_transit_fluxes_detrend[dtidx])
-							errors_detrend.append(all_transit_errors_detrend[dtidx])
-						elif dt not in all_transit_times_detrend:
-							detrend_model.append(np.nan)
-							fluxes_detrend.append(np.nan)
-							errors_detrend.append(np.nan)
-						flags_detrend = dflags 
+						print('RUNNING METHOD MARGINALIZATION! MAKE SURE YOU CHECK YOUR INPUTS!')
+						detrend_model, fluxes_detrend, errors_detrend = methmarg_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  GP_kernel=GP_kernel, metric=GP_metric, kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
+						flags_detrend = dflags
 
 
 
-
-				elif dmeth == 'untrendy':
-					print("UNTRENDY IMPLEMENTATION IS STILL BUGGY. BEWARE!")
-					mask_transit_idxs = mask_transit_idxs.astype(int)
-					print('mask_transit_idxs = ', mask_transit_idxs)
-					detrend_model, fluxes_detrend, errors_detrend = untrendy_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs)
-					#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
-					flags_detrend = dflags
+				except:
+					traceback.print_exc()
+					print('DETRENDING FAILED FOR THIS QUARTER.')
+					detrend_model, fluxes_detrend, errors_detrend = dfluxes, dfluxes, derrors 
+					flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
+					exceptions_raised = 'y'
 
 
-
-				elif dmeth == 'george':
-					print("GEORGE IMPLEMENTATION IS STILL BUGGY. BEWARE!")
-					detrend_model, fluxes_detrend, errors_detrend = george_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, GP_kernel=GP_kernel, metric=GP_metric, telescope=self.telescope, mask_idxs=mask_transit_idxs)
-					#flags_detrend = np.linspace(0,0,len(fluxes_detrend))
-					flags_detrend = dflags
+			### update self -- just this quarter!
+			if (skip_ntqs == 'n') and (exceptions_raised == 'n'):
+				assert np.all(dfluxes != fluxes_detrend)
+				assert np.all(derrors != errors_detrend)
 
 
-
-				elif dmeth == 'medfilt':
-					print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
-					detrend_model, fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
-					flags_detrend = dflags
-
-
-				elif dmeth == 'methmarg':
-					local_window_duration = 10*self.duration_days
-					lwdm = 10 ### "local window duration multiple"
-					if local_window_duration > 0.5 * self.period:
-						#### you need a shorter duration!
-						local_window_duration = 0.5 * self.period
-						lwdm = local_window_duration / self.duration_days
-
-					
-					print('RUNNING METHOD MARGINALIZATION! MAKE SURE YOU CHECK YOUR INPUTS!')
-					detrend_model, fluxes_detrend, errors_detrend = methmarg_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  GP_kernel=GP_kernel, metric=GP_metric, kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), local_window_duration_multiple=lwdm, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
-					flags_detrend = dflags
-
-
-
-			except:
-				traceback.print_exc()
-				print('DETRENDING FAILED FOR THIS QUARTER.')
-				detrend_model, fluxes_detrend, errors_detrend = dfluxes, dfluxes, derrors 
-				flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))
-				exceptions_raised = 'y'
-
-
-		### update self -- just this quarter!
-		if (skip_ntqs == 'n') and (exceptions_raised == 'n'):
-			assert np.all(dfluxes != fluxes_detrend)
-			assert np.all(derrors != errors_detrend)
-
-
-		if len(self.quarters) > 1:
-			master_detrend_model.append(np.array(detrend_model))
-			master_detrend.append(np.array(fluxes_detrend))
-			master_error_detrend.append(np.array(errors_detrend))
-			master_flags_detrend.append(np.array(flags_detrend))
-		elif len(self.quarters) == 1:
-			master_detrend_model = np.array(master_detrend_model)
-			master_detrend = np.array(fluxes_detrend)
-			master_error_detrend = np.array(errors_detrend)
-			master_flags_detrend = np.array(flags_detrend)
+			if len(self.quarters) > 1:
+				master_detrend_model.append(np.array(detrend_model))
+				master_detrend.append(np.array(fluxes_detrend))
+				master_error_detrend.append(np.array(errors_detrend))
+				master_flags_detrend.append(np.array(flags_detrend))
+			elif len(self.quarters) == 1:
+				master_detrend_model = np.array(master_detrend_model)
+				master_detrend = np.array(fluxes_detrend)
+				master_error_detrend = np.array(errors_detrend)
+				master_flags_detrend = np.array(flags_detrend)
 
 
 	### this is the first initialization of the detrended fluxes.
