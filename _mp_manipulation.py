@@ -353,7 +353,7 @@ def initialize_priors(self, modelcode):
 
 ### DETRENDING!
 
-def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_holczer='y'):
+def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors='y', mask_multiple=None, skip_ntqs='n', medfilt_kernel_transit_multiple=5, GP_kernel='ExpSquaredKernel', GP_metric=1.0, max_degree=30, use_holczer='y', downsample_factor=20):
 	print('calling _mp_manipulation.py/detrend().')
 	#if mask_multiple == None:
 	#	mask_multiple = self.mask_multiple
@@ -395,9 +395,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', mask_neighbors
 		cctimes, ccfluxes, ccerrors = np.concatenate(self.times), np.concatenate(norm_fluxes), np.concatenate(norm_errors)
 
 		try:
-			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=cctimes, fluxes=ccfluxes, errors=ccerrors, period=self.period)
+			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=cctimes, fluxes=ccfluxes, errors=ccerrors, period=self.period, downsample_factor=downsample_factor)
 		except:
-			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=np.array(cctimes, dtype=np.float64), fluxes=np.array(ccfluxes, dtype=np.float64), errors=np.array(ccerrors, dtype=np.float64), period=self.period)
+			detrend_model, fluxes_detrend, errors_detrend = phasma_detrend(times=np.array(cctimes, dtype=np.float64), fluxes=np.array(ccfluxes, dtype=np.float64), errors=np.array(ccerrors, dtype=np.float64), period=self.period, downsample_factor=downsample_factor)
 
 		#flags_detrend = np.concatenate(self.flags)
 		flags_detrend = np.linspace(2097152,2097152,len(fluxes_detrend))

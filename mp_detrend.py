@@ -11,8 +11,12 @@ import matplotlib.pyplot as plt
 
 
 
-def phasma_detrend(times, fluxes, errors, period):
+def phasma_detrend(times, fluxes, errors, period, downsample_factor=20):
 	print('calling mp.detrend.py/phasma_detrend().')
+	print('BE SURE TO SET YOUR downsample_factor. Default is 20.')
+	print(' ')
+	print(' ')
+
 
 	#### gonna using a moving median filter with a box equal to HALF THE PERIOD.
 	#### NOT A NUMBER OF DATA POINTS -- HAS TO BE EXACTLY THE WIDTH OF THE PERIOD
@@ -34,9 +38,11 @@ def phasma_detrend(times, fluxes, errors, period):
 	#### initialize the moving_medians with a bunch of NaNs, equal to the number of spaces to the first idx.
 	#### if first idx is 10, you need 0-9 (or 10 in all) nans.
 	moving_medians = np.linspace(np.nan, np.nan, first_box_center_idx).tolist()
+	#box_center_times = np.linspace(np.nan, np.nan, first_box_center_idx).tolist()
+	box_center_times = times[:first_box_center_idx].tolist()
 	print('len(moving_medians) (to start): ', len(moving_medians))
 
-	for mmidx in np.arange(first_box_center_idx, last_box_center_idx,1):
+	for mmidx in np.arange(first_box_center_idx, last_box_center_idx, downsample_factor):
 		#### grab all the indices in the window
 		box_start_time = times[mmidx] - (period/2)
 		box_end_time = times[mmidx] + (period/2)
@@ -46,12 +52,32 @@ def phasma_detrend(times, fluxes, errors, period):
 		box_times, box_fluxes, box_errors = times[box_idxs], fluxes[box_idxs], errors[box_idxs]
 		box_median = np.nanmedian(box_fluxes)
 		moving_medians.append(box_median)
+		box_center_times.append(times[mmidx])
 	print('len(moving_medians) (after the crawl): ', len(moving_medians))
 
 	#### now you need to append NaNs on the back end, to make moving_medians have same length as times
-	ntoadd = len(times) - len(moving_medians)
+	#ntoadd = len(times) - len(moving_medians)
+	ntoadd = len(times[last_box_center_idx:])
 	moving_medians = np.concatenate((moving_medians, np.linspace(np.nan, np.nan, ntoadd)))
-	best_model = moving_medians	
+	box_center_times = np.concatenate((box_center_times, times[last_box_center_idx:]))
+	print('len(moving_medians) = ', len(moving_medians))
+	print('len(box_center_times) = ', len(box_center_times))
+
+	assert len(moving_medians) == len(box_center_times)
+
+
+	if downsample_factor > 1:
+		#### you need to fill in the gaps to make moving_medians same length as the original light curve
+		interpolator = interp1d(box_center_times, moving_medians, kind='linear')
+		final_moving_medians = interpolator(times) ### will run the full range, and be length = times.
+		print('INTERPOLATED TREND.')
+	else:
+		final_moving_medians = moving_medians 
+
+	print('len(final_moving_medians) = ', len(final_moving_medians))
+	print('len(times) = ', len(times))
+
+	best_model = final_moving_medians	
 
 	flux_detrend = fluxes / best_model 
 	errors_detrend = errors / fluxes 
