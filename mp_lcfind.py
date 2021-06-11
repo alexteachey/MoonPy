@@ -13,7 +13,10 @@ import socket
 from urllib.request import urlretrieve
 import requests 
 
-moonpydir = os.getcwd()
+#moonpydir = os.getcwd()
+
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/_mp_lcfind.py')]
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
