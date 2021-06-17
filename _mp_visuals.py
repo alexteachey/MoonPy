@@ -140,6 +140,8 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		if nplots == 2:
 			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			ax[0].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))
+			ax[1].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))			
 
 			if show_errors == 'y':
 				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
@@ -154,6 +156,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		elif nplots == 1: ### detrended or undetrended, but not both
 			if detrended == 'y':
 				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax.set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))							
 				if show_errors == 'y':
 					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 
@@ -207,15 +210,18 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			try:
 				self.gen_batman(folded='n')
 				if nplots == 2:
-					ax[1].plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax[1].plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
 				elif nplots == 1:
-					ax.plot(self.bat_times, self.bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax.plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
 
 					
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
 	elif folded == 'y':
+		nplots = 1 #### should only show the detrend -- folding on undetrended is nonsense.
+		plt.close()
+		fig, ax = plt.subplots()
 		detrended = 'y' #### it doesn't make any sense to phase-fold an undetrended light curve
 		try:
 			self.fold(detrended=detrended, phase_offset=phase_offset, period=period)
@@ -267,12 +273,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				if show_errors == 'y':
 					ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 					ax[1].errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax[0].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))
+					ax[1].set_xlim(np.nanmin(self.fold_times), np.nanmax(self.fold_times))		
 
 			elif nplots == 1:
 				ax.scatter(self.fold_times, self.fold_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
 				if show_errors == 'y':
 					ax.errorbar(self.fold_times, self.fold_fluxes, yerr=self.fold_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
-
+					ax.set_xlim(np.nanmin(self.fold_times), np.nanmax(self.fold_times))		
 
 		elif binned == 'y':
 			detrended = 'y'
@@ -292,14 +300,19 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			ax.scatter(self.fold_times, self.fold_fluxes, facecolors='k', s=5, zorder=0, alpha=0.2)
 			ax.scatter(fold_bins, fold_bin_fluxes, facecolor=facecolor, alpha=0.7, s=15, zorder=1)
+			ax.set_xlim(np.nanmin(self.fold_times), np.nanmax(self.fold_times))
 
 		if (show_batman == 'y') and (detrended == 'y'):
 			try:
 				self.gen_batman(folded='y')
 				if nplots == 2:
 					ax[1].plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax[0].set_xlim(np.nanmin(self.folded_bat_times), np.nanmax(self.folded_bat_times))
+					ax[1].set_xlim(np.nanmin(self.folded_bat_times), np.nanmax(self.folded_bat_times))					
 				elif nplots == 1:
 					ax.plot(self.folded_bat_times, self.folded_bat_fluxes, c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax.set_xlim(np.nanmin(self.folded_bat_times), np.nanmax(self.folded_bat_times))					
+					
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
 
