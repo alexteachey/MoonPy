@@ -218,7 +218,7 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 
 
 
-def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', extra_path_info=None, cnnlc_path=moonpydir+'/cnn_lcs'):
+def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n', extra_path_info=None, center_transit='y', cnnlc_path=moonpydir+'/cnn_lcs'):
 	print('calling _mp_manipulation.py/prep_for_CNN().')
 	### this function will produce an arrayy that's ready to be fed to a CNN for moon finding. 
 	if os.path.exists(cnnlc_path) == False:
@@ -230,11 +230,40 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 		cnn_min, cnn_max = tau-window, tau+window
 		print('cnn_min, cnn_max = ', cnn_min, cnn_max)
 		cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
+		print('cnn_idxs (first): ', cnn_idxs)
+		print('len(cnn_idxs) = ', len(cnn_idxs))
+		if len(cnn_idxs) < cnn_len:
+			continue
 		### grab the times, fluxes, and errors
 		cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes)[cnn_idxs], np.hstack(self.errors)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]
+		
+		if center_transit == 'y':
+			##### take the weighted average of the detrended_fluxes to find tmid
+			dFs = 1 - cnn_fluxes_detrend
+			#print('dFs: ', dFs)
+			print('np.nansum(dFs) = ', np.nansum(dFs))
+			try:
+				tmid = np.average(a=cnn_times, weights=dFs)
+				tmid_idx = np.nanargmin(np.abs(tmid - np.hstack(self.times)))
+				print('tmid_idx: ', tmid_idx)
+				tmid_idx = int(tmid_idx)
+				print('|tmid - tau| = '+str(tmid - tau))
+				#cnn_min, cnn_max = tmid-window, tmid+window			
+				#cnn_idxs = np.where((np.hstack(self.times) >= cnn_min) & (np.hstack(self.times) <= cnn_max))[0]
+				cnn_idxs = np.arange(tmid_idx - int(cnn_len/2), tmid_idx + 1 + int(cnn_len/2), 1)
+				print('cnn_idxs (second): ', cnn_idxs)
+				print('len(cnn_idxs) = ', len(cnn_idxs))
+				### grab the times, fluxes, and errors
+				cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = np.hstack(self.times)[cnn_idxs], np.hstack(self.fluxes)[cnn_idxs], np.hstack(self.errors)[cnn_idxs], np.hstack(self.fluxes_detrend)[cnn_idxs], np.hstack(self.errors_detrend)[cnn_idxs]
+			except:
+				traceback.print_exc()
+
 		if len(cnn_times) < cnn_len: ### the size of the array you need to feed into the CNN.
 			### not enough times 
 			continue
+
+		print('len(cnn_times) = ', len(cnn_times))	
+
 		while len(cnn_times) > cnn_len:
 			### shave off from the front end.
 			cnn_times, cnn_fluxes, cnn_errors, cnn_fluxes_detrend, cnn_errors_detrend = cnn_times[1:], cnn_fluxes[1:], cnn_errors[1:], cnn_fluxes_detrend[1:], cnn_errors_detrend[1:]
@@ -246,22 +275,24 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 		if exclude_neighbors == 'y':
 			neighbor_contam = 'n'
 
-			for neighbor in self.neighbor_dict.keys():
-				neighbor_taus = self.neighbor_dict[neighbor].taus
-				if np.any((neighbor_taus >= np.nanmin(cnn_times)) & (neighbor_taus <= np.nanmax(cnn_times))):
-					### there's another transiting planet in your window!
-					neighbor_contam = 'y'
+			if len(self.neighbors) > 0:
+				for neighbor in self.neighbor_dict.keys():
+					neighbor_taus = self.neighbor_dict[neighbor].taus
+					if np.any((neighbor_taus >= np.nanmin(cnn_times)) & (neighbor_taus <= np.nanmax(cnn_times))):
+						### there's another transiting planet in your window!
+						neighbor_contam = 'y'
 			if neighbor_contam == 'y':
 				continue
 
 		if flag_neighbors=='y':
 			flag_idxs = []
-			for neighbor in self.neighbor_dict.keys():
-				neighbor_taus = self.neighbor_dict[neighbor].taus
-				for nt in neighbor_taus:
-					if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
-						ntidxs = np.where((cnn_times >= nt-((self.mask_multiple/2)*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+((self.mask_multiple/2)*self.neighbor_dict[neighbor].duration_days)))[0]
-						flag_idxs.append(ntidxs)
+			if len(self.neighbors) > 0:
+				for neighbor in self.neighbor_dict.keys():
+					neighbor_taus = self.neighbor_dict[neighbor].taus
+					for nt in neighbor_taus:
+						if (nt >= np.nanmin(cnn_times)) and (nt <= np.nanmax(cnn_times)):
+							ntidxs = np.where((cnn_times >= nt-((self.mask_multiple/2)*self.neighbor_dict[neighbor].duration_days)) & (cnn_times <= nt+((self.mask_multiple/2)*self.neighbor_dict[neighbor].duration_days)))[0]
+							flag_idxs.append(ntidxs)
 			#try:
 			if len(flag_idxs) > 0:
 				flag_idxs = np.unique(np.hstack(np.array(flag_idxs)))
