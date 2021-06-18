@@ -27,6 +27,7 @@ from cofiam import max_order
 from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
+from _mp_attributes import get_databases
 
 
 """
@@ -76,8 +77,16 @@ print('moonpydir = ', moonpydir)
 print('Light curves will be stored in '+central_data_dir)
 
 
+###### INITIALIZE ALL THE DATABASES HERE, SO THEY DON'T NEED TO BE RE-READ IN FOR EACH LIGHT CURVE!
+#kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = functimer(get_databases('kepler'))
+#koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = functimer(get_databases('koi'))
+#k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(get_databases('k2'))	
+#tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(get_databases('toi'))
+
+
 
 class MoonpyLC(object):
+
 	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector
 	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs
 	from _mp_manipulation import fit, prep_for_CNN, initialize_priors, detrend, gen_batman
@@ -89,12 +98,11 @@ class MoonpyLC(object):
 
 	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=4, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
-		global first_kepler, first_k2, first_tess, first_koi
+		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
 		global koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns 
 		global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
-		global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
-
+		#global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
 
 		self.mask_multiple = mask_multiple 
 
@@ -200,9 +208,9 @@ class MoonpyLC(object):
 
 		#### SPECIFY THE SAVEPATH FOR THE LIGHT CURVE -- NEW HANDLING (NOV 2020) SAVES THEM OUTSIDE THE MOONPY DIRECTORY, IN CENTRAL_DATA.
 		if self.telescope.lower() == 'kepler':
-			savepath = kepler_URL_generator(find_KIC_alias(targetID), short_cadence=short_cadence)[2] 
+			savepath =functimer(kepler_URL_generator(find_KIC_alias(targetID), short_cadence=short_cadence)[2])
 		elif self.telescope.lower() == 'k2':
-			savepath = k2_URL_generator(find_EPIC_alias(targetID))[2]
+			savepath = functimer(k2_URL_generator(find_EPIC_alias(targetID))[2])
 		elif self.telescope.lower() == 'tess':
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
 
@@ -219,31 +227,32 @@ class MoonpyLC(object):
 
 		if self.target.lower().startswith('kepler') or self.target.lower().startswith('koi') or self.target.lower().startswith('kic'):
 			if self.target.lower().startswith('kepler'):
-				if first_kepler == 'y':
-
-					kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = self.get_databases()
+				#### MOVING UP FOR FIRST INITIALIZATION 
+				#kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = functimer(self.get_databases())
+				
+				try:
 					self.NEA_data = kepler_NEA_data
 					self.NEA_columns = kepler_NEA_columns
 					self.exofop_data = kepler_exofop_data
 					self.exofop_columns = kepler_exofop_columns
-					first_kepler = 'n'
-
-				elif first_kepler == 'n':
+				except:
+					kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = functimer(get_databases('kepler'))
 					self.NEA_data = kepler_NEA_data
 					self.NEA_columns = kepler_NEA_columns
 					self.exofop_data = kepler_exofop_data
-					self.exofop_columns = kepler_exofop_columns			
+					self.exofop_columns = kepler_exofop_columns
 
+		
 			elif (self.target.lower().startswith('koi')) or (self.target.lower().startswith('kic')):
-				if first_koi == 'y':
-					koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = self.get_databases()
+
+				try:
 					self.NEA_data = koi_NEA_data
 					self.NEA_columns = koi_NEA_columns
 					self.exofop_data = koi_exofop_data
 					self.exofop_columns = koi_exofop_columns
-					first_koi = 'n'
 
-				elif first_koi == 'n':
+				except:
+					koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = functimer(get_databases('koi'))
 					self.NEA_data = koi_NEA_data
 					self.NEA_columns = koi_NEA_columns
 					self.exofop_data = koi_exofop_data
@@ -252,15 +261,16 @@ class MoonpyLC(object):
 
 
 		elif self.target.lower().startswith('k2') or self.target.lower().startswith('epic'):
-			if first_k2 == 'y':
-				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = self.get_databases()
+			
+			try:
+				#k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(self.get_databases())
 				self.NEA_data = k2_NEA_data
 				self.NEA_columns = k2_NEA_columns
 				self.exofop_data = k2_exofop_data
 				self.exofop_columns = k2_exofop_columns
-				first_k2 = 'n'
 
-			elif first_k2 == 'n':
+			except:
+				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(get_databases('k2'))				
 				self.NEA_data = k2_NEA_data
 				self.NEA_columns = k2_NEA_columns
 				self.exofop_data = k2_exofop_data
@@ -269,20 +279,20 @@ class MoonpyLC(object):
 
 		
 		elif self.target.lower().startswith('tess') or self.target.lower().startswith('tic') or self.target.lower().startswith('toi'):
-			if first_tess == 'y':
-				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = self.get_databases()
+			try:
+				#tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(self.get_databases())
 				self.NEA_data = tess_NEA_data
 				self.NEA_columns = tess_NEA_columns
 				self.exofop_data = tess_exofop_data
 				self.exofop_columns = tess_exofop_columns
 				first_tess = 'n'
 
-			elif first_tess == 'n':
+			except:
+				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(get_databases('toi'))				
 				self.NEA_data = tess_NEA_data
 				self.NEA_columns = tess_NEA_columns
 				self.exofop_data = tess_exofop_data
 				self.exofop_columns = tess_exofop_columns			
-
 
 
 		### check to see if a file already exists!

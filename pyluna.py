@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import mp_tools
+from mp_tools import * 
 import socket
 from astropy.constants import G
 import time

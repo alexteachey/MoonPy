@@ -198,7 +198,8 @@ def get_coords(self):
 
 
 
-def get_databases(self):
+#def get_databases(self):
+def get_databases(target_prefix):
 
 	current_time = time.time()
 
@@ -321,27 +322,27 @@ def get_databases(self):
 	#NEA_data = pandas.read_csv(kep_NEA_address)
 	koi_NEA_columns = koi_NEA_data.columns
 
-	if self.target.lower().startswith('kepler'):
+	#if self.target.lower().startswith('kepler'):
+	if target_prefix.lower() == 'kepler':
 		NEA_data = confirmed_NEA_data
 		NEA_columns = confirmed_NEA_columns
 
-	elif (self.target.lower().startswith('koi')) or (self.target.lower().startswith('kic')):
+	elif (target_prefix.lower() == 'koi') or (target_prefix.lower() == 'kic'):
 		NEA_data = koi_NEA_data
 		NEA_columns = koi_NEA_columns 
 
-	elif (self.target.lower().startswith('k2')) or (self.target.lower().startswith('epic')):
+	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
 		NEA_data = confirmed_NEA_data
 		NEA_columns = confirmed_NEA_columns 
 
-	elif (self.target.lower().startswith('toi')) or (self.target.lower().startswith('tic')):
+	elif (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'tess'):
 		NEA_data = confirmed_NEA_data 
 		NEA_columns = confirmed_NEA_columns
 
 
 
 
-
-	if self.telescope.lower() == 'kepler':
+	if (target_prefix.lower() == 'kepler') or (target_prefix.lower() == 'koi') or (target_prefix.lower() == 'kic'):
 		kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
 	
 		if os.path.exists(kep_fop_address):
@@ -365,7 +366,7 @@ def get_databases(self):
 			print('EXCEPTION ENCOUNTERED... could not load exofop_data.')
 
 
-	elif self.telescope.lower() == 'k2':
+	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
 		"""
 		k2_NEA_address = moonpydir+'/cumk2ois_mast.txt'
 		if os.path.exists(k2_NEA_address):
@@ -403,7 +404,8 @@ def get_databases(self):
 			print('K2 ExoFOP file not loadable. Possibly corrupted. ')
 
 
-	elif self.telescope.lower() == 'tess':
+
+	elif (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tess'):
 
 		##### RESTRUCTURE -- if it starts with TOI, check if it has a number or letter at the e
 		#toi_NEA_address = moonpydir+'/NEA_cumtois.txt' #### ALL THE TOIs that are NOT confirmed as planets. Of the form TOI-XXXX.01

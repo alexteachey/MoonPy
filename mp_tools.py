@@ -3,6 +3,8 @@ import numpy as np
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 import os
 import pandas
+import time
+from inspect import currentframe, stack, getframeinfo, getouterframes
 
 
 moonpydir = os.path.realpath(__file__)
@@ -26,6 +28,16 @@ Claret_Logg = np.array(Claret_LDCs['logg_cms2']).astype(float)
 Claret_Z = np.array(Claret_LDCs["Z_sun"]).astype(float)
 Claret_quada = np.array(Claret_LDCs['aLSM']).astype(float)
 Claret_quadb = np.array(Claret_LDCs['bLSM']).astype(float)
+
+
+
+
+def functimer(function):
+	t1 = time.time()
+	function_outputs = function
+	t2 = time.time()
+	print('function evaluation time: '+str(t2-t1)+' seconds.')
+	return function_outputs
 
 
 def DKS_best_LDCmatch(Teff=np.nan, Logg=np.nan, MH=np.nan):

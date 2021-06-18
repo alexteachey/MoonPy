@@ -12,6 +12,7 @@ import traceback
 import socket
 from urllib.request import urlretrieve
 import requests 
+from mp_tools import * 
 
 #moonpydir = os.getcwd()
 
@@ -399,7 +400,7 @@ def kepler_fits_download(target_name, clobber='n'):
 		KIC_name = find_KIC_alias(target_name)
 		print('KIC alias = ', KIC_name)
 
-		KIC_URL, KIC_wget, KIC_download_dir = kepler_URL_generator(KIC_name)
+		KIC_URL, KIC_wget, KIC_download_dir = functimer(kepler_URL_generator(KIC_name))
 		#print("KIC wget = ", KIC_wget)
 
 		#### check if KIC_download_dir files already exist... if they do, skip it!
@@ -449,7 +450,7 @@ def k2_fits_download(target_name, clobber='n'):
 def kepler_unpack_fits(target_name, short_cadence=False, long_cadence=True):
 	print('calling mp_lcfind.py/kepler_unpack_fits().')
 	#### first thing you have to do is make sure the damn thing exists!
-	KIC_directory = kepler_URL_generator(find_KIC_alias(target_name))[2] 
+	KIC_directory = functimer(kepler_URL_generator(find_KIC_alias(target_name))[2])
 	try:
 		#### use kepler_fits_download() to grab the KIC_download_dir and unpack these fits.
 		#KIC_directory = kepler_fits_download(target_name, download=download)
