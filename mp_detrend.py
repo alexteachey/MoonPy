@@ -8,6 +8,7 @@ from cofiam import cofiam_iterative
 from poly_detrender import polyAM_iterative, polyLOC_iterative
 import traceback
 import matplotlib.pyplot as plt 
+from mp_tools import * 
 
 
 
@@ -157,7 +158,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 	else: ### self.telescope != 'tess'
 		try:
-			best_model, best_degree, best_DW, max_degree = cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree))
+			best_model, best_degree, best_DW, max_degree = functimer(cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
 			print(' ')
 			print(' ')
 		except:
@@ -221,11 +222,11 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		try:
 			if len(first_half_idxs) > 2:
 				print('detrending first section.')
-				best_model1, best_degree1, best_DW1, max_degree1 = polyAM_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+				best_model1, best_degree1, best_DW1, max_degree1 = functimer(polyAM_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree)))
 			
 			if len(second_half_idxs) > 2:
 				print('detrending second section.')
-				best_model2, best_degree2, best_DW2, max_degree2 = polyAM_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+				best_model2, best_degree2, best_DW2, max_degree2 = functimer(polyAM_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree)))
 			
 			if (len(first_half_idxs) > 2) and (len(second_half_idxs) > 2):
 				best_model = np.concatenate((best_model1, best_model2))
@@ -250,7 +251,7 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 
 	else:
 		try:
-			best_model, best_degree, best_DW, max_degree = polyAM_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree))
+			best_model, best_degree, best_DW, max_degree = functimer(polyAM_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
 			print(' ')
 			print(' ')
 		except:
@@ -323,8 +324,8 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
 
 		try:
-			best_model1, best_degree1, best_BIC1, max_degree1 = polyLOC_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			best_model2, best_degree2, best_BIC2, max_degree2 = polyLOC_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			best_model1, best_degree1, best_BIC1, max_degree1 = functimer(polyLOC_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree)))
+			best_model2, best_degree2, best_BIC2, max_degree2 = functimer(polyLOC_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree)))
 			best_model = np.concatenate((best_model1, best_model2))
 			best_degree = np.nanmean((best_degree1, best_degree2))
 			best_BIC = np.nanmean((best_BIC1, best_BIC2))
@@ -335,7 +336,7 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 
 	else:
 		try:
-			best_model, best_degree, best_BIC, max_degree = polyLOC_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), np.array(unmasked_errors, dtype=np.float64), max_degree=int(max_degree))
+			best_model, best_degree, best_BIC, max_degree = functimer(polyLOC_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), np.array(unmasked_errors, dtype=np.float64), max_degree=int(max_degree)))
 		except:
 			traceback.print_exc()
 			print('unable to call polyAM_iterative. Data points likely reduced to zero.')
@@ -488,21 +489,21 @@ def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredK
 	print('calling np_detrend.py/methmarg_detrend().')
 	#### THIS FUNCTION WILL RUN ALL THE OTHER DETRENDERS, and take the median value at every time step.
 	try:
-		cofiam_fluxes, cofiam_errors = cofiam_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=30)
+		cofiam_fluxes, cofiam_errors = functimer(cofiam_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=30))
 		include_cofiam = 'y'
 	except:
 		traceback.print_exc()
 		include_cofiam = 'n'
 
 	try:
-		polyAM_fluxes, polyAM_errors = polyAM_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=20)	
+		polyAM_fluxes, polyAM_errors = functimer(polyAM_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, mask_idxs=mask_idxs, max_degree=20))
 		include_polyAM = 'y'
 	except:
 		traceback.print_exc()
 		include_polyAM = 'n'
 
 	try:
-		polyLOC_times, polyLOC_fluxes, polyLOC_errors = polyLOC_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, local_window_duration_multiple=local_window_duration_multiple, Tmid=Tmid, Tdur_days=Tdur_days, mask_idxs=mask_idxs, max_degree=20)
+		polyLOC_times, polyLOC_fluxes, polyLOC_errors = functimer(polyLOC_detrend(times=times, fluxes=fluxes, errors=errors, telescope=telescope, remove_outliers='y', outsig=3, window=19, local_window_duration_multiple=local_window_duration_multiple, Tmid=Tmid, Tdur_days=Tdur_days, mask_idxs=mask_idxs, max_degree=20))
 		include_polyLOC = 'y'
 
 		#### need to embed this in a larger array, so that it's the same size.
@@ -521,7 +522,7 @@ def methmarg_detrend(times, fluxes, errors, kernel_hours, GP_kernel='ExpSquaredK
 		include_polyLOC = 'n'
 
 	try:
-		medfilt_fluxes, medfilt_errors = medfilt_detrend(times=times, fluxes=fluxes, errors=errors, kernel_hours=kernel_hours, telescope=telescope, mask_idxs=mask_idxs)	
+		medfilt_fluxes, medfilt_errors = functimer(medfilt_detrend(times=times, fluxes=fluxes, errors=errors, kernel_hours=kernel_hours, telescope=telescope, mask_idxs=mask_idxs))
 		include_medfilt = 'y'
 	except:
 		traceback.print_exc()
