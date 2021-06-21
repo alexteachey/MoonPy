@@ -281,6 +281,12 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 					if np.any((neighbor_taus >= np.nanmin(cnn_times)) & (neighbor_taus <= np.nanmax(cnn_times))):
 						### there's another transiting planet in your window!
 						neighbor_contam = 'y'
+
+			else:
+				neighbor_taus = []
+				neighbor_contam = 'n'
+
+
 			if neighbor_contam == 'y':
 				continue
 
