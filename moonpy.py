@@ -72,7 +72,7 @@ else:
 		pass
 	else:
 		os.system('mkdir '+moonpydir+'/Central_Data')
-		central_data_dir = moonpydir+'/Central_Data'
+	central_data_dir = moonpydir+'/Central_Data'
 print('moonpydir = ', moonpydir)
 print('Light curves will be stored in '+central_data_dir)
 

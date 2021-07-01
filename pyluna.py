@@ -7,16 +7,15 @@ import socket
 from astropy.constants import G
 import time
 
+
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/pyluna.py')]
+
+plt.rcParams["font.family"] = 'serif'
+
 hostname = socket.gethostname()
-if ('tethys' in hostname) and ('sinica' in hostname):
-	moonpydir = '/data/tethys/Documents/Software/MoonPy'
-	central_data_dir = '/data/tethys/Documents/Central_Data/'
-elif ('Alexs-MacBook') in hostname:
-	moonpydir = '/Users/hal9000/Documents/Software/MoonPy'
-	central_data_dir = '/Users/hal9000/Documents/Central_Data'
-elif 'umbriel' in hostname:
-	moonpydir = '/home/cal/ateachey/Documents/MoonPy'
-	central_data_dir = '/home/cal/ateachey/Documents/Central_Data/'
+
+
 
 
 ### THIS CODE IS THE MASTER LUNA INTERFACE. ALL LUNA QUERIES THROUGH ME.
