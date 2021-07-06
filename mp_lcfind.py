@@ -283,6 +283,8 @@ def kepler_URL_generator(KIC, short_cadence=False):
 
 	#http://archive.stsci.edu/pub/kepler/lightcurves/0047/004760478/kplr004760478-2010078095331_llc.fits
 	final_URL = 'http://archive.stsci.edu/pub/kepler/lightcurves/'+first_four_numbers+'/'+query_format_number+'/'
+	if os.path.exists(central_data_dir+'/Kepler_lightcurves') == False:
+		os.system('mkdir '+central_data_dir+'/Kepler_lightcurves')
 
 	download_directory = central_data_dir+'/Kepler_lightcurves/KIC'+str(query_format_number)
 	if os.path.exists(download_directory):
@@ -842,6 +844,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 		for sector in np.arange(1,nsectors+1,1):
 
+			if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
+				os.system('mkdir '+central_data_dir+'/TESS_lightcurves')
 			download_directory = central_data_dir+'/TESS_lightcurves/TIC'+str(ticnum)
 			if os.path.exists(download_directory):
 				pass
@@ -1013,6 +1017,8 @@ def TESS_QLP_load(tic, sectors='all', clobber='n'):
 	sectors = []
 	lcfiles = []	
 
+	if os.path.exists(central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs') == False:
+		os.system('mkdir '+central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs')
 	download_directory = central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs/TIC'+str(ticnum)	
 	QLP_files = os.listdir(download_directory)
 
@@ -1077,6 +1083,8 @@ def TESS_QLP_load(tic, sectors='all', clobber='n'):
 
 
 def TESS_QLP_download(tic, sectors='all', clobber='n'):
+	if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
+		os.system('mkdir '+central_data_dir+'/TESS_lightcurves')
 	TESSdir = central_data_dir+'/TESS_lightcurves'
 	TIC_FFI_LCs = TESSdir+'/TIC_FFI_LCs'
 
