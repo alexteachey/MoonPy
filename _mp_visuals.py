@@ -43,7 +43,10 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		show_model = 'n'
 
 	if period == None:
-		period = self.period 
+		try:
+			period = self.period 
+		except:
+			period = np.nan
 
 	### THIS FUNCTION PLOTS THE LIGHT CURVE OBJECT.
 	
