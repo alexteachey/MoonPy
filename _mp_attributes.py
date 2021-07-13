@@ -739,8 +739,10 @@ def find_planet_row(self, alias=None, row_known='n'):
 			if "NEA_rowidx" in dir(self):
 				NEA_rowidx = self.NEA_rowidx 
 			else:
-				NEA_rowidx = np.where(np.char.lower(self.NEA_data['pl_name']) == NEA_targetname.lower())[0] ### in "confirmed" planets.
-			
+				try:
+					NEA_rowidx = np.where(np.char.lower(self.NEA_data['pl_name']) == NEA_targetname.lower())[0] ### in "confirmed" planets.
+				except:
+					NEA_rowidx = np.nan 
 
 		try:
 			#self.exofop_rowidx = int(exofop_rowidx)
