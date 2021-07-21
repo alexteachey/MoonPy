@@ -770,7 +770,6 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 				print('EXHAUSTED ALL TRIES TO FIND TIC.')
 
 
-
 	if lc_format == 'pdc':
 		kobj_times, kobj_pdc_fluxes, kobj_pdc_errors, kobj_flags, kobj_quarters = tess_target_download(object_number, targtype=targtype, quarters=quarters, lc_format=lc_format, short_cadence=short_cadence)
 	elif lc_format == 'sap':
@@ -792,6 +791,12 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='pdc', delete_fits='n', is_neighbor='n'):
 	print('calling mp_lcfind.py/tess_target_download().')
 	### this function interfaces with MASS to download light curves based on the TIC #.
+
+	print('targID: ', targID)
+	print('type(targID): ', type(targID))
+	if type(targID) != str:
+		targID = targID[0]
+
 	if os.path.exists(moonpydir+'/TESS_lcs'):
 		pass
 	else:
@@ -813,7 +818,10 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				ticnum = str(ticnum)[1:]
 		
 		else:
-			ticnum = str(targID) ### you've already handled the TOI already!
+			#if targID.lower().startswith('toi'):
+			#### find it in exofop!
+			ticnum = self.exofop_data['TIC ID'][self.exofop_rowidx]
+			#ticnum = str(targID) ### you've already handled the TOI already!
 			if ticnum.startswith(' '):
 				ticnum = ticnum[1:]
 

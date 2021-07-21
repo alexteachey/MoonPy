@@ -693,6 +693,9 @@ class MoonpyLC(object):
 									ticnum = ticnum[1:]
 							except:
 								print('Could not access TIC number in NEA catalog.')
+								self.find_planet_row()
+								ticnum = self.exofop_data['TIC ID'][self.exofop_rowidx]
+								ticname = 'TIC '+str(ticnum)
 
 						try:
 							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
