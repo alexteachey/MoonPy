@@ -878,7 +878,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 				master_error_detrend.append(np.array(errors_detrend))
 				master_flags_detrend.append(np.array(flags_detrend))
 			elif len(self.quarters) == 1:
-				master_detrend_model = np.array(master_detrend_model)
+				#master_detrend_model = np.array(master_detrend_model)
+				#### CHETAN'S IMPROVEMENT vvvv 
+				master_detrend_model = np.array(detrend_model)				
 				master_detrend = np.array(fluxes_detrend)
 				master_error_detrend = np.array(errors_detrend)
 				master_flags_detrend = np.array(flags_detrend)
@@ -1006,7 +1008,17 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 	self.masked_flags = np.array(masked_flags, dtype=object)
 
 	#### NOW CALCULATE THE DURBIN-WATSON STATISTIC! -- using the masked_detrended_fluxes
-	self.DWstat = DWstat(data=np.concatenate(self.masked_fluxes_detrend), model=np.linspace(1,1,len(np.concatenate(self.masked_fluxes_detrend))))
+	#self.DWstat = DWstat(data=np.concatenate(self.masked_fluxes_detrend), model=np.linspace(1,1,len(np.concatenate(self.masked_fluxes_detrend))))
+	##### CHETAN'S IMPROVEMENT vvv 
+	
+	print(self.masked_fluxes_detrend.shape)
+	if self.masked_fluxes_detrend.shape[0]==1:
+	    print("Ndim of masked_fluxes_detrend = 1")
+	    self.DWstat = DWstat(data=self.masked_fluxes_detrend, model=np.linspace(1,1,len(self.masked_fluxes_detrend)))
+	elif self.masked_fluxes_detrend.shape[0]>1: 
+	    print("Ndim of masked_fluxes_detrend > 1")
+	    self.DWstat = DWstat(data=np.concatenate(self.masked_fluxes_detrend), model=np.linspace(1,1,len(np.concatenate(self.masked_fluxes_detrend))))
+	
 
 
 

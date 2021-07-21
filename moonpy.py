@@ -861,8 +861,13 @@ class MoonpyLC(object):
 					lc_errors_detrend = lc_errors_detrend[qidx]
 					lc_flags = lc_flags[qidx]
 					lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.delete(lc_times, nan_idxs), np.delete(lc_fluxes, nan_idxs), np.delete(lc_errors, nan_idxs), np.delete(lc_fluxes_detrend, nan_idxs), np.delete(lc_errors_detrend, nan_idxs), np.delete(lc_flags, nan_idxs)
-					assert np.all(np.isfinite(lc_fluxes))
-					assert np.all(np.isfinite(lc_errors))
+					#assert np.all(np.isfinite(lc_fluxes))
+					#assert np.all(np.isfinite(lc_errors))
+					##### CHETAN'S IMPROVEMENT vvv 
+					assert np.all(np.isfinite(np.array(lc_fluxes, dtype=np.float64)))
+					assert np.all(np.isfinite(np.array(lc_errors, dtype=np.float64)))
+
+
 
 			if remove_flagged == 'y':
 				if len(lc_quarters) > 1:

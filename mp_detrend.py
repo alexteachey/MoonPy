@@ -473,7 +473,10 @@ def medfilt_detrend(times, fluxes, errors, kernel_hours, telescope=None, mask_id
 		print('median_filter() failed, utilizing scipy.signal.medfilt().')
 
 	medfilt_interp = interp1d(unmasked_times, flux_trend, bounds_error=False, fill_value='extrapolate')
-	flux_trend = medfilt_interp(times)	
+	#flux_trend = medfilt_interp(times)
+	#### CHETAN'S IMPROVEMENT vvv
+	flux_trend = medfilt_interp(np.array(times, dtype=np.float64))
+
 	best_model = flux_trend
 
 	detrend_errors = errors / fluxes 

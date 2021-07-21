@@ -38,9 +38,20 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	print('calling _mp_visuals.py/plot_lc().')
-	if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
-		detrended = 'n'
-		show_model = 'n'
+	#if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
+	#	detrended = 'n'
+	#	show_model = 'n'
+	#### CHETAN'S IMPROVEMENT vvv 
+	if len(self.quarters) > 1:
+	    if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
+	        detrended = 'n'
+	        show_model = 'n'
+	elif len(self.quarters) == 1:
+	    if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.array(self.detrend_model, dtype=np.float64))) == False):
+	        detrended = 'n'
+	        show_model = 'n'
+
+
 
 	if period == None:
 		try:
@@ -152,7 +163,17 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 			if show_model == 'y':
 				try:
-					ax[0].plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+					#ax[0].plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+	                ##### CHETAN'S IMRPOVEMENT vvv
+					if (quarters=='all') and (len(self.quarters) > 1):
+						ax[0].plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+					elif (quarters=='all') and (len(self.quarters) == 1):
+						ax[0].plot(plot_stitched_times, np.array(self.detrend_model, dtype=np.float64), color='BlueViolet', linewidth=2, alpha=0.7)
+					elif (quarters!='all') and (len(quarters) > 1):
+						ax[0].plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+					elif (quarters!='all') and (len(quarters) == 1):
+						ax[0].plot(plot_stitched_times, np.array(self.detrend_model, dtype=np.float64), color='BlueViolet', linewidth=2, alpha=0.7)
+
 				except:
 					print('self.detrend_model not stored. (FIX THIS BUG).')
 
@@ -169,7 +190,17 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
 				if show_model == 'y':
 					try:
-						ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+						#ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+						#### CHETAN'S IMPROVEMENT vvvv
+						if (quarters=='all') and (len(self.quarters) > 1):
+							ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+						elif (quarters=='all') and (len(self.quarters) == 1):
+							ax.plot(plot_stitched_times, np.array(self.detrend_model, dtype=np.float64), color='BlueViolet', linewidth=2, alpha=0.7)
+						elif (quarters!='all') and (len(quarters) > 1):
+							ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
+						elif (quarters!='all') and (len(quarters) == 1):
+							ax.plot(plot_stitched_times, np.array(self.detrend_model, dtype=np.float64), color='BlueViolet', linewidth=2, alpha=0.7)
+
 					except:
 						print('detrend_model not available.')
 
