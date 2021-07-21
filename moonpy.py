@@ -102,7 +102,7 @@ class MoonpyLC(object):
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
 		global koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns 
 		global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
-		#global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
+		global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
 
 		self.mask_multiple = mask_multiple 
 

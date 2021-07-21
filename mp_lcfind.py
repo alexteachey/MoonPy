@@ -198,14 +198,37 @@ def find_TIC_alias(target_name):
 		star_number = star_number[:-1]
 
 	target_aliases = []
-	alias_search_results = Simbad.query_objectids(star_number)
-	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
-		target_alias = alias_search_results[alidx][0]
-		target_aliases.append(target_alias)
+	try:
+		alias_search_results = Simbad.query_objectids(star_number)
+		print('len(alias_search_results): ', len(alias_search_results))
+		for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+			target_alias = alias_search_results[alidx][0]
+			target_aliases.append(target_alias)
 
-		if target_alias.lower().startswith('tic'):
-			tic_number = target_alias
-			break
+			if target_alias.lower().startswith('tic'):
+				tic_number = target_alias
+				self.ticnum = tic_number
+				break
+
+	except:
+		print('SIMBAD WAS UNABLE TO FIND THE TARGET.')
+		try:
+			target_aliases.np.array([self.ticnum])
+			tic_number = self.ticnum
+			print("TIC# LOCATED WITHIN EXOFOP.")
+		except:
+			try:
+				find_planet_row()
+				target_aliases.np.array([self.ticnum])
+				tic_number = self.ticnum
+				print("TIC# LOCATED WITHIN EXOFOP.")
+			except:
+				try:
+					tic_number = 'TIC '+np.array([self.exofop_data[self.exofop_rowidx]])[0]
+				except:
+					print('TARGET ALIAS IS JUST ORIGINAL TARGET NAME INPUT.')
+					target_aliases = np.array([target_name])
+
 	try:
 		return tic_number
 	except:		
@@ -731,7 +754,21 @@ def tess_coord_download(ra, dec, coord_format='degrees', quarters='all', search_
 	### find the object in Simbad using it's coordinates, and call kplr_target_download
 
 	print('ra,dec = ', ra, dec)
-	object_name, object_number = Simbad_query(ra=ra, dec=dec, coord_format=coord_format, telescope=self.telescope)
+	try:
+		object_name, object_number = Simbad_query(ra=ra, dec=dec, coord_format=coord_format, telescope=self.telescope)
+	except:
+		print('SIMBAD QUERY FAILED.')
+		#### try to find TIC number another way
+		try:
+			ticnumber = self.ticnum
+			object_name, object_number = ticnumber, ticnumber[4:]
+		except:
+			try:
+				ticnumber = np.array(self.exofop_data['TIC ID'][self.exofop_rowidx])[0]
+				object_name, object_number = ticnumber, ticnumber[4:]
+			except:
+				print('EXHAUSTED ALL TRIES TO FIND TIC.')
+
 
 
 	if lc_format == 'pdc':
@@ -855,22 +892,23 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			if os.path.exists(download_directory+'/'+lcdownload_name):
 				print('file already exists.')	
+				print(' ')
 			else:
 				print('attempting to download: ', lcdownload_name)
 				os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
-				if os.path.exists(download_directory+'/'+lcdownload_name):
-					print('file downloaded or already exists.')
-				else:
-					print('file was not downloaded.')
-			print(' ')
+				#if os.path.exists(download_directory+'/'+lcdownload_name):
+					#print('file downloaded or already exists.')
+				#else:
+				#	print('file was not downloaded.')
+			#print(' ')
 			#print('downloading the light curve for '+str(targID)+' in sector ', sector)
 
 			try:
-				#lcfile = pyfits.open(moonpydir+'/TESS_lcs/'+lcdownload_name)
 				lcfile = pyfits.open(download_directory+'/'+lcdownload_name)
 			except:
-				#os.system('rm -rf '+moonpydir+'/TESS_lcs/'+lcdownload_name)
+				print(lcdownload_name+' was an empty data file. removing.')
 				os.system('rm -rf '+download_directory+'/'+lcdownload_name)
+				print(' ')
 				continue
 
 			lcfiles.append(lcfile)

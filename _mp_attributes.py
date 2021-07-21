@@ -97,13 +97,19 @@ def find_transit_quarters(self, locate_neighbor='n'):
 def find_aliases(self):
 	print('calling _mp_attributes.py/find_aliases().')
 	target_aliases = []
-	alias_search_results = Simbad.query_objectids(self.target)
-	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
-		target_alias = alias_search_results[alidx][0]
-		target_aliases.append(target_alias)
-	self.aliases = np.array(target_aliases)
-	print(self.aliases)
-	print( )
+	try:
+		alias_search_results = Simbad.query_objectids(self.target)
+		for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+			target_alias = alias_search_results[alidx][0]
+			target_aliases.append(target_alias)
+		if len(target_aliases) == 0:
+			print('NO SIMBAD ALIASES FOUND. RETURNING TARGET ONLY.')
+			target_aliases = [self.target]
+		self.aliases = np.array(target_aliases)
+		print(self.aliases)
+		print( )
+	except:
+		print('UNABLE TO IDENTIFY ALIASES.')
 
 
 
@@ -176,6 +182,7 @@ def get_coords(self):
 						try:
 							self.RA = np.array(self.exofop_data['RA'][self.exofop_rowidx])[0]
 							self.Dec = np.array(self.exofop_data['Dec'][self.exofop_rowidx])[0]
+							self.ticnum = np.array(self.exofop_data['TIC ID'][self.exofop_rowidx])[0]
 						except:
 							pass
 
@@ -185,12 +192,14 @@ def get_coords(self):
 						target_name = 'TIC '+str(self.target) ### only update if this worked!
 						self.RA = simbad_query['RA']
 						self.Dec = simbad_query['DEC']
+						self.ticnum = target_name
 						#target_in_simbad = 'y'
 					except:
 						#target_in_simbad = 'n'
 						try:
 							self.RA = np.array(self.exofop_data['RA'][self.exofop_rowidx])[0]
 							self.Dec = np.array(self.exofop_data['Dec'][self.exofop_rowidx])[0]
+							self.ticnum = np.array(self.exofop_data['TIC ID'][self.exofop_rowidx])[0]
 						except:
 							pass
 
@@ -713,8 +722,6 @@ def find_planet_row(self, alias=None, row_known='n'):
 
 			else:
 				#### it's of the form TOI-XXXX.01, not TOI-XXXX b.
-
-
 				try:
 					if 'exofop_rowidx' in dir(self):
 						exofop_rowidx = self.exofop_rowidx
