@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last (non-exhaustive) update: April 29, 2021. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: August 10th, 2021. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
@@ -14,11 +14,10 @@ MoonPy is kind of like a streamlined astro package aggregator, but in time it wi
 In particular, support for modeling exomoon transits is coming! (Hence the name, MoonPy). It's not quite ready for prime time, so stay tuned!
 
 ## Installation
-The easiest way to use MoonPy is to clone the directory, and then create a .pth file that will link this directory such that it will be included in your python path for importing. I've always found this terribly confusing, personally; the best instructions are in [the accepted answer to this question on StackOverflow](https://stackoverflow.com/questions/37006114/anaconda-permanently-include-external-packages-like-in-pythonpath). Basically, create a text file called ```moonpy.pth```, containing the path to MoonPy (wherever you've saved it), and place it in ```site-packages``` directory of the python you're using. 
+Within the ```MoonPy``` directory, execute the ```pathmaker.py``` file by typing ```python pathmaker.py``` in the terminal. This code *should* generate a file called ```moonpy.pth```, containing the path to MoonPy directory, and copy it to the directory where your Python distribution can see it. After this has been completed, you should be able to use ```from moonpy import *``` from any working directory.
 
-For example: Start by identifying the path to your python libraries by typing ```which python``` in the terminal. On my machine, for example, this returns ```/opt/anaconda3/bin/python```. With this information you figure out where to place the ```moonpy.pth``` file. Using my path as an example, you will want to place ```moonpy.pth``` within ```/opt/anaconda3/lib/python3.7/site-packages```. Your path may well be different. If you use anaconda environments, it may be something like ```~/anaconda3/envs/{NAME_OF_ENVIRONMENT}/lib/pythonX.X/site-packages/```. 
+For example: If you type ```which python``` on the command line, you should see a path to your python distribution. It may be something like ```/home/user/anaconda3/envs/env_name/bin/python```. This means the ```moonpy.pth``` file should live within the directory ```/home/user/anaconda3/envs/env_name/lib/pythonX.Y/site-packages```, where ```pythonX.Y``` is the version of python you are running. If ```from moonpy import *``` does not work, first verify that you have the ```moonpy.pth``` file inside, and that that file contains the path to the MoonPy directory.
 
-Once you've done this you should be able to use ```from moonpy import *``` from any working directory.
 
 
 ## Prerequisites
