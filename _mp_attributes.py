@@ -1165,32 +1165,36 @@ def get_properties(self, locate_neighbor='n'):
 def find_taus(self):
 	print("calling _mp_attributes.py/find_taus().")	
 	try:
-		transit_midtimes = [self.tau0]
-		print('tau0 = ', self.tau0)
-		while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
-			#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
-			### the transit_midtime you just added isn't the first transit!
-			transit_midtimes.append(transit_midtimes[-1] - self.period)
-		transit_midtimes = np.sort(transit_midtimes).tolist()
-		print('appended '+str(len(transit_midtimes))+' transit midtimes.')
-
-		next_transit = transit_midtimes[-1]+self.period
-		
-		nquarters = len(self.quarters)
-		if nquarters != 1:
-			maxtime = np.nanmax(np.concatenate((self.times)))
-
-		elif nquarters == 1:
-			maxtime = np.nanmax(self.times)
-
-		while next_transit < maxtime:
-			transit_midtimes.append(next_transit)
-			next_transit = transit_midtimes[-1]+self.period
-		self.taus = np.array(transit_midtimes)
+		transit_midtimes = self.taus 
 
 	except:
-		traceback.print_exc()
-		raise Exception('an exception was raised while calling find_taus().')
+		try:
+			transit_midtimes = [self.tau0]
+			print('tau0 = ', self.tau0)
+			while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
+				#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
+				### the transit_midtime you just added isn't the first transit!
+				transit_midtimes.append(transit_midtimes[-1] - self.period)
+			transit_midtimes = np.sort(transit_midtimes).tolist()
+			print('appended '+str(len(transit_midtimes))+' transit midtimes.')
+
+			next_transit = transit_midtimes[-1]+self.period
+			
+			nquarters = len(self.quarters)
+			if nquarters != 1:
+				maxtime = np.nanmax(np.concatenate((self.times)))
+
+			elif nquarters == 1:
+				maxtime = np.nanmax(self.times)
+
+			while next_transit < maxtime:
+				transit_midtimes.append(next_transit)
+				next_transit = transit_midtimes[-1]+self.period
+			self.taus = np.array(transit_midtimes)
+
+		except:
+			traceback.print_exc()
+			raise Exception('an exception was raised while calling find_taus().')
 
 
 
