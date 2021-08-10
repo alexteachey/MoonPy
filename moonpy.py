@@ -1015,6 +1015,9 @@ class MoonpyLC(object):
 				print('calling MoonpyLC for neighbor: ', neighbor)
 
 				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', clobber='n')
+				neighbor_dict[neighbor_key].times = self.times
+				neighbor_dict[neighbor_key].fluxes = self.fluxes
+				neighbor_dict[neighbor_key].errors = self.errors 
 
 			except:
 				traceback.print_exc()
@@ -1027,8 +1030,12 @@ class MoonpyLC(object):
 		neighbor_transit_idxs = []
 		neighbor_transit_IDs = []
 		
-		for neighbor in neighbor_dict.keys():			
-			neighbor_taus = neighbor_dict[neighbor].taus 
+		for neighbor in neighbor_dict.keys():	
+			try:		
+				neighbor_taus = neighbor_dict[neighbor].taus 
+			except:
+				neighbor_dict[neighbor].find_taus()
+				neighbor_taus = neighbor_dict[neighbor].taus
 			neighbor_dur = neighbor_dict[neighbor].duration_days 
 
 			print('appending '+str(len(neighbor_taus))+' neighbor transit times.')
@@ -1045,7 +1052,7 @@ class MoonpyLC(object):
 			target_taus = self.taus
 		except:
 			print('self.taus not available. Setting target_taus = np.array([np.nan])')
-			target_taus = np.array([np.nan])
+			target_taus = np.array([])
 		try:
 			target_dur = self.duration_days
 		except:

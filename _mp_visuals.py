@@ -206,26 +206,34 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 		for neighbor in neighbors:
-			
-			neighbor_taus = self.neighbor_dict[neighbor].taus 
-			neighbor_dur = self.neighbor_dict[neighbor].duration_days 
+			try:
+				neighbor_taus = self.neighbor_dict[neighbor].taus 
+			except:
+				neighbor_taus = np.array([])
 
-			neighbor_transit_idxs = []
-			for nt in neighbor_taus:
-				ntidxs = np.where((stitched_times >= (nt - (self.mask_multiple/2)*neighbor_dur)) & (stitched_times <= (nt + (self.mask_multiple/2)*neighbor_dur)))[0]
-				neighbor_transit_idxs.append(ntidxs)
-			neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
-			
-			if (nplots == 2) and (show_neighbors == 'y'):
-				ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
-				ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+			try:
+				neighbor_dur = self.neighbor_dict[neighbor].duration_days 
+			except:
+				neighbor_dur = np.array([])
 
-			elif (nplots == 1) and (show_neighbors == 'y'):
-				if detrended == 'y':
-					ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
-				else:
-					ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
-		
+			try:
+				neighbor_transit_idxs = []
+				for nt in neighbor_taus:
+					ntidxs = np.where((stitched_times >= (nt - (self.mask_multiple/2)*neighbor_dur)) & (stitched_times <= (nt + (self.mask_multiple/2)*neighbor_dur)))[0]
+					neighbor_transit_idxs.append(ntidxs)
+				neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
+				
+				if (nplots == 2) and (show_neighbors == 'y'):
+					ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+					ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+
+				elif (nplots == 1) and (show_neighbors == 'y'):
+					if detrended == 'y':
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+					else:
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+			except:
+				traceback.print_exc()
 
 		### PLOT THE TARGET TRANSITS TOO!
 		if (nplots == 2) and (show_neighbors == 'y'):
