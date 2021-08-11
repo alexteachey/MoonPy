@@ -105,6 +105,9 @@ class MoonpyLC(object):
 		global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
 		global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
 
+		if type(telescope) == str:
+			telescope = telescope.lower()
+
 		self.mask_multiple = mask_multiple 
 
 		### FOR A USER-GENERATED LIGHT CURVE, DO EVERYTHING UP TOP!
