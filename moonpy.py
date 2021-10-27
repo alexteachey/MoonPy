@@ -65,6 +65,8 @@ if ('tethys' in hostname) and ('sinica' in hostname):
 	central_data_dir = '/data/tethys/Documents/Central_Data'
 elif ('Alexs-MacBook') in hostname:
 	central_data_dir = '/Users/hal9000/Documents/Central_Data'
+	if os.path.exists(central_data_dir) == False:
+		os.system('mkdir '+central_data_dir)
 elif 'umbriel' in hostname:
 	central_data_dir = '/home/cal/ateachey/Documents/Central_Data'
 else:
