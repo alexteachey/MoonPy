@@ -838,14 +838,19 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 		nsectors = 99
 		nactual_sectors = 0
+		nempty_in_a_row = 0
 		for sector in np.arange(1,nsectors,1):
 			### get the curl script... then extract the prefixes and suffixes from the first line.
+			print('looking for sector: ', sector)
 
 			try:
 				if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
+					print('curlscript exists.')
 					pass
 				else:
+					print('attempting to download curlscript for the first time.')
 					sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
+					print('sector_curl_UR')
 					os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
 
 				curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
@@ -855,14 +860,33 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				sector_suffix = second_line[56:71] 
 				### now read the first line of that 
 				sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
+				print('sector_prefix = ', sector_prefix)
+				print('len(sector_prefix) = ', len(sector_prefix))
 				if len(sector_prefix) > 0:
 					#print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
 					nactual_sectors += 1
+					### reset nempty_in_a_row
+					nempty_in_a_row = 0 
+
 				else:
-					break
+					print('sector '+str(sector)+' curlscript file was empty...')
+					print("REMOVING!")
+					nempty_in_a_row += 1
+					#### remove it!
+					os.system('rm -rf '+moonpydir+'/sector'+str(sector)+'_curlscript.txt')
+					#break
+					#continue
+					if nempty_in_a_row == 5:
+						break
+					else:
+						continue
+
 			except:
 				traceback.print_exc()
-				break
+				break_loop = input('Do you want to break loop? y/n: ')
+				if break_loop == 'y':
+					break
+
 		nsectors = nactual_sectors
 		print('nsectors = ', nsectors)
 
