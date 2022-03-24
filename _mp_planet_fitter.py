@@ -473,20 +473,18 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 			# dataset --- HOW DOES THIS WORK
 			#map_soln = pmx.optimize(start=model.test_point)
 
-			for i in np.arange(0,5,1):
-				print("ITERATION "+str(i))
-				map_soln = pmx.optimize(start=model.test_point, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp])
-				map_soln = pmx.optimize(start=map_soln, vars=[log_depth])
-				map_soln = pmx.optimize(start=map_soln, vars=[impact])
-				map_soln = pmx.optimize(start=map_soln, vars=[log10Period, t0])
-				map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
-				map_soln = pmx.optimize(start=map_soln, vars=[ldcs])
-				map_soln = pmx.optimize(start=map_soln, vars=[log_depth]) ### huh? why again?
-				map_soln = pmx.optimize(start=map_soln, vars=[impact]) #### why again?
-				map_soln = pmx.optimize(start=map_soln, vars=[ecs])
-				map_soln = pmx.optimize(start=map_soln, vars=[mean])
-				map_soln = pmx.optimize(start=map_soln, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp]) #huh?
-				map_soln = pmx.optimize(start=map_soln) 
+			map_soln = pmx.optimize(start=model.test_point, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp])
+			map_soln = pmx.optimize(start=map_soln, vars=[log_depth])
+			map_soln = pmx.optimize(start=map_soln, vars=[impact])
+			map_soln = pmx.optimize(start=map_soln, vars=[log10Period, t0])
+			map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
+			map_soln = pmx.optimize(start=map_soln, vars=[ldcs])
+			map_soln = pmx.optimize(start=map_soln, vars=[log_depth]) ### huh? why again?
+			map_soln = pmx.optimize(start=map_soln, vars=[impact]) #### why again?
+			map_soln = pmx.optimize(start=map_soln, vars=[ecs])
+			map_soln = pmx.optimize(start=map_soln, vars=[mean])
+			map_soln = pmx.optimize(start=map_soln, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp]) #huh?
+			map_soln = pmx.optimize(start=map_soln) 
 			
 
 			extras = dict(zip(["light_curves", "gp_pred"], pmx.eval_in_model([light_curves, gp.predict(residuals)], map_soln),))

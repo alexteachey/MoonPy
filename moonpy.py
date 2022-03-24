@@ -99,7 +99,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=4, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=20, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
 		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
@@ -1039,6 +1039,10 @@ class MoonpyLC(object):
 				neighbor_taus = neighbor_dict[neighbor].taus
 			neighbor_dur = neighbor_dict[neighbor].duration_days 
 
+			self.neighbor_taus = neighbor_taus
+
+			self.all_taus = np.concatenate((self.taus, self.neighbor_taus))
+
 			print('appending '+str(len(neighbor_taus))+' neighbor transit times.')
 			print('neighbor duration = '+str(neighbor_dur))
 
@@ -1054,11 +1058,14 @@ class MoonpyLC(object):
 		except:
 			print('self.taus not available. Setting target_taus = np.array([np.nan])')
 			target_taus = np.array([])
+
 		try:
 			target_dur = self.duration_days
 		except:
 			print('self.duration_days not available. Setting target_dur = np.nan')
 			target_dur = np.nan 
+
+
 		for tt in target_taus:
 			ttidxs = np.where((np.hstack(self.times) >= (tt - (self.mask_multiple/2)*target_dur)) & (np.hstack(self.times) <= (tt + (self.mask_multiple/2)*target_dur)))[0]
 			for ttidx in ttidxs:

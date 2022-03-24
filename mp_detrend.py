@@ -129,10 +129,12 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 		### you need to detrend the two halves separately!
 		deltats = []
 		for nut, ut in enumerate(unmasked_times):
-			if nut == unmasked_times.size-1:
+			#if nut == unmasked_times.size-1:
+			#	pass
+			if nut == 0:
 				pass
 			else:
-				deltats.append(unmasked_times[nut+1] - unmasked_times[nut])
+				deltats.append(unmasked_times[nut] - unmasked_times[nut-1])
 
 		deltats = np.array(deltats)
 		deltat = np.nanmedian(deltats)
@@ -218,10 +220,12 @@ def polyAM_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', o
 		### you need to detrend the two halves separately!
 		deltats = []
 		for nut, ut in enumerate(unmasked_times):
-			if nut == unmasked_times.size-1:
+			#if nut == unmasked_times.size-1:
+			#	pass
+			if nut == 0:
 				pass
 			else:
-				deltats.append(unmasked_times[nut+1] - unmasked_times[nut])
+				deltats.append(unmasked_times[nut] - unmasked_times[nut-1])
 
 		deltats = np.array(deltats)
 		deltat = np.nanmedian(deltats)
@@ -323,10 +327,12 @@ def polyLOC_detrend(times, fluxes, errors, telescope=None, remove_outliers='y', 
 		### you need to detrend the two halves separately!
 		deltats = []
 		for nut, ut in enumerate(unmasked_times):
-			if nut == unmasked_times.size-1:
+			#if nut == unmasked_times.size-1:
+			#	pass
+			if nut == 0:
 				pass
 			else:
-				deltats.append(unmasked_times[nut+1] - unmasked_times[nut])
+				deltats.append(unmasked_times[nut] - unmasked_times[nut-1])
 		deltats = np.array(deltats)
 		deltat = np.nanmedian(deltats)
 

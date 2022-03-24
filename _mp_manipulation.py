@@ -460,6 +460,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 		self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)					
 
 
+
 	else:
 		#### FOR ALL OTHER METHODS -- DETREND ON A QUARTER BY QUARTER BASIS.
 
@@ -497,7 +498,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 				### find out which transit midtimes, if any, are in this quarter
 				mask_transit_idxs = []
 
-				if use_holczer == 'y':
+				if (self.telescope.lower() == 'kepler') and (use_holczer == 'y'):
 
 					print("Using TTV Catalog to identify transit times for detrending...")
 					### taus should be calculated based on the Mazeh table.
@@ -596,10 +597,14 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 
 
-				elif use_holczer == 'n':
+				##### WE CAN ONLY USE HOLCZER FOR KEPLER PLANETS! SO IF IT AIN'T KEPLER...
+				else:
 					self.mask_taus = self.taus 
 
 
+
+
+				##### NOW THIS APPLIES EVERWHERE!
 				quarter_transit_taus = self.mask_taus[((self.mask_taus > np.nanmin(dtimes)) & (self.mask_taus < np.nanmax(dtimes)))]
 				try:
 					quarter_transit_taus = np.concatenate(quarter_transit_taus)
@@ -610,7 +615,27 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 				for qtt in quarter_transit_taus:
 					#### FOR EACH TRANSIT IN THIS QUARTER.... 
 
-					in_transit_idxs = np.where((dtimes >= float(qtt) - (self.mask_multiple / 2)*self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple / 2)*self.duration_days))[0]
+					if (use_holczer == 'y') and (self.telescope.lower() == 'kepler'):
+						in_transit_idxs = np.where( (dtimes >= float(qtt) - (5*self.duration_days)) & (dtimes <= float(qtt) + (5*self.duration_days)))[0]
+					
+
+					elif (use_holczer != 'y') or (self.telescope.lower() != 'kepler'):
+						#### NEW -- MARCH 2022 -- re-center the mask on the flux minimum!
+						in_transit_idxs = np.where( (dtimes >= float(qtt) - (self.mask_multiple/2) *self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple/2)*self.duration_days))[0]						
+						in_transit_flux_minimum_idx = np.nanargmin(dfluxes[in_transit_idxs])
+						new_in_transit_center_idx = in_transit_idxs[in_transit_flux_minimum_idx]
+						new_in_transit_center_time = dtimes[new_in_transit_center_idx]
+
+						#### update the self.taus value!
+						self_tau_idx = np.where(qtt == self.taus)[0]
+						self.taus[self_tau_idx] = new_in_transit_center_time
+						print('UPDATED TAU!')
+						print('was: '+str(qtt)+'; now: '+str(new_in_transit_center_time))
+
+						#### now update it
+						in_transit_idxs = np.where((dtimes >= float(new_in_transit_center_time) - (self.mask_multiple / 4)*self.duration_days) & (dtimes <= float(new_in_transit_center_time) + (self.mask_multiple / 4)*self.duration_days))[0]
+
+
 					mask_transit_idxs.append(in_transit_idxs)
 				
 				try:
@@ -620,20 +645,15 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 					print('mask_transit_idxs could not be concatenated (probably not needed).')
 
 
-				#print("BEFORE: ")
-				#print('mask_transit_idxs = ', mask_transit_idxs)
-				#print("mask transit times = ", dtimes[mask_transit_idxs])
-				#mask_transit_idxs = mask_transit_idxs
 
 				### add neighbor transit times to mask_transit_idxs.
 				try:
 					sntt = self.neighbor_transit_times # don't need to print them, just see if they're there!
 				except:
 					pass
-					#try:
-					#	self.mystery_solver(self.tau0, self.period, self.duration_hours)
-					#except:
-					#	pass
+
+
+
 
 				if (mask_neighbors == 'y') and (len(self.neighbors) > 0):
 
@@ -652,15 +672,13 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 							n_neighbor_idxs += 1
 						print('appended '+str(n_neighbor_idxs)+' neighbor transit data points for masking.')	
 
-				#try:
 
-				#print('mask_transit_idxs: ', mask_transit_idxs)
+
 
 				print('min, max quarter times: ', np.nanmin(dtimes), np.nanmax(dtimes))
 				
 				if len(quarter_transit_taus) > 0:
 					print(str(len(quarter_transit_taus))+" transit(s) in this quarter.")
-
 
 				if len(quarter_transit_taus) == 1:
 					try:
@@ -708,17 +726,18 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 				mask_transit_idxs = np.array([])
 
 			print(' ')
-			#print("AFTER: ")
-			#print('mask_transit_idxs = ', mask_transit_idxs)
 			if len(mask_transit_idxs) > 0:
-				print('len(mask_transit_idxs) = '+str(len(mask_transit_idxs)))
-				#print("mask transit times = ", dtimes[mask_transit_idxs])			
+				print('len(mask_transit_idxs) = '+str(len(mask_transit_idxs)))	
 
 
 			all_quarter_mask_transit_idxs.append(mask_transit_idxs)
 
 			##### update!
 			self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
+
+
+
+
 
 
 			if skip_quarter == 'n':
