@@ -86,7 +86,16 @@ else:
 #for nkic,kic in enumerate(kics):
 
 
-def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False):
+def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, fit_neighbors=False):
+
+	print('fit_neighbors: ', fit_neighbors)
+
+	number_of_neighbors = len(self.neighbor_dict.keys())
+	if fit_neighbors == True:
+		total_number_of_planets = number_of_neighbors+1 
+	elif fit_neighbors == False:
+		total_number_of_planets = 1 
+
 
 	if show_plots == True:
 		keep_showing = 'y'
@@ -200,11 +209,17 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 
 
 		#### find nearby fluxes -- don't want to fit everything!!!!! just use +/- 3 days on either side of a transit
-		near_transit_idxs = []
-		for ncctime, cctime in enumerate(cctimes):
-			if np.any(np.abs(cctime - taus) < 10):
-				near_transit_idxs.append(ncctime)
-		near_transit_idxs = np.array(near_transit_idxs)
+		if fit_neighbors == False:
+			near_transit_idxs = []
+			for ncctime, cctime in enumerate(cctimes):
+				if np.any(np.abs(cctime - taus) < 10):
+					near_transit_idxs.append(ncctime)
+			near_transit_idxs = np.array(near_transit_idxs)
+
+		elif fit_neighbors == True:
+			#### just need to the whole light curve
+			near_transit_idxs = np.arange(0,len(cctimes),1)
+
 
 		print('len(cctimes) = ', len(cctimes))
 		print('len(near_transit_idxs) = ', len(near_transit_idxs))
@@ -296,8 +311,37 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		#### The transit model in PyMC3
 
 		#### MY TRY
-		periods = self.period #### my guess
-		t0s = first_transit
+		if fit_neighbors == False:
+			planet_names = self.target
+			periods = self.period #### my guess
+			t0s = first_transit
+			rprstars = self.rprstar
+
+
+		elif fit_neighbors == True:
+			planet_names = [self.target]
+			periods = [self.period]
+			t0s = [self.tau0]
+			rprstars = [self.rprstar]
+
+			for key in self.neighbor_dict.keys():
+				planet_names.append(self.neighbor_dict[key].target)
+				periods.append(self.neighbor_dict[key].period)
+				t0s.append(self.neighbor_dict[key].tau0)
+				rprstars.append(self.neighbor_dict[key].rprstar)
+
+			planet_names = np.array(planet_names)
+			periods = np.array(periods)
+			t0s = np.array(t0s)
+			rprstars = np.array(rprstars)
+
+			assert len(periods) == total_number_of_planets
+			assert len(t0s) == total_number_of_planets 
+			assert len(planet_names) == total_number_of_planets
+			assert len(rprstars) == total_number_of_planets 
+
+
+
 		model_times = cctimes
 		yvals = cc_fluxes_detrend
 		yerr = cc_errors_detrend
@@ -317,10 +361,13 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 
 
 			#### COLLECTING ALL THE PRIORS HERE.
+
+			#### LIGHT CURVE ATTRIBUTES
 			mean = pm.Normal("mean", mu=1.0, sd=np.nanmedian(yerr))	
 			ldcs = xo.distributions.QuadLimbDark("ldcs", testval=(0.3, 0.2)) #### making it a tuple -- I guess this is what they want?
+			
+			#### STELLAR ATTRIBUTES
 			star = xo.LimbDarkLightCurve(ldcs[0], ldcs[1])
-
 			BoundedNormal = pm.Bound(pm.Normal, lower=0.0)
 			try:
 				m_star = BoundedNormal("m_star", mu=self.smass, sd=np.nanmean(np.abs(self.smass_err)))
@@ -329,24 +376,32 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 			r_star = BoundedNormal("r_star", mu=self.rstar_rsol, sd=0.05*self.rstar_rsol)
 
 
-			t0 = pm.Normal("t0", mu=t0s, sd=1.0, shape=1)
-			log10Period = pm.Normal("log10Period", mu=np.log10(periods), sd=0.1, shape=1)
+			#### PLANET ATTRIBUTES -- FIT MULTIPLE, IF THERE ARE MULTIPLE
+			t0 = pm.Normal("t0", mu=t0s, shape=total_number_of_planets, sd=1.0)
+			log10Period = pm.Normal("log10Period", mu=np.log10(periods), shape=total_number_of_planets, sd=0.1)
 			period = pm.Deterministic("period", 10**log10Period)	
-
-			impact = pm.Uniform("impact", lower=0, upper=1) 
-			log_depth = pm.Normal("log_depth", mu=np.log(np.nanmin(yvals)), sigma=2.0) ### why sigma=2?
-
+			impact = pm.Uniform("impact", lower=0, upper=1, shape=total_number_of_planets) 
+			log_depth = pm.Normal("log_depth", mu=np.log(np.nanmin(yvals)), shape=total_number_of_planets, sigma=2.0) ### why sigma=2?
 			try:
-				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=1, testval=self.rprstar)
+				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=total_number_of_planets, testval=rprstars)
 			except:
-				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=1, testval=0.05)
+				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=total_number_of_planets, testval=0.05)
+			rplan = pm.Deterministic("rplan", rprstars * r_star) 
 
-			rplan = pm.Deterministic("rplan", rprstar * r_star) 
-			ecs = pmx.UnitDisk('ecs', testval=(0.01, 0.0)) #### making it a tuple... I think this is what they want.
-			ecc = pm.Deterministic("ecc", tt.sum(ecs ** 2))					
-			omega = pm.Deterministic("omega", tt.arctan2(ecs[1], ecs[0])) #### what is this??!
-			xo.eccentricity.kipping13("ecc_prior", fixed=True, observed=ecc)
+			#### THIS MAY NEED SOME ADJUSTING!!!
+			if fit_neighbors == True:
+				ecs = pmx.UnitDisk('ecs', testval=(0.01 * np.ones((2,total_number_of_planets))), shape=(2,total_number_of_planets)) #### making it a tuple... I think this is what they want.			
+				ecc = pm.Deterministic("ecc", tt.sum(ecs ** 2, axis=0))		
 			
+			elif fit_neighbors == False:
+				ecs = pmx.UnitDisk('ecs', testval=(0.01, 0.0)) #### ORIGINAL -- WORKS
+				ecc = pm.Deterministic("ecc", tt.sum(ecs ** 2))		
+
+
+			omega = pm.Deterministic("omega", tt.arctan2(ecs[1], ecs[0])) #### what is this??!
+			xo.eccentricity.kipping13("ecc_prior", fixed=True, observed=ecc, shape=total_number_of_planets)
+			
+
 			#Transit jitter & GP parameters
 			log_sigma_lc = pm.Normal("log_sigma_lc", mu=np.log(np.nanstd(yvals)), sd=10) #### why sd=10?
 			log_rho_gp = pm.Normal("log_rho_gp", mu=0, sd=10) #### what is this mean and sd?!?!
@@ -377,7 +432,23 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 			# Here we track the value of the model light curve for plotting
 			# purposes
 			pm.Deterministic("light_curves", light_curves)
-			pm.Deterministic("lc_pred", 1e6 * star.get_light_curve(orbit=orbit, r=rplan, t=t0 + phase_lc)[...,0]) #### WHAT IS ALL THIS?!
+			if fit_neighbors == False:
+				pm.Deterministic("lc_pred", 1e6 * star.get_light_curve(orbit=orbit, r=rplan, t=t0 + phase_lc)[...,0]) #### WHAT IS ALL THIS?!
+			elif fit_neighbors == True:
+				### see this page for the syntax example: https://gallery.exoplanet.codes/tutorials/joint/ 
+				pm.Deterministic(
+					"lc_pred", 
+					1e6 * tt.stack(
+						[
+						star.get_light_curve(
+							orbit=orbit, r=rplan, t=t0[n] + phase_lc
+							)[...,n]
+							for n in range(total_number_of_planets)
+							],
+							axis=-1,
+					),
+				) 
+
 
 
 
@@ -455,11 +526,12 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		ax.set_ylabel("relative flux [ppm]")	
 
 		ax = axes[1]
-		ax.scatter(model_times, (yvals - gp_mod)*1e6, facecolor='LightCoral', edgecolor='k', marker='o', s=20, alpha=0.5, label="de-trended data", zorder=0)
-		mod = extras["light_curves"][:,0]
-		scatter_ppm = np.nanstd((yvals - mod)*1e6)
-
-		ax.plot(model_times, mod*1e6, label='transit model', zorder=1)		
+		ax.scatter(model_times, (yvals - gp_mod)*1e6, facecolor='LightCoral', edgecolor='k', marker='o', s=20, alpha=0.5, zorder=0)
+		for i in np.arange(0,total_number_of_planets,1):
+			mod = extras["light_curves"][:,i]
+			scatter_ppm = np.nanstd((yvals - mod)*1e6)
+			ax.plot(model_times, mod*1e6, label=planet_names[i], zorder=1)		
+		
 		ax.set_ylim(np.nanmin((yvals-gp_mod)*1e6) - 5*scatter_ppm, 5*scatter_ppm)
 		ax.legend(fontsize=10, loc='upper right')
 		ax.set_ylabel("de-trended flux [ppm]")
@@ -529,7 +601,7 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		post_t0 = np.median(flat_samps["t0"])
 
 		# Plot the folded data
-		x_fold = (model_times - post_t0 + 0.5 * post_period) % post_period - 0.5 * post_period
+		x_fold = (model_times - post_t0 + (0.5 * post_period)) % post_period - (0.5 * post_period)
 		yvals_ppm = (yvals - gp_mod) * 1e6
 		plt.scatter(x_fold, yvals_ppm, label="data", facecolor='LightCoral', edgecolor='k', alpha=0.2, s=10, zorder=-1000)
 
@@ -557,11 +629,11 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		)
 
 		plt.legend(fontsize=10, loc=4)
-		plt.xlim(-0.5 * post_period, 0.5 * post_period)
+		#plt.xlim(-0.5 * post_period, 0.5 * post_period)
 		plt.xlabel("time since transit [days]")
 		plt.ylabel("de-trended flux [ppm]")
-		_ = plt.xlim(-0.15, 0.15)
-		_ = plt.ylim(np.nanmin(yvals_ppm)-scatter_ppm, scatter_ppm)
+		#_ = plt.xlim(-0.15, 0.15)
+		#_ = plt.ylim(np.nanmin(yvals_ppm)-scatter_ppm, scatter_ppm)
 
 		plt.subplots_adjust(left=0.15, right=0.85, top=0.9, bottom=0.1)
 
