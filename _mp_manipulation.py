@@ -757,6 +757,15 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 
 
+					elif dmeth == 'median_value':
+						try:
+							detrend_model, fluxes_detrend, errors_detrend = median_flux_detrend(times=dtimes, fluxes=dfluxes, errors=derrors)
+						except:
+							detrend_model, fluxes_detrend, errors_detrend = polyAM_detrend(times=np.array(dtimes, type=np.float64), fluxes=np.array(dfluxes, type=np.float64), errors=np.array(derrors, type=np.float64))
+
+						flags_detrend = dflags
+
+
 
 
 					elif dmeth == 'polyLOC':
@@ -837,7 +846,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 
 
-					elif dmeth == 'medfilt':
+					elif (dmeth == 'medfilt') or (dmeth == 'moving_median'):
 						print("MEDIAN FILTERING HAS YET TO BE TESTED EXTENSIVELY. BEWARE!")
 						detrend_model, fluxes_detrend, errors_detrend = medfilt_detrend(times=dtimes, fluxes=dfluxes, errors=derrors,  kernel_hours=(medfilt_kernel_transit_multiple*self.duration_hours), telescope=self.telescope, mask_idxs=mask_transit_idxs)
 						flags_detrend = dflags

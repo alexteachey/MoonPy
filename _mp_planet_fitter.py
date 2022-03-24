@@ -86,7 +86,7 @@ else:
 #for nkic,kic in enumerate(kics):
 
 
-def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, show_plots=True, use_mp_detrend=False):
+def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False):
 
 	if show_plots == True:
 		keep_showing = 'y'
@@ -112,6 +112,14 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		#### update it
 		self.smass = smass
 
+
+	if type(smass_err) != type(None):
+		#### update it
+		self.smass_err = smass_err
+	else:
+		self.smass_err = 0.05*self.smass 
+
+
 	try:
 		print('self.period = ', self.period)
 	except:
@@ -132,12 +140,24 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 
 	try:
 		print('self.smass = ', self.smass)
+		if np.isfinite(self.smass) == False:
+			manual_smass_entry = input('Enter stellar mass, in solar units: ')
+			self.smass = float(manual_smass_entry)
+
 	except:
 		manual_smass_entry = input('Enter stellar mass, in solar units: ')
 		self.smass = float(manual_smass_entry)
 		
 
-
+	try:
+		print('self.smass_err = ', self.smass_err)
+		if np.isfinite(self.smass_err) == False:
+			manual_smass_err_entry = input('Enter stellar mass err, in solar units: ')
+			self.smass_err = float(manual_smass_entry)
+	except:
+		manual_smass_err_entry = input('Enter stellar mass err, in solar units: ')
+		self.smass_err = float(manual_smass_entry)
+		
 
 
 
@@ -192,14 +212,9 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		if continue_query != 'y':
 			raise Exception('you opted not to continue.')
 
+		##### update !
 		cctimes, ccsap, ccsap_err, cc_fluxes_detrend, cc_errors_detrend, ccflags = cctimes[near_transit_idxs], ccsap[near_transit_idxs], ccsap_err[near_transit_idxs], cc_fluxes_detrend[near_transit_idxs], cc_errors_detrend[near_transit_idxs], ccflags[near_transit_idxs] 
-		### update this
-		good_flags = np.where(ccflags == 0)[0]
 
-
-		#### test plot 
-		#plt.scatter(cctimes, cc_fluxes_detrend, marker='o', facecolor='LightCoral', edgecolor='k', s=20)
-		#plt.show()
 
 
 
@@ -217,6 +232,23 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 			pass
 
 		transit_times = np.arange(first_transit, np.nanmax(cctimes), self.period)
+		print("transit_times = ", transit_times)
+
+
+		##### MASK OUT THE TRANSITS FOR GP FITTING.
+		transit_idxs = []
+		out_of_transit_idxs = []
+		for ncct,cct in enumerate(cctimes):
+			if np.any(np.abs(cct - transit_times) < 0.5*self.duration_days):
+				#### means it's in transit
+				transit_idxs.append(ncct)
+			else:
+				out_of_transit_idxs.append(ncct)
+
+		transit_idxs, out_of_transit_idxs = np.array(transit_idxs), np.array(out_of_transit_idxs)
+
+
+
 
 		#### CREATE A PHASE-FOLD
 		fold_times = []
@@ -234,12 +266,14 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		fold_times = np.array(fold_times, dtype=object)
 		fold_times = fold_times - first_transit	
 
+
+
 		#### now plot them all up and see how well BLS is doing
 		if show_test_plots == 'y':
 
 			fig, ax = plt.subplots(2)
 
-			ax[0].scatter(cctimes[good_flags], cc_fluxes_detrend[good_flags], facecolor='LightCoral', edgecolor='k', s=20, alpha=0.7)
+			ax[0].scatter(cctimes, cc_fluxes_detrend, facecolor='LightCoral', edgecolor='k', s=20, alpha=0.7)
 
 			for btt in transit_times:
 				#### mark with a vertical line
@@ -247,7 +281,7 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 				#plt.plot(np.linspace(btt-0.5*duration,btt-0.5*duration,100), np.linspace(0.95*np.nanmin(cc_fluxes_detrend), 1.05*np.nanmax(cc_fluxes_detrend), 100), color='red', alpha=0.8, linestyle='--')
 				#plt.plot(np.linspace(btt+0.5*duration,btt+0.5*duration,100), np.linspace(0.95*np.nanmin(cc_fluxes_detrend), 1.05*np.nanmax(cc_fluxes_detrend), 100), color='red', alpha=0.8, linestyle='--')			
 
-			ax[1].scatter(fold_times[good_flags], ccksp[good_flags], facecolor='LightCoral', edgecolor='k', s=20, alpha=0.7)
+			ax[1].scatter(fold_times, ccksp, facecolor='LightCoral', edgecolor='k', s=20, alpha=0.7)
 
 			ax[0].set_title(kic)
 			#ax[1].set_xlabel('BTJD')
@@ -264,19 +298,10 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		#### MY TRY
 		periods = self.period #### my guess
 		t0s = first_transit
-		model_times = cctimes[good_flags]
-		#yerr = np.nanmedian(np.concatenate(kspsap_errors)[good_flags])
-		#yerr = np.nanmedian(np.concatenate(errors_detrend)[good_flags])
-
-		#if use_mp_detrend == True:
-		yvals = cc_fluxes_detrend[good_flags]
-		yerr = cc_errors_detrend[good_flags]
+		model_times = cctimes
+		yvals = cc_fluxes_detrend
+		yerr = cc_errors_detrend
 		
-		#elif use_mp_detrend == False:
-		#	#### normalize them 
-		#	yvals = ccsap[good_flags] / np.nanmedian(ccsap[good_flags])
-		#	yerr = ccsap_err[good_flags] / ccsap[good_flags]
-
 
 		"""
 		YOU SHOULD REALLY FOLLOW THIS PAGE -- TO INCORPORATE THE GPs!!!
@@ -290,24 +315,17 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 
 			phase_lc = np.linspace(-0.3, 0.3, 100) #### what is this?!
 
-			#### let y be the real data
-			#yvals = np.concatenate(kspsap_fluxes)[good_flags]
-			#yvals = cc_fluxes_detrend[good_flags] 
 
 			#### COLLECTING ALL THE PRIORS HERE.
-			#mean = pm.Normal("mean", mu=1.0, sd=np.nanstd(np.concatenate(fluxes)[good_flags]))		
-			mean = pm.Normal("mean", mu=1.0, sd=np.nanmedian(cc_errors_detrend))
-			#ldcs = xo.distributions.QuadLimbDark("ldcs", testval=np.array([0.3, 0.2])) #### STICK WITH THIS I GUESS		
+			mean = pm.Normal("mean", mu=1.0, sd=np.nanmedian(yerr))	
 			ldcs = xo.distributions.QuadLimbDark("ldcs", testval=(0.3, 0.2)) #### making it a tuple -- I guess this is what they want?
 			star = xo.LimbDarkLightCurve(ldcs[0], ldcs[1])
 
 			BoundedNormal = pm.Bound(pm.Normal, lower=0.0)
-			#m_star = BoundedNormal("m_star", mu=QLP_MASS, sd=0.05*QLP_MASS) ### now uncertainties available, just use 5%
 			try:
 				m_star = BoundedNormal("m_star", mu=self.smass, sd=np.nanmean(np.abs(self.smass_err)))
 			except:
 				m_star = BoundedNormal("m_star", mu=self.smass, sd=0.05*self.smass)
-			#r_star = BoundedNormal("r_star", mu=QLP_RADIUS, sd=0.05*QLP_RADIUS) ### no uncertainties available, just using 5%
 			r_star = BoundedNormal("r_star", mu=self.rstar_rsol, sd=0.05*self.rstar_rsol)
 
 
@@ -318,48 +336,43 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 			impact = pm.Uniform("impact", lower=0, upper=1) 
 			log_depth = pm.Normal("log_depth", mu=np.log(np.nanmin(yvals)), sigma=2.0) ### why sigma=2?
 
-			#rprstar = pm.Uniform("rprstar", lower=0, upper=1, shape=1, testval=np.array([0.05])) ### MY VERSION
 			try:
 				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=1, testval=self.rprstar)
 			except:
-				#rprstar = pm.Uniform("rprstar", lower=0, upper=1, shape=1, testval=np.array([0.05])) ### MY VERSION	
 				rprstar = pm.Uniform('rprstar', lower=0, upper=1, shape=1, testval=0.05)
 
 			rplan = pm.Deterministic("rplan", rprstar * r_star) 
-			#ecs = pmx.UnitDisk('ecs', testval=np.array([0.01, 0.0])) #### WHAT IS THIS?? 
 			ecs = pmx.UnitDisk('ecs', testval=(0.01, 0.0)) #### making it a tuple... I think this is what they want.
-			#ecc = xo.distributions.eccentricity.kipping13("ecc", lower=None, upper=None) ### NEW	
 			ecc = pm.Deterministic("ecc", tt.sum(ecs ** 2))					
-			#omega = pm.Uniform('omega', lower=0, upper=2*np.pi, shape=1, testval=np.array([np.pi])) ### NEW
 			omega = pm.Deterministic("omega", tt.arctan2(ecs[1], ecs[0])) #### what is this??!
 			xo.eccentricity.kipping13("ecc_prior", fixed=True, observed=ecc)
 			
-			#### GET RID OF THIS IF YOU'RE GOING TO USE THE QLP MASS AND RADIUS VALUES!
-			#rhostar = pm.HalfNormal('rhostar', sigma=5) ### g/cm^3 ### based on the distribution on NASA Exoplanet Archive (eyeballed)
-
 			#Transit jitter & GP parameters
 			log_sigma_lc = pm.Normal("log_sigma_lc", mu=np.log(np.nanstd(yvals)), sd=10) #### why sd=10?
 			log_rho_gp = pm.Normal("log_rho_gp", mu=0, sd=10) #### what is this mean and sd?!?!
 			log_sigma_gp = pm.Normal("log_sigma_gp", mu=np.log(np.nanstd(yvals)), sd=10)  #### 
-
 
 			# Set up a Keplerian orbit for the planets -- models the system
 			orbit = xo.orbits.KeplerianOrbit(period=period, t0=t0, b=impact, ecc=ecc, omega=omega, m_star=m_star, r_star=r_star)
 
 			#### creates an observation from the model
 			light_curves = star.get_light_curve(orbit=orbit, r=rplan, t=model_times)	
+			#### trying a MASK!
+			#light_curves = star.get_light_curve(orbit=orbit, r=rplan, t=model_times)			
 			light_curve = tt.sum(light_curves, axis=-1) + mean 
 
 			residuals = yvals - light_curve 
+			#### TRYING A MASK!
+			#residuals = yvals - light_curve 
 
 
 			### GP MODEL FOR THE LIGHT CURVE
 			kernel = terms.SHOTerm(sigma=tt.exp(log_sigma_gp), rho=tt.exp(log_rho_gp), Q=1 / np.sqrt(2),)
+			#gp = GaussianProcess(kernel, t=model_times, yerr=tt.exp(log_sigma_lc))
+			#### trying a MASK! 
 			gp = GaussianProcess(kernel, t=model_times, yerr=tt.exp(log_sigma_lc))
 			gp.marginal("gp", observed=residuals)
 			
-
-
 
 			# Here we track the value of the model light curve for plotting
 			# purposes
@@ -394,7 +407,7 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 			map_soln = pmx.optimize(start=map_soln, vars=[log_depth])
 			map_soln = pmx.optimize(start=map_soln, vars=[impact])
 			map_soln = pmx.optimize(start=map_soln, vars=[log10Period, t0])
-			#map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
+			map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
 			map_soln = pmx.optimize(start=map_soln, vars=[ldcs])
 			map_soln = pmx.optimize(start=map_soln, vars=[log_depth]) ### huh? why again?
 			map_soln = pmx.optimize(start=map_soln, vars=[impact]) #### why again?
@@ -446,8 +459,8 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		mod = extras["light_curves"][:,0]
 		scatter_ppm = np.nanstd((yvals - mod)*1e6)
 
-		ax.plot(model_times, mod*1e6, label='transit model', zorder=1)
-		ax.set_ylim(np.nanmin((yvals-gp_mod)*1e6) - scatter_ppm, 2*scatter_ppm)
+		ax.plot(model_times, mod*1e6, label='transit model', zorder=1)		
+		ax.set_ylim(np.nanmin((yvals-gp_mod)*1e6) - 5*scatter_ppm, 5*scatter_ppm)
 		ax.legend(fontsize=10, loc='upper right')
 		ax.set_ylabel("de-trended flux [ppm]")
 
@@ -458,7 +471,7 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sh
 		ax.axhline(0, color="#aaaaaa", lw=1)
 		ax.set_ylabel("residuals [ppm]")
 		ax.set_xlim(model_times.min(), model_times.max())
-		ax.set_ylim(-2*scatter_ppm, 2*scatter_ppm)
+		ax.set_ylim(-5*scatter_ppm, 5*scatter_ppm)
 		ax.set_xlabel("time [days]")
 
 
