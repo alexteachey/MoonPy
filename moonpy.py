@@ -1023,7 +1023,8 @@ class MoonpyLC(object):
 				traceback.print_exc()
 				print("COULD NOT DOWNLOAD INFORMATION FOR "+str(neighbor))
 
-			self.neighbor_dict = neighbor_dict 
+		#### 
+		self.neighbor_dict = neighbor_dict 
 
 
 		final_neighbor_IDs = []		

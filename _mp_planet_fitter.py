@@ -86,7 +86,7 @@ else:
 #for nkic,kic in enumerate(kics):
 
 
-def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, fit_neighbors=False):
+def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, restrict_data=True, fit_neighbors=False):
 
 	print('fit_neighbors: ', fit_neighbors)
 
@@ -209,26 +209,27 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 
 
 		#### find nearby fluxes -- don't want to fit everything!!!!! just use +/- 3 days on either side of a transit
-		if fit_neighbors == False:
-			near_transit_idxs = []
-			for ncctime, cctime in enumerate(cctimes):
-				if np.any(np.abs(cctime - taus) < 10):
-					near_transit_idxs.append(ncctime)
-			near_transit_idxs = np.array(near_transit_idxs)
+		if restrict_data == True:
+			if fit_neighbors == False:
+				near_transit_idxs = []
+				for ncctime, cctime in enumerate(cctimes):
+					if np.any(np.abs(cctime - taus) < 10):
+						near_transit_idxs.append(ncctime)
+				near_transit_idxs = np.array(near_transit_idxs)
 
-		elif fit_neighbors == True:
-			#### just need to the whole light curve
-			near_transit_idxs = np.arange(0,len(cctimes),1)
+			elif fit_neighbors == True:
+				#### just need to the whole light curve
+				near_transit_idxs = np.arange(0,len(cctimes),1)
 
 
-		print('len(cctimes) = ', len(cctimes))
-		print('len(near_transit_idxs) = ', len(near_transit_idxs))
-		continue_query = input('Do you wish to continue? y/n: ')
-		if continue_query != 'y':
-			raise Exception('you opted not to continue.')
+			print('len(cctimes) = ', len(cctimes))
+			print('len(near_transit_idxs) = ', len(near_transit_idxs))
+			continue_query = input('Do you wish to continue? y/n: ')
+			if continue_query != 'y':
+				raise Exception('you opted not to continue.')
 
-		##### update !
-		cctimes, ccsap, ccsap_err, cc_fluxes_detrend, cc_errors_detrend, ccflags = cctimes[near_transit_idxs], ccsap[near_transit_idxs], ccsap_err[near_transit_idxs], cc_fluxes_detrend[near_transit_idxs], cc_errors_detrend[near_transit_idxs], ccflags[near_transit_idxs] 
+			##### update !
+			cctimes, ccsap, ccsap_err, cc_fluxes_detrend, cc_errors_detrend, ccflags = cctimes[near_transit_idxs], ccsap[near_transit_idxs], ccsap_err[near_transit_idxs], cc_fluxes_detrend[near_transit_idxs], cc_errors_detrend[near_transit_idxs], ccflags[near_transit_idxs] 
 
 
 
@@ -356,17 +357,16 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 
 		with pm.Model() as model: #### this is a PYMC3 MODEL! 
 
-
-			phase_lc = np.linspace(-0.3, 0.3, 100) #### what is this?!
+			phase_lc = np.linspace(-self.period/2, self.period/2, 10000) #### what is this?!
 
 
 			#### COLLECTING ALL THE PRIORS HERE.
 
-			#### LIGHT CURVE ATTRIBUTES
+			#### LIGHT CURVE PRIORS 
 			mean = pm.Normal("mean", mu=1.0, sd=np.nanmedian(yerr))	
 			ldcs = xo.distributions.QuadLimbDark("ldcs", testval=(0.3, 0.2)) #### making it a tuple -- I guess this is what they want?
 			
-			#### STELLAR ATTRIBUTES
+			#### STELLAR PRIORS
 			star = xo.LimbDarkLightCurve(ldcs[0], ldcs[1])
 			BoundedNormal = pm.Bound(pm.Normal, lower=0.0)
 			try:
@@ -376,9 +376,9 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 			r_star = BoundedNormal("r_star", mu=self.rstar_rsol, sd=0.05*self.rstar_rsol)
 
 
-			#### PLANET ATTRIBUTES -- FIT MULTIPLE, IF THERE ARE MULTIPLE
+			#### PLANET PRIORS 
 			t0 = pm.Normal("t0", mu=t0s, shape=total_number_of_planets, sd=1.0)
-			log10Period = pm.Normal("log10Period", mu=np.log10(periods), shape=total_number_of_planets, sd=0.1)
+			log10Period = pm.Normal("log10Period", mu=np.log10(periods), shape=total_number_of_planets, sd=0.01)
 			period = pm.Deterministic("period", 10**log10Period)	
 			impact = pm.Uniform("impact", lower=0, upper=1, shape=total_number_of_planets) 
 			log_depth = pm.Normal("log_depth", mu=np.log(np.nanmin(yvals)), shape=total_number_of_planets, sigma=2.0) ### why sigma=2?
@@ -473,37 +473,21 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 			# dataset --- HOW DOES THIS WORK
 			#map_soln = pmx.optimize(start=model.test_point)
 
+			for i in np.arange(0,5,1):
+				print("ITERATION "+str(i))
+				map_soln = pmx.optimize(start=model.test_point, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp])
+				map_soln = pmx.optimize(start=map_soln, vars=[log_depth])
+				map_soln = pmx.optimize(start=map_soln, vars=[impact])
+				map_soln = pmx.optimize(start=map_soln, vars=[log10Period, t0])
+				map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
+				map_soln = pmx.optimize(start=map_soln, vars=[ldcs])
+				map_soln = pmx.optimize(start=map_soln, vars=[log_depth]) ### huh? why again?
+				map_soln = pmx.optimize(start=map_soln, vars=[impact]) #### why again?
+				map_soln = pmx.optimize(start=map_soln, vars=[ecs])
+				map_soln = pmx.optimize(start=map_soln, vars=[mean])
+				map_soln = pmx.optimize(start=map_soln, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp]) #huh?
+				map_soln = pmx.optimize(start=map_soln) 
 			
-			map_soln = pmx.optimize(start=model.test_point, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp])
-			map_soln = pmx.optimize(start=map_soln, vars=[log_depth])
-			map_soln = pmx.optimize(start=map_soln, vars=[impact])
-			map_soln = pmx.optimize(start=map_soln, vars=[log10Period, t0])
-			map_soln = pmx.optimize(start=map_soln, vars=(log10Period, t0))
-			map_soln = pmx.optimize(start=map_soln, vars=[ldcs])
-			map_soln = pmx.optimize(start=map_soln, vars=[log_depth]) ### huh? why again?
-			map_soln = pmx.optimize(start=map_soln, vars=[impact]) #### why again?
-			map_soln = pmx.optimize(start=map_soln, vars=[ecs])
-			map_soln = pmx.optimize(start=map_soln, vars=[mean])
-			map_soln = pmx.optimize(start=map_soln, vars=[log_sigma_lc, log_sigma_gp, log_rho_gp]) #huh?
-			map_soln = pmx.optimize(start=map_soln) 
-			
-
-			#### RE-DOING WITH TUPLES
-			"""
-			map_soln = pmx.optimize(start=model.test_point, vars=np.array([(log_sigma_lc, log_sigma_gp, log_rho_gp)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(log_depth)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(impact)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(log10Period, t0)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(log10Period, t0)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(ldcs)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(log_depth)])) ### huh? why again?
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(impact)])) #### why again?
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(ecs)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(mean)]))
-			map_soln = pmx.optimize(start=map_soln, vars=np.array([(log_sigma_lc, log_sigma_gp, log_rho_gp)])) #huh?
-			map_soln = pmx.optimize(start=map_soln) 
-			"""
-
 
 			extras = dict(zip(["light_curves", "gp_pred"], pmx.eval_in_model([light_curves, gp.predict(residuals)], map_soln),))
 
