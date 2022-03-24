@@ -497,7 +497,10 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 def plot_corner(self, fitter='emcee', modelcode='batman', burnin_pct=0.1):
 	print('calling _mp_visuals.py/plot_corner().')
-	import corner
+	try:
+		import corner
+	except:
+		print('could not import corner.')
 
 	### THIS FUNCTION GENERATES A CORNER PLOT BASED ON YOUR MODEL FITS.
 	if fitter == 'multinest':

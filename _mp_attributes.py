@@ -1171,6 +1171,13 @@ def find_taus(self):
 		try:
 			transit_midtimes = [self.tau0]
 			print('tau0 = ', self.tau0)
+			print('looking for transit times...')
+			print('self.period = ', self.period)
+
+			if (self.period == 0.0) or np.isfinite(self.period) == False:
+				manual_period_entry = input('Something wrong with the planet period... please enter a value: ')
+				self.period = float(manual_period_entry)
+
 			while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
 				#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
 				### the transit_midtime you just added isn't the first transit!
