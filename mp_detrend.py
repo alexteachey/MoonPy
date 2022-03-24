@@ -88,6 +88,19 @@ def phasma_detrend(times, fluxes, errors, period, downsample_factor=20):
 
 
 
+def median_flux_detrend(times, fluxes, errors):
+	### simply divides out the median value of the fluxes -- should do this on a quarter-by-quarter basis, obviously
+
+	flux_detrend = fluxes / np.nanmedian(fluxes)
+	errors_detrend = errors / fluxes 
+
+	#### for the sake of uniformity with other detrending functions
+	best_model = np.linspace(np.nanmedian(fluxes), np.nanmedian(fluxes), len(fluxes))
+
+	return best_model, flux_detrend, errors_detrend 
+
+
+
 
 
 def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
