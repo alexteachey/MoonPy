@@ -986,6 +986,13 @@ class MoonpyLC(object):
 
 		print('calling _mp_attributes.py/get_neighbors().')
 
+		try:
+			print('neighbors: ', self.neighbors)
+		except:
+			self.find_neighbors()
+
+
+
 		neighbor_dict = {}
 		for neighbor in self.neighbors:
 			if neighbor == self.target:

@@ -103,9 +103,14 @@ def median_flux_detrend(times, fluxes, errors):
 
 
 
-def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30):
+def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y', outsig=3, window=19, mask_idxs=None, max_degree=30, norm_first=False):
 	print('calling mp_detrend.py/cofiam_detrend().')
 	print("len(mask_idxs) [in-transit data] = ", len(mask_idxs))
+
+
+	if norm_first == True:
+		fluxes, errors = median_flux_detrend(times=times, fluxes=fluxes, errors=errors)[1:] #### just use the second and third output!
+
 
 	if type(mask_idxs) != type(None):
 		if len(mask_idxs) > 0:

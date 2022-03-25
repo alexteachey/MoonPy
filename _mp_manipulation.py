@@ -396,7 +396,17 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 	#	mask_multiple = self.mask_multiple
 
 	if period == None:
-		period = self.period 
+		try:
+			period = self.period 
+		except:
+			period_manual_entry = input('Period is missing... please enter one (or press enter for median_value detrend): ')
+			if period_manual_entry == '':
+				### change the detrending method to median value -- you can't mask anything!
+				print('switching detrending method to "median_value, because there is no planet ephemerides for transit masking.')
+				dmeth = 'median_value'
+			else:
+				period = float(period_manual_entry)
+				self.period = period 
 
 	exceptions_raised = 'n'
 
