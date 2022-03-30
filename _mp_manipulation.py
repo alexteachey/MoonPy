@@ -626,10 +626,12 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 					#### FOR EACH TRANSIT IN THIS QUARTER.... 
 
 					if (use_holczer == 'y') and (self.telescope.lower() == 'kepler'):
+						#### for Kepler targets that have TTVs catalogued in Holczer 2016
 						in_transit_idxs = np.where( (dtimes >= float(qtt) - (5*self.duration_days)) & (dtimes <= float(qtt) + (5*self.duration_days)))[0]
 					
 
 					elif (use_holczer != 'y') or (self.telescope.lower() != 'kepler'):
+						#### if not in Holczer, or if it's not a Kepler target (which means its' definitely not in Holczer)
 						#### NEW -- MARCH 2022 -- re-center the mask on the flux minimum!
 						in_transit_idxs = np.where( (dtimes >= float(qtt) - (self.mask_multiple/2) *self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple/2)*self.duration_days))[0]						
 						in_transit_flux_minimum_idx = np.nanargmin(dfluxes[in_transit_idxs])

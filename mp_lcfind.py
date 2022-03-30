@@ -839,19 +839,112 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 		nsectors = 99
 		nactual_sectors = 0
 		nempty_in_a_row = 0
-		for sector in np.arange(1,nsectors,1):
-			### get the curl script... then extract the prefixes and suffixes from the first line.
-			print('looking for sector: ', sector)
+		sector_numbers = []
 
-			try:
-				if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
-					print('curlscript exists.')
-					pass
-				else:
-					print('attempting to download curlscript for the first time.')
-					sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
-					print('sector_curl_UR')
-					os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+
+		sector_filename = 'tess_sectors.txt'
+		if os.path.exists(moonpydir+'/'+sector_filename):
+			#### see if it is more than one day old:
+			current_time = time.time()
+			sectorfile_createtime = os.path.getctime(moonpydir+'/'+sector_filename)
+
+			if current_time - sectorfile_createtime > 86400: #### more than one day
+				### we're going to make a new one
+				create_new_sectorfile = True
+			else:
+				create_new_sectorfile = False 
+
+		else:
+			#### just create it
+			create_new_sectorfile = True 
+			os.system('touch '+moonpydir+'/'+sector_filename)
+
+
+
+		if create_new_sectorfile == True:
+
+			sectorfile = open(moonpydir+'/'+sector_filename, mode='w')
+
+			for sector in np.arange(1,nsectors,1):
+				### get the curl script... then extract the prefixes and suffixes from the first line.
+				print('looking for sector: ', sector)
+
+				try:
+					if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
+						print('curlscript exists.')
+						pass
+
+
+					else:
+						print('attempting to download curlscript for the first time.')
+						sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
+						print('sector_curl_UR')
+						os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+
+					curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
+					first_line = curltxt.readline()
+					second_line = curltxt.readline()
+					sector_prefix = second_line[16:40]
+					sector_suffix = second_line[56:71] 
+					### now read the first line of that 
+					sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
+					print('sector_prefix = ', sector_prefix)
+					print('len(sector_prefix) = ', len(sector_prefix))
+
+
+
+					if len(sector_prefix) > 0:
+						#print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
+						nactual_sectors += 1
+						### reset nempty_in_a_row
+						nempty_in_a_row = 0 
+
+						sectorfile.write('sector '+str(sector)+'\n')
+
+
+					else:
+						print('sector '+str(sector)+' curlscript file was empty...')
+						print("REMOVING!")
+						nempty_in_a_row += 1
+						#### remove it!
+						os.system('rm -rf '+moonpydir+'/sector'+str(sector)+'_curlscript.txt')
+						#break
+						#continue
+						if nempty_in_a_row == 5:
+							break
+						else:
+							continue
+
+				except:
+					traceback.print_exc()
+					break_loop = input('Do you want to break loop? y/n: ')
+					if break_loop == 'y':
+						break
+
+			sectorfile.close()
+			
+
+
+		elif create_new_sectorfile == False:
+			##### means you already queried the database once today, no need to do it again!
+
+			sector_numbers = []
+
+			nactual_sectors = 0 
+			nsectors = 0 
+			#### just open it, so you can count the number of sectors
+			sectorfile = open(moonpydir+'/'+sector_filename, mode='r')
+			for nline, line in enumerate(sectorfile):
+				sector_numbers.append(int(line.split()[1]))
+				nactual_sectors += 1 	
+				nsectors += 1		
+			sectorfile.close()
+
+			nsectors = nactual_sectors
+			print('nsectors = ', nsectors)			
+
+			for sector in sector_numbers:
+				#print('sector '+str(sector))
 
 				curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
 				first_line = curltxt.readline()
@@ -860,56 +953,13 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				sector_suffix = second_line[56:71] 
 				### now read the first line of that 
 				sector_prefixes[sector], sector_suffixes[sector] = sector_prefix, sector_suffix
-				print('sector_prefix = ', sector_prefix)
-				print('len(sector_prefix) = ', len(sector_prefix))
-				if len(sector_prefix) > 0:
-					#print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
-					nactual_sectors += 1
-					### reset nempty_in_a_row
-					nempty_in_a_row = 0 
-
-				else:
-					print('sector '+str(sector)+' curlscript file was empty...')
-					print("REMOVING!")
-					nempty_in_a_row += 1
-					#### remove it!
-					os.system('rm -rf '+moonpydir+'/sector'+str(sector)+'_curlscript.txt')
-					#break
-					#continue
-					if nempty_in_a_row == 5:
-						break
-					else:
-						continue
-
-			except:
-				traceback.print_exc()
-				break_loop = input('Do you want to break loop? y/n: ')
-				if break_loop == 'y':
-					break
-
-		nsectors = nactual_sectors
-		print('nsectors = ', nsectors)
+				#print('sector_prefix = ', sector_prefix)
+				#print('len(sector_prefix) = ', len(sector_prefix))
 
 
-		"""
-		sector_prefixes[1], sector_suffixes[1] = 'tess2018206045859-s0001-', '-0120-s_lc.fits'
-		sector_prefixes[2], sector_suffixes[2] = 'tess2018234235059-s002-', '-0121-s_lc.fits'
-		sector_prefixes[3], sector_suffixes[3] = 'tess2018263035959-s0003-', '-0123-s_lc.fits'
-		sector_prefixes[4], sector_suffixes[4] = 'tess2018292075959-s0004-', '-0124-s_lc.fits'
-		sector_prefixes[5], sector_suffixes[5] = 'tess2018319095959-s0005-', '-0125-s_lc.fits'
-		sector_prefixes[6], sector_suffixes[6] = 'tess2018349182459-s0006-', '-0126-s_lc.fits'
-		sector_prefixes[7], sector_suffixes[7] = 'tess2019006130736-s0007-', '-0131-s_lc.fits'
-		sector_prefixes[8], sector_suffixes[8] = 'tess2019032160000-s0008-', '-0136-s_lc.fits'
-		sector_prefixes[9], sector_suffixes[9] = 'tess2019058134432-s0009-', '-0139-s_lc.fits'
-		sector_prefixes[10], sector_suffixes[10] = 'tess2019085135100-s0010-', '-0140-s_lc.fits'
-		sector_prefixes[11], sector_suffixes[11] = 'tess2019112060037-s0011-', '-0143-s_lc.fits'
-		sector_prefixes[12], sector_suffixes[12] = 'tess2019140104343-s0012-', '-0144-s_lc.fits'
-		sector_prefixes[13], sector_suffixes[13] = 'tess2019169103026-s0013-', '-0146-s_lc.fits'
-		sector_prefixes[14], sector_suffixes[14] = 'tess2019198215352-s0014-', '-0150-s_lc.fits'
-		sector_prefixes[15], sector_suffixes[15] = 'tess2019226182529-s0015-', '-0151-s_lc.fits'
-		sector
-		nsectors = 28
-		"""
+
+
+
 
 		for sector in np.arange(1,nsectors+1,1):
 
