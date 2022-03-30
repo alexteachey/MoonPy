@@ -802,6 +802,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 	else:
 		os.system('mkdir '+moonpydir+'/TESS_lcs')
 
+
 	### first try a simple curl script!
 
 	all_times = []
@@ -824,6 +825,16 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			#ticnum = str(targID) ### you've already handled the TOI already!
 			if ticnum.startswith(' '):
 				ticnum = ticnum[1:]
+
+
+
+		#### now we have the ticnum, we can establish the download directory. 
+		download_directory = central_data_dir+'/TESS_lightcurves/TIC'+str(ticnum)
+		if os.path.exists(download_directory):
+			pass
+		else:
+			os.system('mkdir '+download_directory)	
+
 
 		### prepare for the query
 		query_num = ticnum
@@ -959,37 +970,49 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 
 
+		#### NEW MARCH 30th 2022 -- check for a record of known unobserved sectors -- so you only have to do this once!
+		unobserved_sectors_filename = 'unobserved_sectors.txt'
+		if os.path.exists(download_directory+'/'+unobserved_sectors_filename):
+			unobserved_sectors_file = open(download_directory+'/'+unobserved_sectors_filename, mode='r')
+			unobserved_sectors = []
+			for nline,line in enumerate(unobserved_sectors_file):
+				unobserved_sectors.append(int(line.split()[1]))
+			unobserved_sectors_file.close()
+		else:
+			unobserved_sectors = []
 
 
 		for sector in np.arange(1,nsectors+1,1):
 
 			if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
 				os.system('mkdir '+central_data_dir+'/TESS_lightcurves')
-			download_directory = central_data_dir+'/TESS_lightcurves/TIC'+str(ticnum)
-			if os.path.exists(download_directory):
-				pass
-			else:
-				os.system('mkdir '+download_directory)
+			#download_directory = central_data_dir+'/TESS_lightcurves/TIC'+str(ticnum)
 
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			if os.path.exists(download_directory+'/'+lcdownload_name):
 				print('file already exists.')	
 				print(' ')
 			else:
-				print('attempting to download: ', lcdownload_name)
-				os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
-				#if os.path.exists(download_directory+'/'+lcdownload_name):
-					#print('file downloaded or already exists.')
-				#else:
-				#	print('file was not downloaded.')
-			#print(' ')
-			#print('downloading the light curve for '+str(targID)+' in sector ', sector)
+				if sector in unobserved_sectors:
+					print('target is known not to have been observed in this sector.')
+					continue
+
+				else:
+					print('attempting to download: ', lcdownload_name)
+					os.system('curl  -s -C - -L -o '+download_directory+'/'+lcdownload_name+' https://mast.stsci.edu/api/v0.1/Download/file/?uri=mast:TESS/product/'+sector_prefixes[sector]+query_num+sector_suffixes[sector])
 
 			try:
 				lcfile = pyfits.open(download_directory+'/'+lcdownload_name)
+			
 			except:
 				print(lcdownload_name+' was an empty data file. removing.')
 				os.system('rm -rf '+download_directory+'/'+lcdownload_name)
+				#### add this to unobserved_sectors_file
+				unobserved_sectors_file = open(download_directory+'/'+unobserved_sectors_filename, mode='a')
+				unobserved_sectors_file.write('sector '+str(sector)+'\n')
+				print("sector added to 'unobserved_sectors.txt' file.")
+				unobserved_sectors_file.close()
+
 				print(' ')
 				continue
 
