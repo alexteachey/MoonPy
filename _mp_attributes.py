@@ -213,6 +213,7 @@ def get_databases(target_prefix):
 
 	current_time = time.time()
 
+
 	#### KEPLER HANDLING
 	#if (self.telescope.lower() == 'kepler') :
 
@@ -232,6 +233,15 @@ def get_databases(target_prefix):
 
 
 	if current_time - kep_NEA_fct > 86400: ### one day old
+		#### CHECK WITH USER ABOUT RE-DOWNLOADING.
+		download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
+
+	else:
+		download_new_csvs = 'n'
+
+
+	if download_new_csvs == 'y':
+
 		print("DOWNLOADING Kepler MAST file (once per day)...")
 
 		desired_columns = np.array(['pl_name', 'pl_letter', 'hostname', 'hd_name', 'hip_name',
@@ -316,7 +326,7 @@ def get_databases(target_prefix):
 
 
 
-	if current_time - kep_koi_fct > 86400: ### one day old
+	if (current_time - kep_koi_fct > 86400) and (download_new_csvs == 'y'): ### one day old
 		print("DOWNLOADING KOI MAST file (once per day)...")
 		OLD_query = 'wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_koi_address+'"'
 		os.system('wget -v --tries=1 '+OLD_query)	
@@ -360,7 +370,7 @@ def get_databases(target_prefix):
 		else:
 			kep_fop_fct = 0
 
-		if current_time - kep_fop_fct > 86400:
+		if (current_time - kep_fop_fct > 86400) and (download_new_csvs == 'y'):
 			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
 			#os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
 			os.system('wget --tries=1 --user=teachey --password=Tpiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
@@ -400,7 +410,7 @@ def get_databases(target_prefix):
 		else:
 			k2_fop_fct = 0
 
-		if current_time - k2_fop_fct > 86400:	
+		if (current_time - k2_fop_fct > 86400) and (download_new_csvs == 'y'):	
 			print("DOWNLOADING K2 ExoFOP file (once per day)...")
 			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
 			print(' ')
@@ -443,7 +453,7 @@ def get_databases(target_prefix):
 		else:
 			tess_fop_fct = 0
 
-		if current_time - tess_fop_fct > 86400:
+		if (current_time - tess_fop_fct > 86400) and (download_new_csvs == 'y'):
 			print('DOWNLOADING TESS ExoFOP file (once per day)...')
 			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
 			print(' ')
