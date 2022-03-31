@@ -765,6 +765,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 						You can specify "max_degree" below, or calculate it using the max_order function
 						within cofiam.py.
 						"""
+
 						try:
 							detrend_model, fluxes_detrend, errors_detrend = cofiam_detrend(times=dtimes, fluxes=dfluxes, errors=derrors, telescope=self.telescope, mask_idxs=mask_transit_idxs, max_degree=max_degree)
 						except:

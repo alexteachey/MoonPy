@@ -134,7 +134,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=20, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=10, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
 		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
@@ -524,8 +524,8 @@ class MoonpyLC(object):
 						pdetrend_model = np.array(pandafile['detrend_model'])						
 					
 					except:
-						traceback.print_exc()
-						print("could not load detrended fluxes.")
+						#traceback.print_exc()
+						print("could not load detrended fluxes (if it's a neighbor, it's OK.)")
 						pfluxes_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
 						perrors_detrend = np.linspace(np.nan, np.nan, len(pfluxes))
 						pdetrend_model = np.linspace(np.nan, np.nan, len(pfluxes))
@@ -1011,17 +1011,17 @@ class MoonpyLC(object):
 			#self.find_transit_quarters()
 			if is_neighbor == 'y':
 				#self.get_properties(locate_neighbor='n')
-				self.find_transit_quarters(locate_neighbor='y')
+				self.find_transit_quarters(locate_neighbor='y', times=self.times, fluxes=self.fluxes, errors=self.errors)
 				#self.get_properties()
 				#self.find_transit_quarters(locate_neighbor='n') ### get_properties() is called first thing!
 				#self.find_transit_quarters()
 				traceback.print_exc()
 			
 			elif is_neighbor == 'n':
-				self.find_transit_quarters(locate_neighbor='y') ### ditto above.
+				self.find_transit_quarters(locate_neighbor='y', times=self.times, fluxes=self.fluxes, errors=self.errors) ### ditto above.
 				#self.find_transit_quarters()
 				traceback.print_exc()
-				self.get_neighbors(save_to_file='n') ### do it once when you initialize, so you don't have to do it again!
+				self.get_neighbors(save_to_file='n', times=self.times, fluxes=self.fluxes, errors=self.errors) ### do it once when you initialize, so you don't have to do it again!
 
 
 		except:
@@ -1068,11 +1068,11 @@ class MoonpyLC(object):
 
 
 
-	def get_neighbors(self, save_to_file='y', mask_multiple=None):
+	def get_neighbors(self, save_to_file='y', mask_multiple=None, times=None, fluxes=None, errors=None):
 
 		#### NOTE -- THIS MUST LIVE HERE! BECAUSE MoonpyLC() cannot be evoked in a daughter script.
 
-		print('calling _mp_attributes.py/get_neighbors().')
+		print('calling moonpy.py/get_neighbors().')
 
 		try:
 			print('neighbors: ', self.neighbors)
@@ -1110,9 +1110,11 @@ class MoonpyLC(object):
 				print('calling MoonpyLC for neighbor: ', neighbor)
 
 				neighbor_dict[neighbor_key] = MoonpyLC(targetID=neighbor, is_neighbor='y', clobber='n')
+				#### these are all the same
 				neighbor_dict[neighbor_key].times = self.times
 				neighbor_dict[neighbor_key].fluxes = self.fluxes
 				neighbor_dict[neighbor_key].errors = self.errors 
+
 
 			except:
 				traceback.print_exc()
@@ -1130,7 +1132,8 @@ class MoonpyLC(object):
 			try:		
 				neighbor_taus = neighbor_dict[neighbor].taus 
 			except:
-				neighbor_dict[neighbor].find_taus()
+				print("EXCEPT STATEMENT (moonpy line 1135).")
+				neighbor_dict[neighbor].find_taus(times=self.times, fluxes=self.fluxes, errors=self.errors)
 				neighbor_taus = neighbor_dict[neighbor].taus
 			neighbor_dur = neighbor_dict[neighbor].duration_days 
 

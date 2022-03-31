@@ -12,6 +12,8 @@ from astroquery.simbad import Simbad
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from astropy.timeseries import LombScargle
 import socket 
+import warnings
+
 
 #### BELOW ARE MOONPY PACKAGES
 from moonpy import *
@@ -27,6 +29,10 @@ from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from moonpy import *
 
+
+warnings.filterwarnings("ignore", category=UserWarning)
+
+
 plt.rcParams["font.family"] = 'serif'
 
 moonpydir = os.path.realpath(__file__)
@@ -38,9 +44,9 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
 #dummy = MoonpyLC(targetID='Kepler-1625b')
 
 
-def find_transit_quarters(self, locate_neighbor='n'):
+def find_transit_quarters(self, times=None, fluxes=None, errors=None, locate_neighbor='n'):
 	print('calling _mp_attributes.py/find_transit_quarters().')
-	self.get_properties(locate_neighbor=locate_neighbor) ### calls find_planet_row() within.
+	self.get_properties(locate_neighbor=locate_neighbor, times=times, fluxes=fluxes, errors=errors) ### calls find_planet_row() within.
 	quarter_transit_dict = {}
 	
 	print('self.quarters = ', self.quarters)
@@ -409,7 +415,9 @@ def get_databases(target_prefix):
 			exofop_username, exofop_pw = get_exofop_credentials()
 
 			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
-			os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')	
+
+			koi_exofop_URL = 'https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi'
+			os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+koi_exofop_URL+'" -O "'+kep_fop_address+'"')	
 			print(' ')
 
 		try:
@@ -428,7 +436,6 @@ def get_databases(target_prefix):
 			k2_fop_fct = os.path.getctime(k2_fop_address) ### file created time
 		else:
 			k2_fop_fct = 0
-			#download_new_csvs = 'y' 
 
 
 		if (current_time - k2_fop_fct > 86400):	
@@ -440,8 +447,9 @@ def get_databases(target_prefix):
 				exofop_username, exofop_pw = get_exofop_credentials()	
 
 				print("DOWNLOADING K2 ExoFOP file (once per day)...")
-				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
-				#os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')	
+				k2_exofop_URL = 'https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target'
+				print('download URL is: ', k2_exofop_URL)
+				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+k2_exofop_URL+'" -O "'+k2_fop_address+'"')	
 
 				print(' ')
 
@@ -451,7 +459,7 @@ def get_databases(target_prefix):
 		except:
 			exofop_data = None
 			exofop_columns = np.array([])
-			print('K2 ExoFOP file not loadable. Possibly corrupted. ')
+			print('K2 ExoFOP file not loadable. Possibly corrupted. The system may be down.')
 
 
 
@@ -472,8 +480,9 @@ def get_databases(target_prefix):
 				exofop_username, exofop_pw = get_exofop_credentials()
 
 				print('DOWNLOADING TESS ExoFOP file (once per day)...')
-				#os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')			
-				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')						
+				#os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')	
+				tess_exofop_URL = 'https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv'		
+				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+tess_exofop_URL+'" -O "'+tess_fop_address+'"')						
 				print(' ')
 
 		#NEA_data = ascii.read(NEA_address)
@@ -838,7 +847,7 @@ def find_planet_row(self, alias=None, row_known='n'):
 
 
 
-def get_properties(self, locate_neighbor='n'):
+def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=None):
 	print("calling _mp_attributes.py/get_properties()...")
 
 	if self.telescope.lower() == 'kepler':
@@ -1186,15 +1195,16 @@ def get_properties(self, locate_neighbor='n'):
 		self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
 	
 	try:
-		self.find_taus()
+		self.find_taus(times=times, fluxes=fluxes, errors=errors)
 	except:
-		traceback.print_exc()
-		print("UNABLE TO CALCULATE transit times. You may not have downloaded any data.")
+		#traceback.print_exc()
+		print("UNABLE TO CALCULATE transit times. This error may be resolved later.")
 
 
 
 
-def find_taus(self):
+
+def find_taus(self, times=None, fluxes=None, errors=None):
 	print("calling _mp_attributes.py/find_taus().")	
 	try:
 		transit_midtimes = self.taus 
@@ -1202,9 +1212,21 @@ def find_taus(self):
 	except:
 		try:
 			transit_midtimes = [self.tau0]
+			print('self in question: ', self.target)
 			print('tau0 = ', self.tau0)
 			print('looking for transit times...')
 			print('self.period = ', self.period)
+
+			if type(times) != type(None):
+				self.times = times 
+
+			if type(fluxes) != type(None):
+				self.fluxes = fluxes
+
+			if type(errors) != type(None):
+				self.errors = errors
+
+			#print('self.times = ', self.times)
 
 			if (self.period == 0.0) or np.isfinite(self.period) == False:
 				manual_period_entry = input('Something wrong with the planet period... please enter a value: ')
@@ -1232,8 +1254,8 @@ def find_taus(self):
 			self.taus = np.array(transit_midtimes)
 
 		except:
-			traceback.print_exc()
-			raise Exception('an exception was raised while calling find_taus().')
+			#traceback.print_exc()
+			raise Exception('an exception was raised while calling find_taus(). Consider turning on traceback if you want to know more.')
 
 
 

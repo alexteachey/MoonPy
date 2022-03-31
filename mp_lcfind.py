@@ -990,11 +990,10 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 			lcdownload_name = 'TIC'+ticnum+'_sector'+str(sector)+'-s_lc.fits'
 			if os.path.exists(download_directory+'/'+lcdownload_name):
-				print('file already exists.')	
-				print(' ')
+				print('file already exists for sector '+str(sector))	
 			else:
 				if sector in unobserved_sectors:
-					print('target is known not to have been observed in this sector.')
+					print('target is known not to have been observed in sector '+str(sector))
 					continue
 
 				else:
@@ -1097,7 +1096,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			print(" ")
 			print(" ")
 
-	all_times, all_fluxes, all_errors, all_flags, sectors = np.array(all_times), np.array(all_fluxes), np.array(all_errors), np.array(all_flags), np.array(sectors)
+	all_times, all_fluxes, all_errors, all_flags, sectors = np.array(all_times, dtype=object), np.array(all_fluxes, dtype=object), np.array(all_errors, dtype=object), np.array(all_flags, dtype=object), np.array(sectors, dtype=object)
 
 	return all_times, all_fluxes, all_errors, all_flags, sectors 
 
