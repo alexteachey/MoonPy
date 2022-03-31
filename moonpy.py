@@ -61,23 +61,58 @@ moonpydir = moonpydir[:moonpydir.find('/moonpy.py')]
 plt.rcParams["font.family"] = 'serif'
 
 hostname = socket.gethostname()
-if ('tethys' in hostname) and ('sinica' in hostname):
-	central_data_dir = '/data/tethys/Documents/Central_Data'
-elif ('Alexs-MacBook') in hostname:
-	central_data_dir = '/Users/hal9000/Documents/Central_Data'
-	if os.path.exists(central_data_dir) == False:
-		os.system('mkdir '+central_data_dir)
-elif 'umbriel' in hostname:
-	central_data_dir = '/home/cal/ateachey/Documents/Central_Data'
+
+
+### NEW HANDLING -- MARCH 31 2022 -- 
+#### check to see if there is a central_data_dir dire
+central_data_pointer_filename = moonpydir+'/central_data_pointer.txt'
+if os.path.exists(central_data_pointer_filename):
+	#### load it up and use it for the central_data_dir
+	central_data_pointer = open(central_data_pointer_filename, mode='r')
+	central_data_dir = central_data_pointer.readline()
+	central_data_pointer.close()
+
 else:
-	### store central_data within MoonPy directory
-	if os.path.exists(moonpydir+'/Central_Data'):
-		pass
-	else:
-		os.system('mkdir '+moonpydir+'/Central_Data')
-	central_data_dir = moonpydir+'/Central_Data'
+	#### have the user make it. Once only!
+	print(' ')
+	print(' ')
+	print('FIRST TIME USERS of MoonPy must specify a CENTRAL DATA DIRECTORY.')
+	print('All light curves will be stored here. ')
+	print('Please enter the path to your central data directory, or press ENTER to place it in the MoonPy directory. ')
+	print(' ')
+	central_data_dir = input('Enter the path: ')
+	
+	if len(central_data_dir) == 0:
+		#### means you want the standard path
+		central_data_dir = moonpydir+'/Central_Data'
+		if os.path.exists(central_data_dir) == False:
+			### make it
+			os.system('mkdir '+central_data_dir)
+
+	while os.path.exists(central_data_dir) == False:
+		central_data_dir = input('That path does not exist. Please make it, or try again: ')
+
+	print(' ')
+	print(' ')
+	central_data_pointer = open(central_data_pointer_filename, mode='w')
+	central_data_pointer.write(central_data_dir)
+	central_data_pointer.close()
+
+
+
 print('moonpydir = ', moonpydir)
 print('Light curves will be stored in '+central_data_dir)
+
+if os.path.exists(central_data_dir+'/Kepler_lightcurves') == False:
+	#### make it
+	os.system('mkdir '+central_data_dir+'/Kepler_lightcurves')
+
+if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
+	#### make it
+	os.system('mkdir '+central_data_dir+'/TESS_lightcurves')
+
+if os.path.exists(central_data_dir+'/K2_lightcurves') == False:
+	os.system('mkdir '+central_data_dir+'/K2_lightcurves')
 
 
 ###### INITIALIZE ALL THE DATABASES HERE, SO THEY DON'T NEED TO BE RE-READ IN FOR EACH LIGHT CURVE!
@@ -147,23 +182,50 @@ class MoonpyLC(object):
 				is_neighbor='y'
 
 				try:
+					print(usr_dict)
+				except:
+					print('could not print usr_dict.')
+
+				try:
 					self.period = usr_dict['period']
+				except:
+					self.period = float(input('Enter the period: '))					
+
+				try:
 					self.tau0 = usr_dict['tau0']
+				except:
+					self.tau0 = float(input('Enter the tau0: '))
+
+				try:
 					self.impact = usr_dict['impact']
+				except:
+					self.impact = float(input('Enter the impact parameter: '))
+
+				try:
 					self.duration_hours = usr_dict['duration_hours']
+				except:
+					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
+
+				try:
 					self.rprstar = usr_dict['rprstar']
+				except:
+					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+
+				try:
 					self.sma_AU = usr_dict['sma_AU']
+				except:
+					self.sma_AU = float(input('Enter the planet sma in AU: '))
+
+				try:
 					self.rp_rearth = usr_dict['rp_rearth']
 				except:
-					print(usr_dict)
-					self.period = float(input('Enter the period: '))
-					self.tau0 = float(input('Enter the tau0: '))
-					self.impact = float(input('Enter the impact parameter: '))
-					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
-					self.rprstar = float(input('Enter the Rp/Rstar: '))
-					self.sma_AU = float(input('Enter the planet sma in AU: '))
 					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
-		
+
+
+
+
+
+
 		else:
 			user_supplied = 'n'
 
@@ -175,23 +237,49 @@ class MoonpyLC(object):
 		if type(targetID) != type(None):
 			### targetID has been supplied
 			if targetID.lower().startswith('usr'):
+
+
+				try:
+					print(usr_dict)
+				except:
+					print('could not print usr_dict.')
+
 				try:
 					self.period = usr_dict['period']
+				except:
+					self.period = float(input('Enter the period: '))					
+
+				try:
 					self.tau0 = usr_dict['tau0']
+				except:
+					self.tau0 = float(input('Enter the tau0: '))
+
+				try:
 					self.impact = usr_dict['impact']
+				except:
+					self.impact = float(input('Enter the impact parameter: '))
+
+				try:
 					self.duration_hours = usr_dict['duration_hours']
+				except:
+					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
+
+				try:
 					self.rprstar = usr_dict['rprstar']
+				except:
+					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+
+				try:
 					self.sma_AU = usr_dict['sma_AU']
+				except:
+					self.sma_AU = float(input('Enter the planet sma in AU: '))
+
+				try:
 					self.rp_rearth = usr_dict['rp_rearth']
 				except:
-					print(usr_dict)
-					self.period = float(input('Enter the period: '))
-					self.tau0 = float(input('Enter the tau0: '))
-					self.impact = float(input('Enter the impact parameter: '))
-					self.duration_hours = float(input('Enter the duration of the transit in hours: '))
-					self.rprstar = float(input('Enter the Rp/Rstar: '))
-					self.sma_AU = float(input('Enter the planet sma in AU: '))
-					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))			
+					self.rp_rearth = float(input('Enter the planet radius in units of Earth radii: '))
+
+
 
 		if type(target_type) != type(None):
 			self.target_type = target_type 

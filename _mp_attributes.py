@@ -208,6 +208,39 @@ def get_coords(self):
 
 
 
+def get_exofop_credentials():
+
+	### check for an exofop credentials file
+	if os.path.exists(moonpydir+'/exofop_credentials.txt'):
+		#### open and read it
+		exofop_credentials = open(moonpydir+'/exofop_credentials.txt', mode='r')
+		exofop_username, exofop_pw = exofop_credentials.readline().split()
+		exofop_credentials.close()
+
+	else:
+		#### make the user input these, and save the file
+		print(' ')
+		print(' ')
+		print('NOTE: MoonPy makes use of the ExoFOP databases. ')
+		print('Users are advised to set up an account if they do not have one already. ')
+		print(' ')
+		print(' ')
+
+
+		exofop_username = input('Please enter your exofop username (first time user only), or press ENTER if you do not have one: ')
+		if len(exofop_username) > 0:
+			exofop_pw = input('Please enter your exofop password: ')
+
+			exofop_credentials = open(moonpydir+'/exofop_credentials.txt', mode='w')
+			exofop_credentials.write(exofop_username+' '+exofop_pw)
+			exofop_credentials.close()
+
+	return exofop_username, exofop_pw 
+
+
+
+
+
 #def get_databases(self):
 def get_databases(target_prefix):
 
@@ -235,12 +268,14 @@ def get_databases(target_prefix):
 	if current_time - kep_NEA_fct > 86400: ### one day old
 		#### CHECK WITH USER ABOUT RE-DOWNLOADING.
 		download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
-
 	else:
 		download_new_csvs = 'n'
 
 
 	if download_new_csvs == 'y':
+
+		exofop_username, exofop_pw = get_exofop_credentials()
+
 
 		print("DOWNLOADING Kepler MAST file (once per day)...")
 
@@ -371,10 +406,10 @@ def get_databases(target_prefix):
 			kep_fop_fct = 0
 
 		if (current_time - kep_fop_fct > 86400) and (download_new_csvs == 'y'):
+			exofop_username, exofop_pw = get_exofop_credentials()
+
 			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
-			#os.system('wget --tries=1 --user=teachey --password=Tipiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
-			os.system('wget --tries=1 --user=teachey --password=Tpiu2ExoFOP "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')
-			
+			os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')	
 			print(' ')
 
 		try:
@@ -387,33 +422,28 @@ def get_databases(target_prefix):
 
 
 	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
-		"""
-		k2_NEA_address = moonpydir+'/cumk2ois_mast.txt'
-		if os.path.exists(k2_NEA_address):
-			k2_NEA_fct = os.path.getctime(k2_NEA_address) ### file created time
-		else:
-			k2_NEA_fct = 0
-
-
-		if current_time - k2_NEA_fct > 86400:
-			print('DOWNLOADING K2 MAST file (once per day)...')
-			os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=k2candidates&select=epic_name,epic_candname,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=epic_name&format=ascii" -O "'+k2_NEA_address+'"')
-			print(' ')
-
-		NEA_data = ascii.read(k2_NEA_address)
-		NEA_columns = NEA_data.columns
-		"""
 
 		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
 		if os.path.exists(k2_fop_address):
 			k2_fop_fct = os.path.getctime(k2_fop_address) ### file created time
 		else:
 			k2_fop_fct = 0
+			#download_new_csvs = 'y' 
 
-		if (current_time - k2_fop_fct > 86400) and (download_new_csvs == 'y'):	
-			print("DOWNLOADING K2 ExoFOP file (once per day)...")
-			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
-			print(' ')
+
+		if (current_time - k2_fop_fct > 86400):	
+			download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
+
+
+			if download_new_csvs == 'y':
+
+				exofop_username, exofop_pw = get_exofop_credentials()	
+
+				print("DOWNLOADING K2 ExoFOP file (once per day)...")
+				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target" -O "'+k2_fop_address+'"')
+				#os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi" -O "'+kep_fop_address+'"')	
+
+				print(' ')
 
 		try:
 			exofop_data = pandas.read_csv(k2_fop_address, header=10)
@@ -427,36 +457,24 @@ def get_databases(target_prefix):
 
 	elif (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tess'):
 
-		##### RESTRUCTURE -- if it starts with TOI, check if it has a number or letter at the e
-		#toi_NEA_address = moonpydir+'/NEA_cumtois.txt' #### ALL THE TOIs that are NOT confirmed as planets. Of the form TOI-XXXX.01
-		"""
-		NEA_address = moonpydir+'/NEA_confirmed_planets.txt' #### confirmed planets (not limited to TESS)
-		if os.path.exists(NEA_address):
-			NEA_fct = os.path.getctime(NEA_address) ### file created time
-		else:
-			NEA_fct = 0
-
-		if current_time - NEA_fct > 86400:
-			print('DOWNLOADING NEA confirmed planets file (once per day)...')
-			##### THE COMMAND BELOW HAS TO CHANGE -- NOT THE RIGHT TABLE! NEED TO FIND THE ONE THAT HAS things like TOI-125 b and things like that.
-			#os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_rade,pl_radeerr1,pl_radeerr2,ra,dec&order=pl_hostname&format=ascii" -O "'+NEA_address+'"')
-			os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=exoplanets&select=pl_hostname,pl_letter,pl_name,pl_orbper,pl_orbpererr1,pl_orbpererr2,pl_tranmid,pl_tranmiderr1,pl_tranmiderr2,pl_trandep,pl_trandeperr1,pl_trandeperr2,pl_imppar,pl_impparerr1,pl_impparerr2,pl_trandur,pl_trandurerr1,pl_trandurerr2,pl_ratror,pl_ratrorerr1,pl_ratrorerr2,pl_ratdor,pl_ratdorerr1,pl_ratdorerr2,pl_eqt,pl_eqterr1,pl_eqterr2,pl_rade,pl_radeerr1,pl_radeerr2,st_rad,st_raderr1,st_raderr2,ra,dec&order=pl_hostname&format=ascii" -O "'+NEA_address+'"')
-		
-			#os.system('wget --tries=1 "http://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=PS&select=pl_name,hostname,pl_letter,hd_name,hip_name,tic_id,gaia_id,pl_refname,pl_orbper,pl_orbsmax,pl_rade,pl_radj,pl_masse,pl_massj,pl_dens,pl_orbeccen,pl_insol,pl_eqt,pl_orbincl,pl_tranmid,pl_tsystemref,pl_imppar,pl_trandep,pl_ratdor,st_teff,st_rad,st_mass,st_met,st_lum,st_logg,st_age,st_dens,st_rotp,ra,dec,glat,glon&order=pl_name&format=ascii" -O "'+NEA_address+'"')
-			print(' ')
-
-		"""
-
 		tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
 		if os.path.exists(tess_fop_address):
 			tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
 		else:
 			tess_fop_fct = 0
 
-		if (current_time - tess_fop_fct > 86400) and (download_new_csvs == 'y'):
-			print('DOWNLOADING TESS ExoFOP file (once per day)...')
-			os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')				
-			print(' ')
+		if (current_time - tess_fop_fct > 86400):
+
+			download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
+
+			if download_new_csvs == 'y':
+
+				exofop_username, exofop_pw = get_exofop_credentials()
+
+				print('DOWNLOADING TESS ExoFOP file (once per day)...')
+				#os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')			
+				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')						
+				print(' ')
 
 		#NEA_data = ascii.read(NEA_address)
 		#NEA_columns = NEA_data.columns 
@@ -465,6 +483,9 @@ def get_databases(target_prefix):
 
 
 	return NEA_data, NEA_columns, exofop_data, exofop_columns 
+
+
+
 
 
 
