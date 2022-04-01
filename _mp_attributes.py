@@ -404,6 +404,9 @@ def get_databases(target_prefix):
 	try:
 		confirmed_NEA_data = ascii.read(NEA_confirmed_address)
 		confirmed_NEA_columns = confirmed_NEA_data.columns
+
+		#### if this succeeds, you can delete the old versions.
+		os.system('rm '+old_NEA_confirmed_address)
 	except:
 		try:
 			print(' ')
@@ -423,6 +426,10 @@ def get_databases(target_prefix):
 	try:
 		candidate_NEA_data = ascii.read(NEA_candidates_address)
 		candidate_NEA_columns = candidate_NEA_data.columns
+
+		#### if this succeeds, you can remove the old version.
+		os.system('rm '+old_NEA_candidates_address)
+
 	except:
 		try:
 			print('ERROR LOADING NEWLY DOWNLOADED DATABASE (NEA_candidate_address). REVERTING TO PREVIOUS VERSION.')
@@ -444,6 +451,10 @@ def get_databases(target_prefix):
 		elif mission == 'tess':
 			exofop_data = pandas.read_csv(exofop_address)			
 		exofop_columns = exofop_data.columns
+
+		#### if this succeeds, you can remove the old version.
+		os.system('rm '+old_exofop_address)
+		
 	except:
 		try:
 			print('EXCEPTION ENCOUNTERED... new ExoFOP file may be corrupted. Switching to old version.')

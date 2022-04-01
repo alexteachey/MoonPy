@@ -381,15 +381,20 @@ def k2_URL_generator(EPIC):
 	#### since you don't know which campaign it's in, generate a list of final_URLs, a list of wget_commands,
 	final_URLs = []
 	wget_commands = []
-
+	filepaths = []
 
 	for campaign_number in np.arange(0,19,1):
 		print('campaign # ', campaign_number)
 		if campaign_number < 10:
-			final_URL = 'https://archive.stsci.edu/pub/k2/lightcurves/c'+str(campaign_number)+'/'+XXXX+'00000/'+YY+'000/ktwo'+str(query_format_number)+'-c0'+str(campaign_number)+'_llc.fits'
+			filename = 'ktwo'+str(query_format_number)+'-c0'+str(campaign_number)+'_llc.fits'
+			final_URL = 'https://archive.stsci.edu/pub/k2/lightcurves/c'+str(campaign_number)+'/'+XXXX+'00000/'+YY+'000/'+filename #ktwo'+str(query_format_number)+'-c0'+str(campaign_number)+'_llc.fits'
 		else:
-			final_URL = 'https://archive.stsci.edu/pub/k2/lightcurves/c'+str(campaign_number)+'/'+XXXX+'00000/'+YY+'000/ktwo'+str(query_format_number)+'-c'+str(campaign_number)+'_llc.fits'
+			filename = 'ktwo'+str(query_format_number)+'-c'+str(campaign_number)+'_llc.fits'
+			final_URL = 'https://archive.stsci.edu/pub/k2/lightcurves/c'+str(campaign_number)+'/'+XXXX+'00000/'+YY+'000/'+filename #ktwo'+str(query_format_number)+'-c'+str(campaign_number)+'_llc.fits'
 		final_URLs.append(final_URL)
+
+		filepath = download_directory+'/'+filename
+		filepaths.append(filepath)
 
 		#wget_command = "wget -q -nH --cut-dirs=6 -r -l0 -c -N -np -R 'index*' -erobots=off "+final_URL+" -P "+download_directory+"/"
 		#wget_command = 'wget -nH --cut-dirs=6 -r -l0 -c -N -np -R "index*" -erobots=off '+final_URL+' -P '+download_directory+'/'
@@ -398,7 +403,7 @@ def k2_URL_generator(EPIC):
 		wget_commands.append(wget_command)
 
 
-	return final_URLs, wget_commands, download_directory
+	return final_URLs, wget_commands, download_directory, filepaths
 
 
 
@@ -446,17 +451,47 @@ def k2_fits_download(target_name, clobber='n'):
 	try:
 		EPIC_name = find_EPIC_alias(target_name)
 
-		EPIC_URLs, EPIC_wgets, EPIC_download_dir = k2_URL_generator(EPIC_name) ### EPIC_URLs and EPIC_wgets are LISTS!!!!
+		EPIC_URLs, EPIC_wgets, EPIC_download_dir, EPIC_filepaths = k2_URL_generator(EPIC_name) ### EPIC_URLs and EPIC_wgets are LISTS!!!!
 
 		if (len(os.listdir(EPIC_download_dir)) > 0) and (clobber == 'n'):
 			print("light curve files already exist, no need to download again.")
 		
 		else:
+			##### build a list of the EPIC_URLs that have been tried before.
+			unobserved_campaigns = []
+			
+			if os.path.exists(EPIC_download_dir+'/unobserved_campaigns.txt'):
+				#### open it
+				unobserved_campaigns_file = open(EPIC_download_dir+'/unobserved_campaigns.txt', mode='r')
+				for nline,line in unobserved_campaigns_file:
+					unobserved_campaigns.append(line[:line.find('\n')]) ### make sure you have just the EPIC_URL, not those final \n's. 
+				unobserved_campaigns_file.close()
+			else:
+				#### start a new list.
+				unobserved_campaigns = []
+
+
 			print('wgetting EPIC light curves...')
-			for EPIC_URL, EPIC_wget in zip(EPIC_URLs, EPIC_wgets):
-				print('looking for ', EPIC_URL)
-				os.system(EPIC_wget)
-			print('done.')
+			for EPIC_URL, EPIC_wget, EPIC_filepath in zip(EPIC_URLs, EPIC_wgets, EPIC_filepaths):
+				if EPIC_URL in unobserved_campaigns:
+					print('target is known to not be observed in this campaign.')
+					
+				else:
+					print('looking for ', EPIC_URL)
+					os.system(EPIC_wget)
+					print('done.')
+
+					print('EPIC filepath: ', EPIC_filepath)
+					if os.path.exists(EPIC_filepath) == False:
+						unobserved_campaigns_file = open(EPIC_download_dir+'/unobserved_campaigns.txt', mode='a')
+						unobserved_campaigns_file.write(EPIC_URL+'\n')
+						unobserved_campaigns_file.close()
+						print('added to the unobserved_campaigns.txt file.')
+
+
+
+		#### check to see if the file exists -- if it doesn't... add it to the unobserved_campaigns file.
+
 
 	except:
 		traceback.print_exc()
@@ -987,7 +1022,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 		for sector in np.arange(1,nsectors+1,1):
 			if sector in empty_curlscript_sectors:
 				continue
-				
+
 
 			if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
 				os.system('mkdir '+central_data_dir+'/TESS_lightcurves')
