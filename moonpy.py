@@ -935,7 +935,14 @@ class MoonpyLC(object):
 		else:
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object)
 		
-		nquarters = len(lc_quarters)
+		print('lc_times = ', lc_times)
+
+		try:
+			nquarters = len(lc_quarters)
+		except:
+			nquarters = lc_times.shape[0]
+
+			
 		for qidx in np.arange(0,nquarters,1):
 			### remove NaNs
 			try:

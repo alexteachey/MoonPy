@@ -463,7 +463,7 @@ def k2_fits_download(target_name, clobber='n'):
 			if os.path.exists(EPIC_download_dir+'/unobserved_campaigns.txt'):
 				#### open it
 				unobserved_campaigns_file = open(EPIC_download_dir+'/unobserved_campaigns.txt', mode='r')
-				for nline,line in unobserved_campaigns_file:
+				for nline,line in enumerate(unobserved_campaigns_file):
 					unobserved_campaigns.append(line[:line.find('\n')]) ### make sure you have just the EPIC_URL, not those final \n's. 
 				unobserved_campaigns_file.close()
 			else:
