@@ -685,6 +685,7 @@ class MoonpyLC(object):
 								NEA_rowidx = int(alias_NEA_rowidx)
 								break
 							except:
+								NEA_rowidx = np.nan
 								continue
 					except:
 						pass
@@ -700,13 +701,14 @@ class MoonpyLC(object):
 								exofop_rowidx = int(alias_exofop_rowidx)
 								break
 							except:
+								exofop_rowidx = np.nan
 								continue
 					except:
 						pass
 
 
-				print('[mp] NEA_rowidx = ', NEA_rowidx)
-				print('[mp] exofop_rowidx = ', exofop_rowidx)
+				print('[mp] k2 NEA_rowidx = ', NEA_rowidx)
+				print('[mp] k2 exofop_rowidx = ', exofop_rowidx)
 				self.NEA_rowidx = NEA_rowidx
 				self.exofop_rowidx = exofop_rowidx
 

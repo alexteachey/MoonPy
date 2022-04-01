@@ -247,344 +247,232 @@ def get_exofop_credentials():
 
 
 
-#def get_databases(self):
+
+
+
 def get_databases(target_prefix):
 
 	current_time = time.time()
 
+	#### DEFINE FILE NAMES 
+	if target_prefix.lower() in ['kepler', 'koi', 'kic']:
+		mission = 'kepler'
+		NEA_confirmed_address = moonpydir+'/NEA_confirmed_planets.csv'		
+		NEA_candidates_address = moonpydir+'/NEA_cumkois.csv'
+		exofop_address = moonpydir+'/kepler_exofop_targets.csv'
+		exofop_URL = 'https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi'
 
-	#### KEPLER HANDLING
-	#if (self.telescope.lower() == 'kepler') :
+	elif target_prefix.lower() in ['k2', 'epic']:
+		mission = 'k2'
+		NEA_confirmed_address = moonpydir+'/NEA_confirmed_planets.csv'
+		NEA_candidates_address = moonpydir+'/NEA_cumk2ois.csv'
+		exofop_address = moonpydir+'/k2_exofop_targets.csv'
+		exofop_URL = 'https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target'
 
-	#### NEW FUNCTIONALITY -- ONE NEA TABLE FOR KEPLER, K2 AND TESS. 
-	kep_koi_address = moonpydir+'/cumkois_mast.csv'
-	kep_NEA_address = moonpydir+'/confirmed_planets_mast.csv'
 
-	#### make back-ups in case things don't go to plan
-	old_kep_koi_address = kep_koi_address[:-4]+'_OLD.csv'
-	old_kep_NEA_address = kep_NEA_address[:-4]+'_OLD.csv'
-	
-	if os.path.exists(kep_NEA_address):
-		kep_NEA_fct = os.path.getctime(kep_NEA_address) ### file created time
+	elif target_prefix.lower() in ['toi', 'tic', 'tess']:
+		mission = 'tess'
+		NEA_confirmed_address = moonpydir+'/NEA_confirmed_planets.csv'		
+		NEA_candidates_address = moonpydir+'/cumtois.csv' ### doesn't exist, but whatever
+		exofop_address = moonpydir+'/tess_exofop_targets.csv'		
+		exofop_URL = 'https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv'	
+
+	old_NEA_candidates_address = NEA_candidates_address[:-4]+'_OLD.csv'
+	old_NEA_confirmed_address = NEA_confirmed_address[:-4]+'_OLD.csv'
+	old_exofop_address = exofop_address[:-4]+'_OLD.csv'
+
+
+	##### CHECK FILE CREATION TIMES
+	if os.path.exists(NEA_confirmed_address):
+		NEA_confirmed_fct = os.path.getctime(NEA_confirmed_address) ### file created time
 	else:
-		kep_NEA_fct = 0
+		NEA_confirmed_fct = 0
 
-	if os.path.exists(kep_koi_address):
-		kep_koi_fct = os.path.getctime(kep_koi_address) ### file created time
+	if os.path.exists(NEA_candidates_address):
+		NEA_candidates_fct = os.path.getctime(NEA_candidates_address) ### file created time
 	else:
-		kep_koi_fct = 0
+		NEA_candidates_fct = 0
+
+	if os.path.exists(exofop_address):
+		exofop_fct = os.path.getctime(exofop_address) ### file created time
+	else:
+		exofop_fct = 0
 
 
-	if current_time - kep_NEA_fct > 86400: ### one day old
+	#### determine if any are out of date..
+	if current_time - NEA_confirmed_fct > 86400:
+		NEA_confirmed_ood = True
+		print('NASA Exoplanet Archive confirmed planets database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')
+	else:
+		NEA_confirmed_ood = False
+
+	if current_time - NEA_candidates_fct > 86400:
+		print('NASA Exoplanet Archive candidates database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')		
+		NEA_candidates_ood = True
+	else:
+		NEA_candidates_ood = False
+
+	if current_time - exofop_fct > 86400:
+		print('ExoFOP database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')			
+		exofop_ood = True
+	else:
+		exofop_ood = False 
+
+
+	if np.any((NEA_confirmed_ood, NEA_candidates_ood, exofop_ood)): ### one day old
 		#### CHECK WITH USER ABOUT RE-DOWNLOADING.
-		download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
+		print(' ')
+		print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
+		print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
+		print(' ')
+		download_new_csvs = input('Download updated databases? y/n: ')
 	else:
 		download_new_csvs = 'n'
 
 
+
 	if download_new_csvs == 'y':
+		#### copy older files to make sure you have a working back-up (in case of corrupt download)
+		os.system('cp '+NEA_candidates_address+' '+old_NEA_candidates_address)
+		os.system('cp '+NEA_confirmed_address+' '+old_NEA_confirmed_address)	
+		os.system('cp '+exofop_address+' '+old_exofop_address)
 
-		#### make a copy!
-		os.system('cp '+kep_NEA_address+' '+old_kep_NEA_address)
-		os.system('cp '+kep_koi_address+' '+old_kep_koi_address)		
-
+		#### access exofop credentials
 		exofop_username, exofop_pw = get_exofop_credentials()
 
 
-		print("DOWNLOADING Kepler MAST file (once per day)...")
+		##### load the list of desired columns
+		NEA_confirmed_desired_columns = np.load(moonpydir+'/NEA_confirmed_planets_desired_columns.npy')
+		print('number of desired columns: ', len(NEA_confirmed_desired_columns))
 
-		desired_columns = np.array(['pl_name', 'pl_letter', 'hostname', 'hd_name', 'hip_name',
-	       'tic_id', 'disc_pubdate', 'disc_year', 'discoverymethod', 'disc_locale', 'disc_facility', 'disc_telescope',
-	       'ra', 'dec', 'glon', 'glat', 'elon', 'elat', 
-	       'pl_orbper', 'pl_orbpererr1', 'pl_orbpererr2', 'pl_orbperlim', ### orbital period
-	       'pl_orblpererr1','pl_orblper', 'pl_orblpererr2', 'pl_orblperlim', #### argument of periastron
-	       'pl_orbsmax', 'pl_orbsmaxerr1', 'pl_orbsmaxerr2', 'pl_orbsmaxlim', #### semimajor axis
-	       'pl_orbincl', 'pl_orbinclerr1', 'pl_orbinclerr2', 'pl_orbincllim', #### orbital inclination
-	       'pl_orbtper', 'pl_orbtpererr1', 'pl_orbtpererr2', 'pl_orbtperlim', #### epoch of periastron
-	       'pl_orbeccen', 'pl_orbeccenerr1', 'pl_orbeccenerr2', 'pl_orbeccenlim', #### eccentricity
-	       'pl_eqt', 'pl_eqterr1', 'pl_eqterr2', 'pl_eqtlim', #### equilibrium temperature
-	       'pl_occdep', 'pl_occdeperr1', 'pl_occdeperr2', 'pl_occdeplim',  ### occultation depth
-	       'pl_insol', 'pl_insolerr1', 'pl_insolerr2', 'pl_insollim', ### insolation
-	       'pl_dens', 'pl_denserr1', 'pl_denserr2', 'pl_denslim', #### density 
-	       'pl_trandep', 'pl_trandeperr1', 'pl_trandeperr2', 'pl_trandeplim', ### transit depth
-	       'pl_tranmid', 'pl_tranmiderr1', 'pl_tranmiderr2', 'pl_tranmidlim', 'pl_tsystemref', #### transit midtime
-	       'sy_pmdec', 'sy_pmdecerr1', 'sy_pmdecerr2', 
-	       'sy_plx', 'sy_plxerr1', 'sy_plxerr2', 'sy_dist', 'sy_disterr1', 'sy_disterr2', 
-	       'sy_bmag', 'sy_bmagerr1', 'sy_bmagerr2', 'sy_vmag', 'sy_vmagerr1','sy_vmagerr2', 
-	       'sy_jmag', 'sy_jmagerr1', 'sy_jmagerr2', 'sy_hmag','sy_hmagerr1', 'sy_hmagerr2', 
-	       'sy_kmag', 'sy_kmagerr1','sy_kmagerr2', 'sy_umag', 'sy_umagerr1', 'sy_umagerr2', 
-	       'sy_rmag', 'sy_rmagerr1', 'sy_rmagerr2', 'sy_imag', 'sy_imagerr1',
-	       'sy_imagerr2', 'sy_zmag', 'sy_zmagerr1', 'sy_zmagerr2', 
-	       'sy_gaiamag', 'sy_gaiamagerr1','sy_gaiamagerr2', 'sy_tmag', 'sy_tmagerr1', 'sy_tmagerr2',
-	       'pl_controv_flag',
-	       'st_metratio', 'st_spectype', 'sy_kepmag', 'sy_kepmagerr1',
-	       'sy_kepmagerr2', 'st_rotp', 'st_rotperr1', 'st_rotperr2',
-	       'st_rotplim', 'pl_projobliq', 'pl_projobliqerr1',
-	       'pl_projobliqerr2', 'pl_projobliqlim', 'gaia_id', 'cb_flag',
-	       'pl_trandur', 'pl_trandurerr1', 'pl_trandurerr2', 'pl_trandurlim',
-	       'pl_rvamp', 'pl_rvamperr1', 'pl_rvamperr2', 'pl_rvamplim',
-	       'pl_radj', 'pl_radjerr1', 'pl_radjerr2', 'pl_radjlim', 'pl_rade',
-	       'pl_radeerr1', 'pl_radeerr2', 'pl_radelim', 'pl_ratror',
-	       'pl_ratrorerr1', 'pl_ratrorerr2', 'pl_ratrorlim', 'pl_ratdor',
-	       'pl_trueobliq', 'pl_trueobliqerr1', 'pl_trueobliqerr2',
-	       'pl_trueobliqlim', 'sy_icmag', 'sy_icmagerr1', 'sy_icmagerr2',
-	       'dkin_flag', 'pl_ratdorerr1', 'pl_ratdorerr2', 'pl_ratdorlim',
-	       'pl_imppar', 'pl_impparerr1', 'pl_impparerr2', 'pl_impparlim',
-	       'pl_bmassj', 'pl_bmassjerr1', 'pl_bmassjerr2', 'pl_bmassjlim',
-	       'pl_bmasse', 'pl_bmasseerr1', 'pl_bmasseerr2', 'pl_bmasselim',
-	       'pl_bmassprov', 'st_teff', 'st_tefferr1', 'st_tefferr2',
-	       'st_tefflim', 'st_met', 'st_meterr1', 'st_meterr2', 'st_metlim',
-	       'st_radv', 'st_radverr1', 'st_radverr2', 'st_radvlim', 'st_vsin',
-	       'st_vsinerr1', 'st_vsinerr2', 'st_vsinlim', 'st_lum', 'st_lumerr1',
-	       'st_lumerr2', 'st_lumlim', 'st_logg', 'st_loggerr1', 'st_loggerr2',
-	       'st_logglim', 'st_age', 'st_ageerr1', 'st_ageerr2', 'st_agelim',
-	       'st_mass', 'st_masserr1', 'st_masserr2', 'st_masslim', 'st_dens',
-	       'st_denserr1', 'st_denserr2', 'st_denslim', 'st_rad', 'st_raderr1',
-	       'st_raderr2', 'st_radlim', 'ttv_flag', 'ptv_flag', 'tran_flag',
-	       'rv_flag', 'ast_flag', 'obm_flag', 'micro_flag', 'etv_flag',
-	       'ima_flag', 'pul_flag', 'sy_snum', 'sy_pnum', 'sy_mnum',
-	       'st_nphot', 'st_nrvc', 'st_nspec', 'pl_nespec', 'pl_ntranspec',
-	       'pl_nnotes', 'sy_pm', 'sy_pmerr1', 'sy_pmerr2', 'sy_pmra',
-	       'sy_pmraerr1', 'sy_pmraerr2', 'x', 'y', 'z', 'htm20'],
-	      dtype='<U20')
+		NEA_confirmed_desired_cols = ''
+		for ndc,dc in enumerate(NEA_confirmed_desired_columns):
 
-		print('number of desired columns: ', len(desired_columns))
-		
-		desired_cols = ''
-		for ndc,dc in enumerate(desired_columns):
-
-			desired_cols = desired_cols+dc+','
-		if desired_cols[-1] == ',':
-			desired_cols = desired_cols[:-1]
-
-		print(' ')
-		print(' ')
-		print('desired_cols string: ')
-		print(desired_cols)
-		print(' ')
-		print(' ')
-
-		#NEW_query =  '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+'+desired_cols+'+from+pscomppars&format=csv" -O "'+kep_NEA_address+'"'
-		NEW_query =  '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+*+from+pscomppars+order+by+pl_name+asc&format=csv" -O "'+kep_NEA_address+'"'
-
-		#os.system('wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_NEA_address+'"')
-
-		os.system('wget -v --tries=1 '+NEW_query)
-		print(" ")
+			NEA_confirmed_desired_cols = NEA_confirmed_desired_cols+dc+','
+		if NEA_confirmed_desired_cols[-1] == ',':
+			NEA_confirmed_desired_cols = NEA_confirmed_desired_cols[:-1]
 
 
 
+		##### DO THE DOWNLOADS
 
-	if (current_time - kep_koi_fct > 86400) and (download_new_csvs == 'y'): ### one day old
-		print("DOWNLOADING KOI MAST file (once per day)...")
-		OLD_query = 'wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+kep_koi_address+'"'
-		os.system('wget -v --tries=1 '+OLD_query)	
+		#### FOR KEPLER, K2, and TESS
+		print("DOWNLOADING NASA Exoplanet Archive confirmed planets file (once per day)...")
+		if NEA_confirmed_ood:
+			CONFIRMED_query = '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+*+from+pscomppars+order+by+pl_name+asc&format=csv" -O "'+NEA_confirmed_address+'"'
+			os.system('wget -v --tries=1 '+CONFIRMED_query)
+			print(" ")
+
+
+		if NEA_candidates_ood:
+			if mission == 'kepler':
+				print("DOWNLOADING NASA Exoplanet Archive candidate planets file...")
+				#CANDIDATE_query =  '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+*+from+cumulative+order+by+kepoi_name+asc&format=csv" -O "'+NEA_confirmed_address+'"'
+				CANDIDATE_query = 'wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+NEA_candidates_address+'"'
+				os.system('wget -v --tries=1 '+CANDIDATE_query)	
+				print(' ')
+				print(' ')
+
+			elif mission == 'k2':
+				print("DOWNLOADING NASA Exoplanet Archive candidate planets file...")
+				#### ONLINE VIEW IS AT: https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=k2pandc
+				CANDIDATE_query =  '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+*+from+k2pandc+order+by+pl_name+asc&format=csv" -O "'+NEA_candidates_address+'"'
+				#CANDIDATE_query = 'wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=cumulative&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+NEA_candidates_address+'"'
+				os.system('wget -v --tries=1 '+CANDIDATE_query)		
+				print(' ')
+				print(' ')
+
+			elif mission == 'tess':
+				print("DOWNLOADING NASA Exoplanet Archive candidate planets file...")
+				#### ONLINE VIEW IS AT: https://exoplanetarchive.ipac.caltech.edu/cgi-bin/TblView/nph-tblView?app=ExoTbls&config=TOI
+				CANDIDATE_query =  '"https://exoplanetarchive.ipac.caltech.edu/TAP/sync?query=select+*+from+TOI+order+by+toi+asc&format=csv" -O "'+NEA_candidates_address+'"'
+				#CANDIDATE_query = 'wget --tries=1 "https://exoplanetarchive.ipac.caltech.edu/cgi-bin/nstedAPI/nph-nstedAPI?table=TOI&select=kepid,kepoi_name,kepler_name,koi_disposition,koi_period,koi_period_err1,koi_period_err2,koi_sma,koi_sma_err1,koi_sma_err2,koi_insol,koi_insol_err1,koi_insol_err2,koi_time0bk,koi_time0bk_err1,koi_time0bk_err2,koi_impact,koi_impact_err1,koi_impact_err2,koi_duration,koi_duration_err1,koi_duration_err2,koi_eccen,koi_eccen_err1,koi_eccen_err2,koi_longp,koi_longp_err1,koi_longp_err2,koi_ror,koi_ror_err1,koi_ror_err2,koi_incl,koi_incl_err1,koi_incl_err2,koi_prad,koi_prad_err1,koi_prad_err2,koi_ldm_coeff2,koi_ldm_coeff1,koi_smass,koi_smass_err1,koi_smass_err2,koi_model_snr,ra,dec&order=kepoi_name&format=ascii" -O "'+NEA_candidates_address+'"'
+				os.system('wget -v --tries=1 '+CANDIDATE_query)		
+				print(' ')
+				print(' ')			
+
+		if exofop_ood:
+			print('DOWNLOADING ExoFOP file (once per day)...')
+			os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+exofop_URL+'" -O "'+exofop_address+'"')	
+			print(' ')
+			print(' ')
 
 
 
 
 	#### LOAD THE DATA IN
 	try:
-		confirmed_NEA_data = ascii.read(kep_NEA_address)
+		confirmed_NEA_data = ascii.read(NEA_confirmed_address)
+		confirmed_NEA_columns = confirmed_NEA_data.columns
 	except:
-		print(' ')
-		print(' ')
-		print('ERROR LOADING NEWLY DOWNLOADED DATABASE (kep_NEA_address). REVERTING TO PREVIOUS VERSION.')
-		print(' ')
-		print(' ')
-		os.system('rm -rf '+kep_NEA_address)
-		os.system('mv '+old_kep_NEA_address+' '+kep_NEA_address)
-		confirmed_NEA_data = ascii.read(kep_NEA_address)		
-
-	confirmed_NEA_columns = confirmed_NEA_data.columns
-
+		try:
+			print(' ')
+			print(' ')
+			print('ERROR LOADING NEWLY DOWNLOADED DATABASE (NEA_confirmed_address). REVERTING TO PREVIOUS VERSION.')
+			print(' ')
+			print(' ')
+			os.system('rm -rf '+NEA_confirmed_address)
+			os.system('mv '+old_NEA_confirmed_address+' '+NEA_confirmed_address)
+			confirmed_NEA_data = ascii.read(NEA_confirmed_address)		
+			confirmed_NEA_columns = confirmed_NEA_data.columns
+		except:
+			confirmed_NEA_data = None
+			confirmed_NEA_columns = np.array([])
 
 
 	try:
-		koi_NEA_data = ascii.read(kep_koi_address)
+		candidate_NEA_data = ascii.read(NEA_candidates_address)
+		candidate_NEA_columns = candidate_NEA_data.columns
 	except:
-		print(' ')
-		print(' ')
-		print('ERROR LOADING NEWLY DOWNLOADED DATABASE (kep_koi_address). REVERTING TO PREVIOUS VERSION.')
-		print(' ')
-		print(' ')
-		os.system('rm -rf '+kep_koi_address)
-		os.system('mv '+old_kep_koi_address+' '+kep_koi_address)
-		koi_NEA_data = ascii.read(kep_koi_address)				
-
-	koi_NEA_columns = koi_NEA_data.columns
-
-	#if self.target.lower().startswith('kepler'):
-	if target_prefix.lower() == 'kepler':
-		NEA_data = confirmed_NEA_data
-		NEA_columns = confirmed_NEA_columns
-
-	elif (target_prefix.lower() == 'koi') or (target_prefix.lower() == 'kic'):
-		NEA_data = koi_NEA_data
-		NEA_columns = koi_NEA_columns 
-
-	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
-		NEA_data = confirmed_NEA_data
-		NEA_columns = confirmed_NEA_columns 
-
-	elif (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'tess'):
-		NEA_data = confirmed_NEA_data 
-		NEA_columns = confirmed_NEA_columns
-
-
-
-	if (target_prefix.lower() == 'kepler') or (target_prefix.lower() == 'koi') or (target_prefix.lower() == 'kic'):
-		kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
-		old_kep_fop_address = kep_fop_address[:-4]+'_OLD.csv'
-
-
-
-		if os.path.exists(kep_fop_address):
-			kep_fop_fct = os.path.getctime(kep_fop_address) ### file created time
-		else:
-			kep_fop_fct = 0
-
-		if (current_time - kep_fop_fct > 86400) and (download_new_csvs == 'y'):
-			exofop_username, exofop_pw = get_exofop_credentials()
-
-			#### make the copy!!!! 
-			os.system('cp '+kep_fop_address+' '+old_kep_fop_address)
-
-			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
-
-			koi_exofop_URL = 'https://exofop.ipac.caltech.edu/kepler/download_summary_csv.php?sort=koi'
-			os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+koi_exofop_URL+'" -O "'+kep_fop_address+'"')	
-			print(' ')
-
 		try:
-			exofop_data = pandas.read_csv(kep_fop_address, header=18)
-			exofop_columns = exofop_data.columns
+			print('ERROR LOADING NEWLY DOWNLOADED DATABASE (NEA_candidate_address). REVERTING TO PREVIOUS VERSION.')
+			os.system('rm -rf '+NEA_candidates_address)
+			os.system('mv '+old_NEA_candidates_address+' '+NEA_candidates_address)
+			candidate_NEA_data = ascii.read(NEA_candidates_address)				
+			candidate_NEA_columns = candidate_NEA_data.columns
 		except:
-
-			try:
-				print(' ')
-				print(' ')
-				print('EXCEPTION ENCOUNTERED... new ExoFOP file may be corrupted. Switching to old version.')
-				print(' ')
-				print(' ')
-				#### clobber the new one, revert to the old one, and try again:
-				os.system('rm '+kep_fop_address)
-				os.system('mv '+old_kep_fop_address+' '+kep_fop_address)
-				exofop_data = pandas.read_csv(kep_fop_address, header=18)
-				exofop_columns = exofop_data.columns				
-			except:
-				exofop_data = None
-				exofop_columns = np.array([])			
-				print(' ')
-				print(' ')
-				print('EXCEPTION ENCOUNTERED... could not load exofop_data.')
-				print(' ')
-				print(' ')
+			candidate_NEA_data = None
+			candidate_NEA_columns = np.array([])
+			print('EXCEPTION ENCOUNTERED... could not load NEA_candidate_data.')
 
 
-	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
-
-		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
-		old_k2_fop_address = k2_fop_address[:-4]+'_OLD.csv'
-
-		if os.path.exists(k2_fop_address):
-			k2_fop_fct = os.path.getctime(k2_fop_address) ### file created time
-		else:
-			k2_fop_fct = 0
-
-
-		if (current_time - k2_fop_fct > 86400):	
-			download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
-
-
-			if download_new_csvs == 'y':
-
-				#### make a copy
-				os.system('cp '+k2_fop_address+' '+old_k2_fop_address)
-
-				exofop_username, exofop_pw = get_exofop_credentials()	
-
-				print("DOWNLOADING K2 ExoFOP file (once per day)...")
-				k2_exofop_URL = 'https://exofop.ipac.caltech.edu/k2/download_summary_csv.php?camp=All&sort=target'
-				print('download URL is: ', k2_exofop_URL)
-				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+k2_exofop_URL+'" -O "'+k2_fop_address+'"')	
-
-				print(' ')
-
+	try:
+		if mission == 'kepler':
+			exofop_data = pandas.read_csv(exofop_address, header=18)
+		elif mission == 'k2':
+			exofop_data = pandas.read_csv(exofop_address, header=10)
+		elif mission == 'tess':
+			exofop_data = pandas.read_csv(exofop_address)			
+		exofop_columns = exofop_data.columns
+	except:
 		try:
-			exofop_data = pandas.read_csv(k2_fop_address, header=10)
-			exofop_columns = exofop_data.columns
+			print('EXCEPTION ENCOUNTERED... new ExoFOP file may be corrupted. Switching to old version.')
+			#### clobber the new one, revert to the old one, and try again:
+			os.system('rm '+exofop_address)
+			os.system('mv '+old_exofop_address+' '+exofop_address)
+			if mission == 'kepler':
+				exofop_data = pandas.read_csv(exofop_address, header=18)
+			elif mission == 'k2':
+				exofop_data = pandas.read_csv(exofop_address, header=10)
+			elif mission == 'tess':
+				exofop_data = pandas.read_csv(exofop_address)		
+			exofop_columns = exofop_data.columns	
 		except:
-			try:
-				print(' ')
-				print(' ')
-				print('exofop database possibly corrupted. Reverting to old file.')
-				print(' ')
-				print(' ')
-				os.system('rm '+k2_fop_address)
-				os.system('mv '+old_k2_fop_address+' '+k2_fop_address)
-				exofop_data = pandas.read_csv(k2_fop_address, header=10)
-				exofop_columns = exofop_data.columns
-
-			except:
-				exofop_data = None
-				exofop_columns = np.array([])
-				print('K2 ExoFOP file not loadable. Possibly corrupted.')
+			exofop_data = None
+			exofop_columns = np.array([])			
+			print('EXCEPTION ENCOUNTERED... could not load exofop_data.')
 
 
+	#### need to figure out what to do with NEA_data -- confirmed or candidate?
+	if (target_prefix == 'kepler'):
+		#### if it's kepler, it's a confirmed planet, so use the confirmed planet database.
+		NEA_data, NEA_columns = confirmed_NEA_data, confirmed_NEA_columns
 
-	elif (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tess'):
-
-		tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
-		old_tess_fop_address = tess_fop_address[:-4]+'_OLD.csv'
-
-		if os.path.exists(tess_fop_address):
-			tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
-		else:
-			tess_fop_fct = 0
-
-		if (current_time - tess_fop_fct > 86400):
-
-			download_new_csvs = input('Planet databases are missing or more than one day out of date. Do you want to download the new versions? (Takes a few minutes). y/n: ')
-
-			if download_new_csvs == 'y':
-
-				### make a copy of the old version
-				os.system('cp '+tess_fop_address+' '+old_tess_fop_address)
-
-				exofop_username, exofop_pw = get_exofop_credentials()
-
-				print('DOWNLOADING TESS ExoFOP file (once per day)...')
-				#os.system('wget --tries=1 "https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv" -O "'+tess_fop_address+'"')	
-				tess_exofop_URL = 'https://exofop.ipac.caltech.edu/tess/download_toi.php?sort=toi&output=csv'		
-				os.system('wget --tries=1 --user='+exofop_username+' --password='+exofop_pw+' "'+tess_exofop_URL+'" -O "'+tess_fop_address+'"')						
-				print(' ')
-
-		#NEA_data = ascii.read(NEA_address)
-		#NEA_columns = NEA_data.columns 
-		try:
-			exofop_data = pandas.read_csv(tess_fop_address)
-			exofop_columns = exofop_data.columns
-		except:
-			try:
-				print(' ')
-				print(' ')
-				print('Unable to load the ExoFOP file. Possibly corrupted. Reverting to old version.')
-				os.system('rm '+tess_fop_address)
-				os.system('cp '+old_tess_fop_address+' '+tess_fop_address)
-				exofop_data = pandas.read_csv(tess_fop_address)
-				exofop_columns = exofop_data.columns
-			except:
-				exofop_data = None
-				exofop_columns = np.array([])
-				print('TESS ExoFOP file not loadable. Possibly corrupted.')				
-
-
+	elif target_prefix in np.array(['koi', 'kic', 'k2', 'toi', 'tic', 'epic']):
+		#### likely NOT confirmed, so use the candidate page.
+		NEA_data, NEA_columns = candidate_NEA_data, candidate_NEA_columns
 
 	return NEA_data, NEA_columns, exofop_data, exofop_columns 
-
-
-
 
 
 
@@ -607,8 +495,8 @@ def find_planet_row(self, alias=None, row_known='n'):
 	### check the file created times:
 
 	if self.telescope.lower() == 'kepler':
-		kep_koi_address = moonpydir+'/cumkois_mast.csv'
-		kep_NEA_address = moonpydir+'/confirmed_planets_mast.csv'
+		kep_koi_address = moonpydir+'/NEA_cumkois.csv'
+		kep_NEA_address = moonpydir+'/NEA_confirmed_planets.csv'
 
 		old_kep_koi_address = kep_koi_address[:-4]+'_OLD.csv'
 		old_kep_NEA_address = kep_NEA_address[:-4]+'_OLD.csv'		
@@ -712,15 +600,22 @@ def find_planet_row(self, alias=None, row_known='n'):
 	
 	#### K2 HANDLING
 	elif self.telescope.lower() == 'k2':
-		k2_NEA_address = moonpydir+'/cumk2ois_mast.txt'
+		#k2_NEA_address = moonpydir+'/cumk2ois.txt'
+		k2_NEA_address = moonpydir+'/NEA_confirmed_planets.csv'
+		k2oi_address = moonpydir+'/cumko2is.csv'		
+
+		print('row_known: ', row_known)
 
 		if row_known == 'n':
 			if str(row_target).lower().startswith('k2'):
+
 				target_letter = str(row_target[-1])
 				if ' ' in row_target:
 					NEA_targetname = row_target
 				else:
 					NEA_targetname = str(row_target[:-1])+' '+str(target_letter)
+
+				print('NEA_targetname: ', NEA_targetname)
 
 				if "NEA_rowidx" in dir(self):
 					NEA_rowidx = self.NEA_rowidx
@@ -728,30 +623,49 @@ def find_planet_row(self, alias=None, row_known='n'):
 					NEA_rowidx = np.where(np.char.lower(self.NEA_data['pl_name']) == NEA_targetname.lower())[0]
 
 				exofop_rowidx = np.nan
-				print('NEA_rowidx = ', NEA_rowidx)
-				print('exofop_rowidx = ', exofop_rowidx) 
+
+				print('(find_planet_row) k2 NEA_rowidx = ', NEA_rowidx)
+				print('(find_planet_row) k2 exofop_rowidx = ', exofop_rowidx) 
 				print("number of rows matching this description = ", len(NEA_rowidx))
+
+				#### choose the default
+				if len(NEA_rowidx) > 1:
+					NEA_rowidx_idx = np.where(self.NEA_data['default_flag'][NEA_rowidx] == 1)[0]
+					NEA_rowidx = NEA_rowidx[NEA_rowidx_idx]
+					print('default NEA_rowidx = ', NEA_rowidx)
+
 
 			elif str(row_target).lower().startswith('epic'):
 				NEA_targetname = row_target[4:] ### just the numbers!
 				if (NEA_targetname.startswith(' ')) or (NEA_targetname.startswith('-')):
 					NEA_targetname = NEA_targetname[1:]
 				
+
+				print('NEA_targetname: ', NEA_targetname)
 				try:
 					if 'exofop_rowidx' in dir(self):
 						exofop_rowidx = self.exofop_rowidx 
 					else:
-						exofop_rowidx = np.where(np.char.lower(self.exofop_data['EPIC ID']) == NEA_targetname.lower())[0]
+						exofop_rowidx = np.where(np.char.lower(np.array(self.exofop_data['EPIC ID']).astype(str)) == str(NEA_targetname).lower())[0]
 				
 				except:
+					traceback.print_exc()
 					print('unable to extract the exofop_rowidx')
 					exofop_rowidx = np.nan 
 
 				try:
 					if "NEA_rowidx" in dir(self):
 						NEA_rowidx = self.NEA_rowidx	
-					else:			
-						NEA_rowidx = np.where(np.char.lower(self.NEA_data['epic_name']) == NEA_targetname.lower())[0]
+					else:	
+						traceback.print_exc()		
+						NEA_rowidx = np.where(np.char.lower(np.array(self.NEA_data['epic_name']).astype(str)) == str(NEA_targetname).lower())[0]
+
+
+					#### choose the default
+					if len(NEA_rowidx) > 1:
+						NEA_rowidx_idx = np.where(self.NEA_data['default_flag'][NEA_rowidx] == 1)[0]
+						NEA_rowidx = NEA_rowidx[NEA_rowidx_idx]
+						print('default NEA_rowidx = ', NEA_rowidx)
 				
 				except:
 					print('unable to extract the NEA_rowidx')
@@ -770,6 +684,11 @@ def find_planet_row(self, alias=None, row_known='n'):
 			except:
 				NEA_rowidx = np.nan
 				#self.NEA_rowidx = NEA_rowidx 
+
+		else:
+			NEA_rowidx = self.NEA_rowidx
+			exofop_rowidx = self.exofop_rowidx
+
 
 		try:
 			return NEA_rowidx, exofop_rowidx, NEA_targetname
@@ -1394,15 +1313,25 @@ def find_neighbors(self, is_neighbor='n'):
 
 	elif self.telescope.lower() == 'k2':
 		NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known=row_known)
-		if NEA_rowidx < 10:
-			check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
-		else:
-			check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
 
-		if exofop_rowidx < 10:
-			check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
+		if np.isfinite(NEA_rowidx):
+			if NEA_rowidx < 10:
+				check_NEA_rows = np.arange(0,NEA_rowidx+11,1)
+			else:
+				check_NEA_rows = np.arange(NEA_rowidx-10,NEA_rowidx+10,1)
 		else:
-			check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+			check_NEA_rows = np.array([NEA_rowidx])
+
+
+		if np.isfinite(exofop_rowidx):
+			if exofop_rowidx < 10:
+				check_exofop_rows = np.arange(0,exofop_rowidx+11,1)
+			else:
+				check_exofop_rows = np.arange(exofop_rowidx-10,exofop_rowidx+11,1)
+		else:
+			check_exofop_rows = np.array([exofop_rowidx])
+
+
 		print('NEA_rowidx, exofop_rowidx = ', NEA_rowidx, exofop_rowidx)
 	
 
