@@ -851,6 +851,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 		nactual_sectors = 0
 		nempty_in_a_row = 0
 		sector_numbers = []
+		empty_curlscript_sectors = []
 
 
 		sector_filename = 'tess_sectors.txt'
@@ -889,7 +890,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 					else:
 						print('attempting to download curlscript for the first time.')
 						sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
-						print('sector_curl_UR')
+						print('sector_curl_URL')
 						os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
 
 					curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
@@ -916,6 +917,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 					else:
 						print('sector '+str(sector)+' curlscript file was empty...')
 						print("REMOVING!")
+						empty_curlscript_sectors.append(sector)
 						nempty_in_a_row += 1
 						#### remove it!
 						os.system('rm -rf '+moonpydir+'/sector'+str(sector)+'_curlscript.txt')
@@ -983,6 +985,9 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 
 		for sector in np.arange(1,nsectors+1,1):
+			if sector in empty_curlscript_sectors:
+				continue
+				
 
 			if os.path.exists(central_data_dir+'/TESS_lightcurves') == False:
 				os.system('mkdir '+central_data_dir+'/TESS_lightcurves')

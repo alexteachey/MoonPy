@@ -259,6 +259,10 @@ def get_databases(target_prefix):
 	#### NEW FUNCTIONALITY -- ONE NEA TABLE FOR KEPLER, K2 AND TESS. 
 	kep_koi_address = moonpydir+'/cumkois_mast.csv'
 	kep_NEA_address = moonpydir+'/confirmed_planets_mast.csv'
+
+	#### make back-ups in case things don't go to plan
+	old_kep_koi_address = kep_koi_address[:-4]+'_OLD.csv'
+	old_kep_NEA_address = kep_NEA_address[:-4]+'_OLD.csv'
 	
 	if os.path.exists(kep_NEA_address):
 		kep_NEA_fct = os.path.getctime(kep_NEA_address) ### file created time
@@ -279,6 +283,10 @@ def get_databases(target_prefix):
 
 
 	if download_new_csvs == 'y':
+
+		#### make a copy!
+		os.system('cp '+kep_NEA_address+' '+old_kep_NEA_address)
+		os.system('cp '+kep_koi_address+' '+old_kep_koi_address)		
 
 		exofop_username, exofop_pw = get_exofop_credentials()
 
@@ -376,11 +384,34 @@ def get_databases(target_prefix):
 
 
 	#### LOAD THE DATA IN
-	confirmed_NEA_data = ascii.read(kep_NEA_address)
-	#NEA_data = pandas.read_csv(kep_NEA_address)
+	try:
+		confirmed_NEA_data = ascii.read(kep_NEA_address)
+	except:
+		print(' ')
+		print(' ')
+		print('ERROR LOADING NEWLY DOWNLOADED DATABASE (kep_NEA_address). REVERTING TO PREVIOUS VERSION.')
+		print(' ')
+		print(' ')
+		os.system('rm -rf '+kep_NEA_address)
+		os.system('mv '+old_kep_NEA_address+' '+kep_NEA_address)
+		confirmed_NEA_data = ascii.read(kep_NEA_address)		
+
 	confirmed_NEA_columns = confirmed_NEA_data.columns
-	koi_NEA_data = ascii.read(kep_koi_address)
-	#NEA_data = pandas.read_csv(kep_NEA_address)
+
+
+
+	try:
+		koi_NEA_data = ascii.read(kep_koi_address)
+	except:
+		print(' ')
+		print(' ')
+		print('ERROR LOADING NEWLY DOWNLOADED DATABASE (kep_koi_address). REVERTING TO PREVIOUS VERSION.')
+		print(' ')
+		print(' ')
+		os.system('rm -rf '+kep_koi_address)
+		os.system('mv '+old_kep_koi_address+' '+kep_koi_address)
+		koi_NEA_data = ascii.read(kep_koi_address)				
+
 	koi_NEA_columns = koi_NEA_data.columns
 
 	#if self.target.lower().startswith('kepler'):
@@ -402,10 +433,12 @@ def get_databases(target_prefix):
 
 
 
-
 	if (target_prefix.lower() == 'kepler') or (target_prefix.lower() == 'koi') or (target_prefix.lower() == 'kic'):
 		kep_fop_address = moonpydir+'/kepler_exofop_targets.csv'
-	
+		old_kep_fop_address = kep_fop_address[:-4]+'_OLD.csv'
+
+
+
 		if os.path.exists(kep_fop_address):
 			kep_fop_fct = os.path.getctime(kep_fop_address) ### file created time
 		else:
@@ -413,6 +446,9 @@ def get_databases(target_prefix):
 
 		if (current_time - kep_fop_fct > 86400) and (download_new_csvs == 'y'):
 			exofop_username, exofop_pw = get_exofop_credentials()
+
+			#### make the copy!!!! 
+			os.system('cp '+kep_fop_address+' '+old_kep_fop_address)
 
 			print("DOWNLOADING Kepler ExoFOP file (once per day)...")
 
@@ -424,14 +460,33 @@ def get_databases(target_prefix):
 			exofop_data = pandas.read_csv(kep_fop_address, header=18)
 			exofop_columns = exofop_data.columns
 		except:
-			exofop_data = None
-			exofop_columns = np.array([])			
-			print('EXCEPTION ENCOUNTERED... could not load exofop_data.')
+
+			try:
+				print(' ')
+				print(' ')
+				print('EXCEPTION ENCOUNTERED... new ExoFOP file may be corrupted. Switching to old version.')
+				print(' ')
+				print(' ')
+				#### clobber the new one, revert to the old one, and try again:
+				os.system('rm '+kep_fop_address)
+				os.system('mv '+old_kep_fop_address+' '+kep_fop_address)
+				exofop_data = pandas.read_csv(kep_fop_address, header=18)
+				exofop_columns = exofop_data.columns				
+			except:
+				exofop_data = None
+				exofop_columns = np.array([])			
+				print(' ')
+				print(' ')
+				print('EXCEPTION ENCOUNTERED... could not load exofop_data.')
+				print(' ')
+				print(' ')
 
 
 	elif (target_prefix.lower() == 'k2') or (target_prefix.lower() == 'epic'):
 
 		k2_fop_address = moonpydir+'/k2_exofop_targets.csv'
+		old_k2_fop_address = k2_fop_address[:-4]+'_OLD.csv'
+
 		if os.path.exists(k2_fop_address):
 			k2_fop_fct = os.path.getctime(k2_fop_address) ### file created time
 		else:
@@ -443,6 +498,9 @@ def get_databases(target_prefix):
 
 
 			if download_new_csvs == 'y':
+
+				#### make a copy
+				os.system('cp '+k2_fop_address+' '+old_k2_fop_address)
 
 				exofop_username, exofop_pw = get_exofop_credentials()	
 
@@ -457,15 +515,29 @@ def get_databases(target_prefix):
 			exofop_data = pandas.read_csv(k2_fop_address, header=10)
 			exofop_columns = exofop_data.columns
 		except:
-			exofop_data = None
-			exofop_columns = np.array([])
-			print('K2 ExoFOP file not loadable. Possibly corrupted. The system may be down.')
+			try:
+				print(' ')
+				print(' ')
+				print('exofop database possibly corrupted. Reverting to old file.')
+				print(' ')
+				print(' ')
+				os.system('rm '+k2_fop_address)
+				os.system('mv '+old_k2_fop_address+' '+k2_fop_address)
+				exofop_data = pandas.read_csv(k2_fop_address, header=10)
+				exofop_columns = exofop_data.columns
+
+			except:
+				exofop_data = None
+				exofop_columns = np.array([])
+				print('K2 ExoFOP file not loadable. Possibly corrupted.')
 
 
 
 	elif (target_prefix.lower() == 'tic') or (target_prefix.lower() == 'toi') or (target_prefix.lower() == 'tess'):
 
 		tess_fop_address = moonpydir+'/tess_exofop_targets.csv'
+		old_tess_fop_address = tess_fop_address[:-4]+'_OLD.csv'
+
 		if os.path.exists(tess_fop_address):
 			tess_fop_fct = os.path.getctime(tess_fop_address) ### file created time
 		else:
@@ -477,6 +549,9 @@ def get_databases(target_prefix):
 
 			if download_new_csvs == 'y':
 
+				### make a copy of the old version
+				os.system('cp '+tess_fop_address+' '+old_tess_fop_address)
+
 				exofop_username, exofop_pw = get_exofop_credentials()
 
 				print('DOWNLOADING TESS ExoFOP file (once per day)...')
@@ -487,8 +562,23 @@ def get_databases(target_prefix):
 
 		#NEA_data = ascii.read(NEA_address)
 		#NEA_columns = NEA_data.columns 
-		exofop_data = pandas.read_csv(tess_fop_address)
-		exofop_columns = exofop_data.columns
+		try:
+			exofop_data = pandas.read_csv(tess_fop_address)
+			exofop_columns = exofop_data.columns
+		except:
+			try:
+				print(' ')
+				print(' ')
+				print('Unable to load the ExoFOP file. Possibly corrupted. Reverting to old version.')
+				os.system('rm '+tess_fop_address)
+				os.system('cp '+old_tess_fop_address+' '+tess_fop_address)
+				exofop_data = pandas.read_csv(tess_fop_address)
+				exofop_columns = exofop_data.columns
+			except:
+				exofop_data = None
+				exofop_columns = np.array([])
+				print('TESS ExoFOP file not loadable. Possibly corrupted.')				
+
 
 
 	return NEA_data, NEA_columns, exofop_data, exofop_columns 
@@ -519,6 +609,9 @@ def find_planet_row(self, alias=None, row_known='n'):
 	if self.telescope.lower() == 'kepler':
 		kep_koi_address = moonpydir+'/cumkois_mast.csv'
 		kep_NEA_address = moonpydir+'/confirmed_planets_mast.csv'
+
+		old_kep_koi_address = kep_koi_address[:-4]+'_OLD.csv'
+		old_kep_NEA_address = kep_NEA_address[:-4]+'_OLD.csv'		
 
 		if row_known == 'n':
 			if str(row_target).lower().startswith('kepler'):
