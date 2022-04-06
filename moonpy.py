@@ -142,6 +142,9 @@ class MoonpyLC(object):
 		global k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns 
 		global tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns 
 
+		print('original MoonpyLC targetID input: ', targetID)
+
+
 		if type(telescope) == str:
 			telescope = telescope.lower()
 
@@ -325,12 +328,14 @@ class MoonpyLC(object):
 				#kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = functimer(self.get_databases())
 				
 				try:
+					NEA_data = kepler_NEA_data
 					self.NEA_data = kepler_NEA_data
 					self.NEA_columns = kepler_NEA_columns
 					self.exofop_data = kepler_exofop_data
 					self.exofop_columns = kepler_exofop_columns
 				except:
 					kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns = functimer(get_databases('kepler'))
+					NEA_data = kepler_NEA_data
 					self.NEA_data = kepler_NEA_data
 					self.NEA_columns = kepler_NEA_columns
 					self.exofop_data = kepler_exofop_data
@@ -340,6 +345,7 @@ class MoonpyLC(object):
 			elif (self.target.lower().startswith('koi')) or (self.target.lower().startswith('kic')):
 
 				try:
+					NEA_data = koi_NEA_data
 					self.NEA_data = koi_NEA_data
 					self.NEA_columns = koi_NEA_columns
 					self.exofop_data = koi_exofop_data
@@ -347,6 +353,7 @@ class MoonpyLC(object):
 
 				except:
 					koi_NEA_data, koi_NEA_columns, koi_exofop_data, koi_exofop_columns = functimer(get_databases('koi'))
+					NEA_data = koi_NEA_data
 					self.NEA_data = koi_NEA_data
 					self.NEA_columns = koi_NEA_columns
 					self.exofop_data = koi_exofop_data
@@ -358,13 +365,15 @@ class MoonpyLC(object):
 			
 			try:
 				#k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(self.get_databases())
+				NEA_data = k2_NEA_data
 				self.NEA_data = k2_NEA_data
 				self.NEA_columns = k2_NEA_columns
 				self.exofop_data = k2_exofop_data
 				self.exofop_columns = k2_exofop_columns
 
 			except:
-				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(get_databases('k2'))				
+				k2_NEA_data, k2_NEA_columns, k2_exofop_data, k2_exofop_columns = functimer(get_databases('k2'))
+				NEA_data = k2_NEA_data 	
 				self.NEA_data = k2_NEA_data
 				self.NEA_columns = k2_NEA_columns
 				self.exofop_data = k2_exofop_data
@@ -375,6 +384,7 @@ class MoonpyLC(object):
 		elif self.target.lower().startswith('tess') or self.target.lower().startswith('tic') or self.target.lower().startswith('toi'):
 			try:
 				#tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(self.get_databases())
+				NEA_data = tess_NEA_data
 				self.NEA_data = tess_NEA_data
 				self.NEA_columns = tess_NEA_columns
 				self.exofop_data = tess_exofop_data
@@ -382,7 +392,8 @@ class MoonpyLC(object):
 				first_tess = 'n'
 
 			except:
-				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(get_databases('toi'))				
+				tess_NEA_data, tess_NEA_columns, tess_exofop_data, tess_exofop_columns = functimer(get_databases('toi'))		
+				NEA_data = tess_NEA_data		
 				self.NEA_data = tess_NEA_data
 				self.NEA_columns = tess_NEA_columns
 				self.exofop_data = tess_exofop_data
@@ -597,6 +608,8 @@ class MoonpyLC(object):
 				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
 				exofop_columns = exofop_data.columns
 
+				self.NEA_data = NEA_data
+				self.NEA_columns = NEA_columns 
 
 
 			### KEPLER HANDLING
@@ -815,29 +828,50 @@ class MoonpyLC(object):
 
 						try:
 							### does not provide a TIC number!!!
-							tess_ra, tess_dec = np.array(NEA_data['ra'])[NEA_rowidx][0], np.array(NEA_data['dec'])[NEA_rowidx][0]
+							try:
+								tess_ra, tess_dec = np.array(tess_NEA_data['ra'])[NEA_rowidx][0], np.array(tess_NEA_data['dec'])[NEA_rowidx][0]
+							except:
+								try:
+									tess_ra, tess_dec = np.array(tess_NEA_data['ra'])[NEA_rowidx], np.array(tess_NEA_data['dec'])[NEA_rowidx]
+								except:
+									try:
+										tess_ra, tess_dec = np.array(self.NEA_data['ra'])[NEA_rowidx][0], np.array(self.NEA_data['dec'])[NEA_rowidx][0]
+									except:
+										tess_ra, tess_dec = np.array(self.NEA_data['ra'])[NEA_rowidx], np.array(self.NEA_data['dec'])[NEA_rowidx]		
+																		
 							ticname = find_TIC_alias(self.target)
 							ticnum = ticname[ticname.find('TIC'):]
 							if ticnum.startswith(' ') or ticnum.startswith('-'):
 								ticnum = ticnum[1:]							
-						except:
-							try:
-								tess_ra, tess_dec = np.array(NEA_data['ra'])[NEA_rowidx], np.array(NEA_data['dec'])[NEA_rowidx]
-								ticname = find_TIC_alias(self.target)
-								ticnum = ticname[ticname.find('TIC'):]
-								if ticnum.startswith(' ') or ticnum.startswith('-'):
-									ticnum = ticnum[1:]								
+							"""
 							except:
 								try:
-									tess_ra, tess_dec = np.array(exofop_data['RA'])[exofop_rowidx], np.array(exofop_data['Dec'])[exofop_rowidx]
-									ticnum = np.array(exofop_data['TIC ID'][exofop_rowidx])
-									ticname = 'TIC '+str(ticnum)							
-
-								except:								
+									tess_ra, tess_dec = np.array(tess_NEA_data['ra'])[NEA_rowidx], np.array(tess_NEA_data['dec'])[NEA_rowidx]
 									ticname = find_TIC_alias(self.target)
 									ticnum = ticname[ticname.find('TIC'):]
 									if ticnum.startswith(' ') or ticnum.startswith('-'):
-										ticnum = ticnum[1:]
+										ticnum = ticnum[1:]			
+							"""
+
+
+						except:
+
+							try:
+								try:
+									tess_ra, tess_dec = np.array(tess_exofop_data['RA'])[exofop_rowidx], np.array(tess_exofop_data['Dec'])[exofop_rowidx]
+									ticnum = np.array(tess_exofop_data['TIC ID'][exofop_rowidx])
+									ticname = 'TIC '+str(ticnum)		
+								except:
+									tess_ra, tess_dec = np.array(self.exofop_data['RA'])[exofop_rowidx], np.array(self.exofop_data['Dec'])[exofop_rowidx]		
+									ticnum = np.array(self.exofop_data['TIC ID'][exofop_rowidx])	
+							
+								ticname = 'TIC '+str(ticnum)											
+
+							except:								
+								ticname = find_TIC_alias(self.target)
+								ticnum = ticname[ticname.find('TIC'):]
+								if ticnum.startswith(' ') or ticnum.startswith('-'):
+									ticnum = ticnum[1:]
 
 						try:
 							print('tess_ra, tess_dec ', tess_ra, tess_dec)
@@ -935,7 +969,7 @@ class MoonpyLC(object):
 		else:
 			lc_times, lc_fluxes, lc_errors, lc_fluxes_detrend, lc_errors_detrend, lc_flags = np.array(lc_times, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_fluxes, dtype=object), np.array(lc_errors, dtype=object), np.array(lc_flags, dtype=object)
 		
-		print('lc_times = ', lc_times)
+		#print('lc_times = ', lc_times)
 
 		try:
 			nquarters = len(lc_quarters)

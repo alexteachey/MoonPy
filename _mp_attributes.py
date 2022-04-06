@@ -1275,56 +1275,56 @@ def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=No
 
 def find_taus(self, times=None, fluxes=None, errors=None):
 	print("calling _mp_attributes.py/find_taus().")	
+	#try:
+	#	transit_midtimes = self.taus 
+
+	#except:
 	try:
-		transit_midtimes = self.taus 
+		transit_midtimes = [self.tau0]
+		print('self in question: ', self.target)
+		print('tau0 = ', self.tau0)
+		print('looking for transit times...')
+		print('self.period = ', self.period)
+
+		if type(times) != type(None):
+			self.times = times 
+
+		if type(fluxes) != type(None):
+			self.fluxes = fluxes
+
+		if type(errors) != type(None):
+			self.errors = errors
+
+		#print('self.times = ', self.times)
+
+		if (self.period == 0.0) or np.isfinite(self.period) == False:
+			manual_period_entry = input('Something wrong with the planet period... please enter a value: ')
+			self.period = float(manual_period_entry)
+
+		while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
+			#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
+			### the transit_midtime you just added isn't the first transit!
+			transit_midtimes.append(transit_midtimes[-1] - self.period)
+		transit_midtimes = np.sort(transit_midtimes).tolist()
+		print('appended '+str(len(transit_midtimes))+' transit midtimes.')
+
+		next_transit = transit_midtimes[-1]+self.period
+		
+		nquarters = len(self.quarters)
+		if nquarters != 1:
+			maxtime = np.nanmax(np.concatenate((self.times)))
+
+		elif nquarters == 1:
+			maxtime = np.nanmax(self.times)
+
+		while next_transit < maxtime:
+			transit_midtimes.append(next_transit)
+			next_transit = transit_midtimes[-1]+self.period
+		self.taus = np.array(transit_midtimes)
 
 	except:
-		try:
-			transit_midtimes = [self.tau0]
-			print('self in question: ', self.target)
-			print('tau0 = ', self.tau0)
-			print('looking for transit times...')
-			print('self.period = ', self.period)
-
-			if type(times) != type(None):
-				self.times = times 
-
-			if type(fluxes) != type(None):
-				self.fluxes = fluxes
-
-			if type(errors) != type(None):
-				self.errors = errors
-
-			#print('self.times = ', self.times)
-
-			if (self.period == 0.0) or np.isfinite(self.period) == False:
-				manual_period_entry = input('Something wrong with the planet period... please enter a value: ')
-				self.period = float(manual_period_entry)
-
-			while (transit_midtimes[-1] - self.period) > np.nanmin(np.hstack(self.times)):
-				#print('appending transit_midtime: ', transit_midtimes[-1] - self.period)
-				### the transit_midtime you just added isn't the first transit!
-				transit_midtimes.append(transit_midtimes[-1] - self.period)
-			transit_midtimes = np.sort(transit_midtimes).tolist()
-			print('appended '+str(len(transit_midtimes))+' transit midtimes.')
-
-			next_transit = transit_midtimes[-1]+self.period
-			
-			nquarters = len(self.quarters)
-			if nquarters != 1:
-				maxtime = np.nanmax(np.concatenate((self.times)))
-
-			elif nquarters == 1:
-				maxtime = np.nanmax(self.times)
-
-			while next_transit < maxtime:
-				transit_midtimes.append(next_transit)
-				next_transit = transit_midtimes[-1]+self.period
-			self.taus = np.array(transit_midtimes)
-
-		except:
-			#traceback.print_exc()
-			raise Exception('an exception was raised while calling find_taus(). Consider turning on traceback if you want to know more.')
+		#traceback.print_exc()
+		raise Exception('an exception was raised while calling find_taus(). Consider turning on traceback if you want to know more.')
 
 
 
