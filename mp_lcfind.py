@@ -13,6 +13,7 @@ import socket
 from urllib.request import urlretrieve
 import requests 
 from mp_tools import * 
+import copy 
 
 #moonpydir = os.getcwd()
 
@@ -884,6 +885,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 
 		nsectors = 99
 		nactual_sectors = 0
+		last_existing_sector = 1
 		nempty_in_a_row = 0
 		sector_numbers = []
 		empty_curlscript_sectors = []
@@ -943,6 +945,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 					if len(sector_prefix) > 0:
 						#print("sector_prefix, sector_suffix = ", sector_prefix, sector_suffix)
 						nactual_sectors += 1
+						#last_existing_sector = copy.copy(sector) 
+						nsectors = sector
 						### reset nempty_in_a_row
 						nempty_in_a_row = 0 
 
@@ -979,7 +983,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			sector_numbers = []
 
 			nactual_sectors = 0 
-			nsectors = 0 
+			#nsectors = 0 
 			#### just open it, so you can count the number of sectors
 			sectorfile = open(moonpydir+'/'+sector_filename, mode='r')
 			for nline, line in enumerate(sectorfile):
@@ -988,8 +992,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				nsectors += 1		
 			sectorfile.close()
 
-			nsectors = nactual_sectors
-			print('nsectors = ', nsectors)			
+			#nsectors = nactual_sectors
+			#print('nsectors = ', nsectors)			
 
 			for sector in sector_numbers:
 				#print('sector '+str(sector))
@@ -1019,7 +1023,8 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			unobserved_sectors = []
 
 
-		for sector in np.arange(1,nsectors+1,1):
+
+		for sector in sector_numbers:
 			if sector in empty_curlscript_sectors:
 				continue
 
