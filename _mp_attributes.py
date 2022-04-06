@@ -287,36 +287,44 @@ def get_databases(target_prefix):
 		NEA_confirmed_fct = os.path.getctime(NEA_confirmed_address) ### file created time
 	else:
 		NEA_confirmed_fct = 0
+	NEA_confirmed_age_seconds = current_time - NEA_confirmed_fct
+	NEA_confirmed_age_days = NEA_confirmed_age_seconds / 86400
 
 	if os.path.exists(NEA_candidates_address):
 		NEA_candidates_fct = os.path.getctime(NEA_candidates_address) ### file created time
 	else:
 		NEA_candidates_fct = 0
+	NEA_candidates_age_seconds = current_time - NEA_candidates_fct
+	NEA_candidates_age_days = NEA_candidates_age_seconds / 86400
 
 	if os.path.exists(exofop_address):
 		exofop_fct = os.path.getctime(exofop_address) ### file created time
 	else:
 		exofop_fct = 0
+	exofop_age_seconds = current_time - exofop_fct
+	exofop_age_days = exofop_age_seconds / 86400
 
 
 	#### determine if any are out of date..
-	if current_time - NEA_confirmed_fct > 86400:
+	if NEA_confirmed_age_days > 1:
 		NEA_confirmed_ood = True
-		print('NASA Exoplanet Archive confirmed planets database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')
+		print('NASA Exoplanet Archive confirmed planets database is '+str(NEA_confirmed_age_days)+' days out of date.')
+
 	else:
 		NEA_confirmed_ood = False
 
-	if current_time - NEA_candidates_fct > 86400:
-		print('NASA Exoplanet Archive candidates database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')		
+	if NEA_candidates_age_days > 1:
+		print('NASA Exoplanet Archive candidates database is '+str(NEA_candidates_age_days)+' days out of date.')		
 		NEA_candidates_ood = True
 	else:
 		NEA_candidates_ood = False
 
-	if current_time - exofop_fct > 86400:
-		print('ExoFOP database is '+str((current_time - NEA_confirmed_fct)/86400)+' days out of date.')			
+	if exofop_age_days > 1:
+		print('ExoFOP database is '+str(exofop_age_days)+' days out of date.')			
 		exofop_ood = True
 	else:
 		exofop_ood = False 
+
 
 
 	if np.any((NEA_confirmed_ood, NEA_candidates_ood, exofop_ood)): ### one day old

@@ -52,6 +52,11 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	        show_model = 'n'
 
 
+	if self.telescope.lower() == 'k2' and include_flagged == 'n':
+		print(' ')
+		print('BE ADVISED: K2 photometry may have lots of excluded data points due to flagging.')
+		print("call plot_lc(include_flagged='y') if the light curve is sparse.")
+		print(' ')
 
 	if period == None:
 		try:
