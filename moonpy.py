@@ -126,7 +126,7 @@ if os.path.exists(central_data_dir+'/K2_lightcurves') == False:
 class MoonpyLC(object):
 
 	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector
-	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs
+	from _mp_attributes import find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs, get_future_transits
 	from _mp_manipulation import fit, prep_for_CNN, initialize_priors, detrend, gen_batman
 	from _mp_planet_fitter import run_planet_fit
 

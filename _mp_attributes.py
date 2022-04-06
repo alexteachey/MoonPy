@@ -1648,7 +1648,13 @@ def get_future_transits(self, num_transits=20, output_format='datetime', native_
 	elif (output_format.lower() == 'btjd') or (output_format.lower() == 'tjd'):
 		output_taus = future_taus.jd - 2457000
 
+
+	self.future_taus = future_taus #### JD
+	self.output_taus = output_taus #### specified format
+
 	return future_taus, output_taus
+
+
 
 
 
