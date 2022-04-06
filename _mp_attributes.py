@@ -13,6 +13,7 @@ from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun
 from astropy.timeseries import LombScargle
 import socket 
 import warnings
+from datetime import datetime 
 
 
 #### BELOW ARE MOONPY PACKAGES
@@ -246,6 +247,20 @@ def get_exofop_credentials():
 
 
 
+def get_file_age(filepath, format='days'):
+	current_time = time.time()
+	if os.path.exists(filepath):
+		file_creation_time = os.path.getctime(filepath)
+	else:
+		file_creation_time = 0
+		print(filepath+' NOT FOUND. SETTING CREATION TIME = 0.')
+	age_seconds = current_time - file_creation_time
+	age_days = age_seconds / 86400
+
+	if format=='days':
+		return age_days
+	elif format=='seconds':
+		return age_seconds 
 
 
 
@@ -283,26 +298,9 @@ def get_databases(target_prefix):
 
 
 	##### CHECK FILE CREATION TIMES
-	if os.path.exists(NEA_confirmed_address):
-		NEA_confirmed_fct = os.path.getctime(NEA_confirmed_address) ### file created time
-	else:
-		NEA_confirmed_fct = 0
-	NEA_confirmed_age_seconds = current_time - NEA_confirmed_fct
-	NEA_confirmed_age_days = NEA_confirmed_age_seconds / 86400
-
-	if os.path.exists(NEA_candidates_address):
-		NEA_candidates_fct = os.path.getctime(NEA_candidates_address) ### file created time
-	else:
-		NEA_candidates_fct = 0
-	NEA_candidates_age_seconds = current_time - NEA_candidates_fct
-	NEA_candidates_age_days = NEA_candidates_age_seconds / 86400
-
-	if os.path.exists(exofop_address):
-		exofop_fct = os.path.getctime(exofop_address) ### file created time
-	else:
-		exofop_fct = 0
-	exofop_age_seconds = current_time - exofop_fct
-	exofop_age_days = exofop_age_seconds / 86400
+	NEA_confirmed_age_days = get_file_age(NEA_confirmed_address)	
+	NEA_candidates_age_days = get_file_age(NEA_candidates_address)
+	exofop_age_days = get_file_age(exofop_address)
 
 
 	#### determine if any are out of date..
@@ -326,16 +324,53 @@ def get_databases(target_prefix):
 		exofop_ood = False 
 
 
+	opt_out_filepath = moonpydir+'/'+target_prefix+'_updated_databases_opt_out.txt'
+	opt_out_age_days = get_file_age(opt_out_filepath)
 
 	if np.any((NEA_confirmed_ood, NEA_candidates_ood, exofop_ood)): ### one day old
-		#### CHECK WITH USER ABOUT RE-DOWNLOADING.
-		print(' ')
-		print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
-		print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
-		print(' ')
-		download_new_csvs = input('Download updated databases? y/n: ')
+
+		#### check to see if the updated_databases_decision file exists.
+		if os.path.exists(opt_out_filepath):
+
+			#### check to see if the file is more than one day old.
+			if opt_out_age_days > 1:
+				#### remove it.
+				os.system('rm '+opt_out_filepath)
+
+				#### CHECK WITH USER ABOUT RE-DOWNLOADING.
+				print(' ')
+				print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
+				print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
+				print(' ')
+				download_new_csvs = input('Download updated databases? y/n: ')
+
+			else:
+				download_new_csvs = 'n'
+
+		else:
+			#### CHECK WITH USER ABOUT RE-DOWNLOADING.
+			print(' ')
+			print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
+			print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
+			print(' ')
+			download_new_csvs = input('Download updated databases? y/n: ')
+
+
+
 	else:
 		download_new_csvs = 'n'
+		opt_out_age_days = get_file_age(opt_out_filepath)
+
+	if (download_new_csvs == 'n') and (opt_out_age_days > 1): ##### don't need to be re-writing this every time you run a light curve!
+		#### write this to a file so you don't have to keep asking every time.
+		updated_databases_decision_file = open(moonpydir+'/'+target_prefix+'_updated_databases_opt_out.txt', mode='w')
+		now = datetime.now()
+		dt_string = now.strftime('%d/%m/%Y %H:%M:%S')
+		updated_databases_decision_file.write('You opted not to update the databases on '+dt_string+'\n')
+		updated_databases_decision_file.write('NEA confirmed planets database age is '+str(NEA_confirmed_age_days)+' days. \n')
+		updated_databases_decision_file.write('NEA candidate planets database age is '+str(NEA_candidates_age_days)+' days. \n')		
+		updated_databases_decision_file.write('ExoFOP planet database age is '+str(exofop_age_days)+' days. \n')		
+		updated_databases_decision_file.close()
 
 
 
