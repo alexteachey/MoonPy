@@ -406,7 +406,8 @@ def get_databases(target_prefix):
 		confirmed_NEA_columns = confirmed_NEA_data.columns
 
 		#### if this succeeds, you can delete the old versions.
-		os.system('rm '+old_NEA_confirmed_address)
+		if os.path.exists(old_NEA_confirmed_address):
+			os.system('rm '+old_NEA_confirmed_address)
 	except:
 		try:
 			print(' ')
@@ -428,7 +429,8 @@ def get_databases(target_prefix):
 		candidate_NEA_columns = candidate_NEA_data.columns
 
 		#### if this succeeds, you can remove the old version.
-		os.system('rm '+old_NEA_candidates_address)
+		if os.path.exists(old_NEA_candidates_address):
+			s.system('rm '+old_NEA_candidates_address)
 
 	except:
 		try:
@@ -453,8 +455,9 @@ def get_databases(target_prefix):
 		exofop_columns = exofop_data.columns
 
 		#### if this succeeds, you can remove the old version.
-		os.system('rm '+old_exofop_address)
-		
+		if os.path.exists(old_exofop_address):
+			os.system('rm '+old_exofop_address)
+
 	except:
 		try:
 			print('EXCEPTION ENCOUNTERED... new ExoFOP file may be corrupted. Switching to old version.')
