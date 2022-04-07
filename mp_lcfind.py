@@ -657,7 +657,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 		
 		except:
 			print('first except triggered.')
-			time.sleep(10)
+			time.sleep(2)
 			try:
 				print('lc may not have been downloaded. Attempting to download...')
 				kepler_fits_download(targID, clobber=clobber)
@@ -666,7 +666,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 			
 			except:
 				print('second except triggered.')
-				time.sleep(10)
+				time.sleep(2)
 				traceback.print_exc()
 				raise Exception("Something went wrong in 'kplr_target_download()' (see traceback).")
 
@@ -677,7 +677,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 		
 		except:
 			print('first except triggered.')
-			time.sleep(10)
+			time.sleep(2)
 			
 			try:
 				print('lc may not have been downloaded. Attempting to download...')
@@ -687,7 +687,7 @@ def kplr_target_download(targID, targtype='koi', quarters='all', lc_format='pdc'
 			
 			except:
 				print('second except triggered.')
-				time.sleep(10)
+				time.sleep(2)
 				traceback.print_exc()
 				raise Exception("Something went wrong in 'kplr_target_download()' (see traceback).")
 
@@ -853,11 +853,14 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			ticnum = str(targID)[3:]
 			if ticnum.startswith(' '):
 				ticnum = str(ticnum)[1:]
+			elif ticnum.startswith('-'):
+				ticnum = str(ticnum)[1:]
 		
 		else:
 			#if targID.lower().startswith('toi'):
 			#### find it in exofop!
-			ticnum = self.exofop_data['TIC ID'][self.exofop_rowidx]
+			ticnum = self.exofop_data['TIC ID'][self.exofop_rowidx] #### I'm not sure where the self comes from, but it works! (for known TOIs)
+			#ticnum = exofop_data['TIC ID'][exofop_rowidx]
 			#ticnum = str(targID) ### you've already handled the TOI already!
 			if ticnum.startswith(' '):
 				ticnum = ticnum[1:]
@@ -1086,7 +1089,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 	except:
 		traceback.print_exc()
 		print('EXCEPTION RAISED FOR tess_target_download().')
-		time.sleep(10)
+		time.sleep(2)
 
 		obsTable = Observations.query_object(targID, radius='0.001 deg')
 		TESS_idxs = np.where(np.array(obsTable['obs_collection']) == 'TESS')[0]

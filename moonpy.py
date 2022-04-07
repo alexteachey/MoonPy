@@ -789,6 +789,8 @@ class MoonpyLC(object):
 
 				if ffi == 'n':
 
+					print('self.target.lower() = ', self.target.lower())
+
 					if self.target.lower().startswith("toi"):
 						try:
 							ticnum = int(np.array(exofop_data['TIC ID'])[self.exofop_rowidx]) ### identify the TIC# based on the matching TOI row.
@@ -807,7 +809,7 @@ class MoonpyLC(object):
 								ticname = 'TIC '+str(ticnum)
 
 						try:
-							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(ticname)	
+							lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targID=ticname)	
 							print('lc_times.shape = ', lc_times.shape)
 						except:
 							print('Unable to download lc with tess_target_download(). Likely missing TIC.')
@@ -815,8 +817,9 @@ class MoonpyLC(object):
 
 
 					elif self.target.lower().startswith('tic'):
-						print('calling tess_target_download().')
-						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targetID) ### TIC number -- LACKS the TIC prefix!
+						print('calling tess_target_download(targID='+str(self.target)+').')
+						#lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targID=targetID) ### TIC number -- LACKS the TIC prefix!
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_target_download(targID=self.target)
 						print('lc_times.shape = ', lc_times.shape)
 
 
