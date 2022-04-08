@@ -19,6 +19,7 @@ import aesara_theano_fallback.tensor as tt
 import platform 
 from matplotlib import rcParams
 from moonpy import * 
+import pickle
 
 #rcParams['font.family'] = 'serif'
 
@@ -86,7 +87,7 @@ else:
 #for nkic,kic in enumerate(kics):
 
 
-def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, restrict_data=True, fit_neighbors=False):
+def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, restrict_data=True, fit_neighbors=False, savepath=None):
 
 	print('fit_neighbors: ', fit_neighbors)
 
@@ -102,7 +103,8 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 	else:
 		keep_showing = 'n'
 
-	savepath = self.savepath 
+	if type(savepath) == type(None):
+		savepath = self.savepath 
 
 
 	if type(period) != type(None):
@@ -573,6 +575,11 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		#### PLOT FROM DRAWS
 		flat_samps = trace.posterior.stack(sample=("chain", "draw"))
 
+		with open(savepath+'/'+self.target+'_flat_samps.pkl', 'wb') as handle:
+			pickle.dump(flat_samps, handle)
+
+		self.flat_samps = flat_samps #### so it can be accessed later
+
 		# Compute the GP prediction
 		gp_mod = extras["gp_pred"] + map_soln["mean"]  # np.median(
 		#     flat_samps["gp_pred"].values + flat_samps["mean"].values[None, :], axis=-1
@@ -614,6 +621,10 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 		#plt.xlim(-0.5 * post_period, 0.5 * post_period)
 		plt.xlabel("time since transit [days]")
 		plt.ylabel("de-trended flux [ppm]")
+		try:
+			plt.xlim(-3*self.duration_days, 3*self.duration_days)
+		except:
+			pass
 		#_ = plt.xlim(-0.15, 0.15)
 		#_ = plt.ylim(np.nanmin(yvals_ppm)-scatter_ppm, scatter_ppm)
 
@@ -688,41 +699,142 @@ def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, sm
 
 
 
-
-		flat_samps_keys = ['mean','ldc1','ldc2','m_star','r_star','t0','log10Period','period','impact','log_depth','rprstar','rplan','ecs1','ecs2','ecc','omega','log_sigma_lc','log_rho_gp','log_sigma_gp']
+		#### all the parameters you've fit
+		flat_samps_keys = ['mean','ldc1','ldc2','m_star','r_star','log_sigma_lc','log_rho_gp','log_sigma_gp','t0','log10Period','period','impact','log_depth','rprstar','rplan','ecs1','ecs2','ecc','omega']
 		#posterior_file = open(kicpath+'/'+kic+'_posteriors.csv', mode='w')
+		
+		headers = []
+		star_headers = ['mean','ldc1','ldc2','m_star','r_star','log_sigma_lc','log_rho_gp','log_sigma_gp'] #### stellar parameters, not planet-specific 
+
+
+
+		for fsk in flat_samps_keys:
+			if fsk in star_headers:
+				headers += [fsk]
+
+			else:
+				### means it's a planet value -- do these individually!
+				for i in np.arange(0,total_number_of_planets,1):
+					#### append the planet number to the header name -- all in a row!
+					headers += [fsk+'_'+str(i)]
+
+
+
+
+		#### now we have a whole bunch of headers -- for the planets, they'll be aranged t0_0, t0_1, log10Period_0, log10Period_1, etc...
+
 		posterior_file = open(savepath+'/'+self.target+'_posteriors.csv', mode='w')
 		
 		### write the header
-		for nfsk,fsk in enumerate(flat_samps_keys):
-			if fsk != flat_samps_keys[-1]:
-				posterior_file.write(fsk+',')
-			elif fsk == flat_samps_keys[-1]:
-				posterior_file.write(fsk+'\n')
+		#for nfsk,fsk in enumerate(flat_samps_keys):
+		for nheader,header in enumerate(headers):
+			if header != headers[-1]:
+				posterior_file.write(header+',')
+			elif header == headers[-1]:
+				posterior_file.write(header+'\n')
 
-		extra_idx_keys = ['t0', 'log10Period', 'period', 'rprstar', 'rplan']
+
+		continue_printing = 'y'
+
 
 		for sample in np.arange(0,nsamples,1):
-			for fsk in flat_samps_keys:
-				if fsk == 'ldc1':
-					sampval = np.array(flat_samps['ldcs'])[0][sample]
-				elif fsk == 'ldc2':
-					sampval = np.array(flat_samps['ldcs'])[1][sample]	
-				elif fsk == 'ecs1':
-					sampval = np.array(flat_samps['ecs'])[0][sample]						
-				elif fsk == 'ecs2':
-					sampval = np.array(flat_samps['ecs'])[1][sample]	
+			##### for each draw of the posterior
+			for nfsk,fsk in enumerate(flat_samps_keys):
+				#try:
+				#### pull out the value for that particular parameter
 
-				elif fsk in extra_idx_keys:
-					sampval = np.array(flat_samps[fsk])[0][sample] #### have to do this for some stupid reason.
+				if fsk in star_headers:
+					#### means there is only a single value for the system, not planet-specific.
+					if fsk == 'ldc1':
+						sampval = np.array(flat_samps['ldcs'])[0][sample]
+					elif fsk == 'ldc2':
+						sampval = np.array(flat_samps['ldcs'])[1][sample]	
+
+					else:
+						sampval = np.array(flat_samps[fsk][sample])
+
+					posterior_file.write(str(sampval)+',') #### all the star values come first!
+
 
 				else:
-					sampval = np.array(flat_samps[fsk])[sample]
-				
-				if fsk != flat_samps_keys[-1]:
-					posterior_file.write(str(sampval)+',')
-				elif fsk == flat_samps_keys[-1]:
-					posterior_file.write(str(sampval)+'\n')
+					#### planet values
+					if total_number_of_planets == 1:
+						#### don't need the extra indexing
+						if fsk == 'ecs1':
+							sampval = np.array(flat_samps['ecs'])[0][sample]						
+						elif fsk == 'ecs2':
+							sampval = np.array(flat_samps['ecs'])[1][sample]
+
+						else:
+							try:
+								#sampval = np.array(flat_samps[fsk])[sample][sample] #### there's only one!
+								sampval = np.array(flat_samps[fsk])[0][sample]
+							except:
+								try:
+									sampval = np.array(flat_samps[fsk])[sample]
+								except:
+									traceback.print_exc()
+									print(' ')
+									print(' ')
+									print('fsk = ', fsk)
+									print('sample = ', sample)
+									print('len(flat_samps[fsk] = ', len(flat_samps[fsk]))
+									posterior_file.close()
+									print('Posteriors written to file.')
+
+							#try:
+							#	sampval = np.array(flat_samps[fsk])[0][sample]
+							#except:
+							#	sampval = np.array(flat_samps[fsk])[sample]
+
+
+					else:
+						for i in np.arange(0,total_number_of_planets,1):
+							#### they'll be right next to each other!
+							if fsk == 'ecs1':
+								sampval = np.array(flat_samps['ecs'])[i][sample]						
+							elif fsk == 'ecs2':
+								sampval = np.array(flat_samps['ecs'])[i][sample]
+
+							else:
+								sampval = np.array(flat_samps[fsk])[i][sample] 
+								#try:
+								#	sampval = np.array(flat_samps[fsk])[i][sample]
+								#except:
+								#	try:
+								#		sampval = np.array(flat_samps[fsk])[0][i][sample]		
+								#	except:						
+								#		sampval = np.array(flat_samps[fsk])[i][0][sample]
+
+					#if (fsk != flat_samps_keys[-1]) and (i != total_number_of_planets - 1):
+					if nfsk != len(flat_samps_keys) - 1:
+						posterior_file.write(str(sampval)+',') #### there's still more to append
+
+					elif nfsk == len(flat_samps_keys) - 1:
+						posterior_file.write(str(sampval)+'\n') #### end of the line!
+					else:
+						print('SOMETHING WENT WRONG WRITING THE POSTERIOR FILE!')
+
+
+				if continue_printing == 'y':
+					print('sample ', sample)
+					print('fsk = ', fsk)
+					print('sampval = ', sampval)
+					print(' ')
+
+
+				#except:
+				#	print('fsk = ', fsk)
+				#	print(' ')
+				#	traceback.print_exc()
+
+
+
+
+				if continue_printing == 'y':
+					continue_printing = input('Do you want to continue printing? y/n: ')
+
+
 
 		posterior_file.close()
 		print('Posteriors written to file.')
