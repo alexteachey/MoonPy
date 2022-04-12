@@ -29,6 +29,7 @@ from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from moonpy import *
+from _mp_visuals import fold 
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -983,6 +984,84 @@ def make_vespa_starini(self):
 
 	starini_file.close()
 	
+
+
+
+def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
+	if os.path.exists(moonpydir+'/vespa'):
+		pass
+	else:
+		os.system('mkdir '+moonpydir+'/vespa')
+
+
+	#compute the cadence
+	timediffs = []
+	for i in np.arange(1,len(self.times[0]), 1):
+		#### use the first quarter / sector, that should do well enough
+		timediffs.append(self.times[0][i] - self.times[0][i-1])
+	timediffs = np.array(timediffs)
+	cadence_days = np.nanmedian(timediffs)
+
+
+	fppini_file = open(moonpydir+'/vespa/fpp.ini', mode='w')
+
+	fppini_file.write('name = '+str(self.target)+'\n')
+
+	fppini_file.write('ra = '+str(self.ra)+'\n')
+	fppini_file.write('dec = '+str(self.dec)+'\n')
+	fppini_file.write('\n')
+	fppini_file.write('period = '+str(self.period)+' #days\n')
+	fppini_file.write('rprs = '+str(self.rprstar)+' #Rp/Rstar\n')
+	fppini_file.write('cadence = '+str(cadence_days)+' #cadence [days]\n')
+	if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+		fppini_file.write('band = Kepler\n')
+	fppini_file.write('photfile = '+moonpydir+'/vespa/photfile.csv #contains transit photometry\n')
+	fppini_file.write('\n')
+	fppini_file.write('[constraints]\n')
+	fppini_file.write('maxrad = '+str(maxrad)+' # aperture radius [arcsec]\n')
+	fppini_file.write('secthres = '+str(secthresh)+' # Maximum allowed depth of potential secondary eclipse\n')
+
+	fppini_file.close()
+
+
+
+def make_vespa_photfile(self, dmeth='cofiam'):
+	try:
+		print('fold times: ', self.fold_times)
+	
+	except:
+		#### probably means it's not detrended yet
+		self.detrend(dmeth=dmeth)
+
+		try:
+			fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors
+		except:
+			self.fold()
+			fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors 
+
+		#### fold times are in terms of phase, so to transfor into days from tmid, you need to multiply by the period
+		fold_times_from_tmid = fold_times * self.period 
+
+		photfile_idxs = np.where((fold_times_from_tmid >= -3) & (fold_times_from_tmid <= 3))[0]
+		photfile_times, photfile_fluxes, photfile_errors = fold_times_from_tmid[photfile_idxs], fold_fluxes[photfile_idxs], fold_errors[photfile_idxs]
+
+		photfile = open(moonpydir+'/vespa/photfile.csv', mode='w')
+		for t,f,e in zip(photfile_times, photfile_fluxes, photfile_errors):
+			photfile.write(str(t)+','+str(f)+','+str(e)+'\n')
+		photfile.close()
+
+
+
+def run_vespa(self):
+	self.make_vespa_starini
+	self.make_vespa_fppini
+	self.make_vespa_photfile
+
+	try:
+		os.system('cd '+moonpydir+'/vespa; calcfpp -n 1000')
+	except RuntimeError:
+		os.system('cd '+moonpydir+'/vespa; starfit --all .&& calcfpp -n 1000')
+
 
 
 
