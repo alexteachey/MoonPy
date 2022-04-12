@@ -908,7 +908,17 @@ def find_planet_row(self, alias=None, row_known='n'):
 
 
 
+def make_NEA_dict(self):
+	#### this function will create a dictionary of all the values available in NASA Exoplanet Archive
+	planet_dict = {}
+	for col in self.NEA_columns:
+		planet_dict[col] = self.NEA_data[col][self.NEA_rowidx]
 
+		#### set attributes for this object using setattr(object, attrname, value)
+		setattr(self, col, self.NEA_data[col][self.NEA_rowidx])
+
+
+	self.NEA_dict = planet_dict
 
 
 
@@ -918,6 +928,12 @@ def find_planet_row(self, alias=None, row_known='n'):
 
 def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=None):
 	print("calling _mp_attributes.py/get_properties()...")
+
+
+	try:
+		self.make_NEA_dict()
+	except:
+		print('An Error occurred calling make_NEA_dict().')
 
 	if self.telescope.lower() == 'kepler':
 		if self.newlc == 'y':
