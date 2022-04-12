@@ -924,6 +924,69 @@ def make_NEA_dict(self):
 
 
 
+def make_vespa_starini(self):
+	if os.path.exists(moonpydir+'/vespa'):
+		pass
+	else:
+		os.system('mkdir '+moonpydir+'/vespa')
+
+	starini_file = open(moonpydir+'/vespa/star.ini', mode='w')
+	starini_file.write('#provide spectroscopic properties if available\n')
+
+	#### EFFECTIVE TEMPERATURE
+	if np.isfinite(self.st_teff.__float__()):
+		teff_input = self.st_teff
+		teff_err_input = np.nanmax((np.abs(self.st_tefferr1), np.abs(self.st_tefferr2)))
+		starini_file.write('Teff = '+str(teff_input)+', '+str(teff_err_input)+' #value, uncertainty\n')
+
+
+	#### Metallicity feh
+	if np.isfinite(self.st_met.__float__()):
+		feh_input = self.st_met
+		feh_err_input = np.nanmax((np.abs(self.st_meterr1), np.abs(self.st_meterr2)))
+		starini_file.write('feh = '+str(teff_input)+', '+str(teff_err_input)+' #value, uncertainty\n')
+
+
+	#### Logg 
+	if np.isfinite(self.st_logg.__float__()):
+		logg_input = self.st_logg
+		logg_err_input = np.nanmax((np.abs(self.st_loggerr1), np.abs(self.st_loggerr2)))
+		starini_file.write('logg = '+str(teff_input)+', '+str(logg_err_input)+' #value, uncertainty\n')	
+
+	starini_file.write('\n')
+
+	#### JMAG 
+	if np.isfinite(self.sy_jmag.__float__()):
+		jmag_input = self.sy_jmag
+		jmag_err_input = np.nanmax((np.abs(self.sy_jmagerr1), np.abs(self.sy_jmagerr2)))
+		starini_file.write('J = '+str(jmag_input)+', '+str(jmag_err_input)+' #value, uncertainty\n')
+
+	#### HMAG
+	if np.isfinite(self.sy_hmag.__float__()):
+		hmag_input = self.sy_hmag
+		hmag_err_input = np.nanmax((np.abs(self.sy_hmagerr1), np.abs(self.sy_hmagerr2)))
+		starini_file.write('H = '+str(hmag_input)+', '+str(hmag_err_input)+' #value, uncertainty\n')		
+
+	#### KMAG
+	if np.isfinite(self.sy_kmag.__float__()):
+		kmag_input = self.sy_kmag
+		kmag_err_input = np.nanmax((np.abs(self.sy_kmagerr1), np.abs(self.sy_kmagerr2)))
+		starini_file.write('K = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')
+
+
+	#### Kepler mag
+	if np.isfinite(self.sy_kepmag.__float__()):
+		kepmag_input = self.sy_kepmag
+		kepmag_err_input = np.nanmax((np.abs(self.sy_kepmagerr1), np.abs(self.sy_kepmagerr2)))
+		starini_file.write('Kepler = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')				
+
+
+	starini_file.close()
+	
+
+
+
+
 
 
 def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=None):
