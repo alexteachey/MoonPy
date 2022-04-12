@@ -926,12 +926,12 @@ def make_NEA_dict(self):
 
 
 def make_vespa_starini(self):
-	if os.path.exists(moonpydir+'/vespa'):
-		pass
-	else:
-		os.system('mkdir '+moonpydir+'/vespa')
+	#if os.path.exists(moonpydir+'/vespa'):
+	#	pass
+	#else:
+	#	os.system('mkdir '+moonpydir+'/vespa')
 
-	starini_file = open(moonpydir+'/vespa/star.ini', mode='w')
+	starini_file = open(self.savepath+'/star.ini', mode='w')
 	starini_file.write('#provide spectroscopic properties if available\n')
 
 	#### EFFECTIVE TEMPERATURE
@@ -988,10 +988,10 @@ def make_vespa_starini(self):
 
 
 def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
-	if os.path.exists(moonpydir+'/vespa'):
-		pass
-	else:
-		os.system('mkdir '+moonpydir+'/vespa')
+	#if os.path.exists(moonpydir+'/vespa'):
+	#	pass
+	#else:
+	#	os.system('mkdir '+moonpydir+'/vespa')
 
 
 	#compute the cadence
@@ -1003,10 +1003,9 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
 	cadence_days = np.nanmedian(timediffs)
 
 
-	fppini_file = open(moonpydir+'/vespa/fpp.ini', mode='w')
+	fppini_file = open(self.savepath+'/fpp.ini', mode='w')
 
 	fppini_file.write('name = '+str(self.target)+'\n')
-
 	fppini_file.write('ra = '+str(self.ra)+'\n')
 	fppini_file.write('dec = '+str(self.dec)+'\n')
 	fppini_file.write('\n')
@@ -1015,7 +1014,7 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
 	fppini_file.write('cadence = '+str(cadence_days)+' #cadence [days]\n')
 	if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
 		fppini_file.write('band = Kepler\n')
-	fppini_file.write('photfile = '+moonpydir+'/vespa/photfile.csv #contains transit photometry\n')
+	fppini_file.write('photfile = '+self.savepath+'/photfile.csv #contains transit photometry\n')
 	fppini_file.write('\n')
 	fppini_file.write('[constraints]\n')
 	fppini_file.write('maxrad = '+str(maxrad)+' # aperture radius [arcsec]\n')
@@ -1045,7 +1044,7 @@ def make_vespa_photfile(self, dmeth='cofiam'):
 		photfile_idxs = np.where((fold_times_from_tmid >= -3) & (fold_times_from_tmid <= 3))[0]
 		photfile_times, photfile_fluxes, photfile_errors = fold_times_from_tmid[photfile_idxs], fold_fluxes[photfile_idxs], fold_errors[photfile_idxs]
 
-		photfile = open(moonpydir+'/vespa/photfile.csv', mode='w')
+		photfile = open(self.savepath+'/photfile.csv', mode='w')
 		for t,f,e in zip(photfile_times, photfile_fluxes, photfile_errors):
 			photfile.write(str(t)+','+str(f)+','+str(e)+'\n')
 		photfile.close()
@@ -1058,9 +1057,9 @@ def run_vespa(self):
 	self.make_vespa_photfile
 
 	try:
-		os.system('cd '+moonpydir+'/vespa; calcfpp -n 1000')
+		os.system('cd '+self.savepath+'; calcfpp -n 1000')
 	except RuntimeError:
-		os.system('cd '+moonpydir+'/vespa; starfit --all .&& calcfpp -n 1000')
+		os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
 
 
 
