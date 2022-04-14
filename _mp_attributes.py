@@ -30,6 +30,7 @@ from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from moonpy import *
 from _mp_visuals import fold 
+import subprocess
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -1066,11 +1067,36 @@ def run_vespa(self):
 
 
 	print("ATTEMPTING TO RUN VESPA....")
-	
+
 	try:
-		os.system('cd '+self.savepath+'; calcfpp -n 1000')
-	except RuntimeError:
-		os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
+		print(' ')
+		print('try #1')
+		#os.system('cd '+self.savepath+'; calcfpp -n 1000')
+		subprocess.Popen('cd '+self.savepath+'; calcfpp -n 1000')
+		print(' ')
+	except:
+		traceback.print_exc()
+		try:
+			print(' ')
+			print('try #2') #### THIS IS THE ONE!!!! (BUT MAYBE WE STILL NEED TRY #1 FOR STARFIT ALL)
+			print(' ')
+			#os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
+			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n 1000', shell=True)
+		except:
+			traceback.print_exc()
+			try:
+				print(' ')
+				print('try #3')
+				print(' ')
+				#os.system('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
+				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000', shell=True)
+			except:
+				traceback.print_exc()
+				print(' ')
+				print('last except.')
+				print(' ')
+				#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
+				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000', shell=True)
 
 
 
