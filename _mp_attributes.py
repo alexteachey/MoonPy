@@ -931,7 +931,8 @@ def make_vespa_starini(self):
 	#else:
 	#	os.system('mkdir '+moonpydir+'/vespa')
 
-	starini_file = open(self.savepath+'/star.ini', mode='w')
+	starini_filename = self.savepath+'/star.ini'
+	starini_file = open(starini_filename, mode='w')
 	starini_file.write('#provide spectroscopic properties if available\n')
 
 	#### EFFECTIVE TEMPERATURE
@@ -983,6 +984,8 @@ def make_vespa_starini(self):
 
 
 	starini_file.close()
+
+	print('created '+starini_filename)
 	
 
 
@@ -1002,8 +1005,8 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
 	timediffs = np.array(timediffs)
 	cadence_days = np.nanmedian(timediffs)
 
-
-	fppini_file = open(self.savepath+'/fpp.ini', mode='w')
+	fppini_filename = self.savepath+'/fpp.ini'
+	fppini_file = open(fppini_filename, mode='w')
 
 	fppini_file.write('name = '+str(self.target)+'\n')
 	fppini_file.write('ra = '+str(self.ra)+'\n')
@@ -1021,6 +1024,8 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
 	fppini_file.write('secthres = '+str(secthresh)+' # Maximum allowed depth of potential secondary eclipse\n')
 
 	fppini_file.close()
+
+	print('created '+fppini_filename)
 
 
 
@@ -1044,18 +1049,24 @@ def make_vespa_photfile(self, dmeth='cofiam'):
 		photfile_idxs = np.where((fold_times_from_tmid >= -3) & (fold_times_from_tmid <= 3))[0]
 		photfile_times, photfile_fluxes, photfile_errors = fold_times_from_tmid[photfile_idxs], fold_fluxes[photfile_idxs], fold_errors[photfile_idxs]
 
-		photfile = open(self.savepath+'/photfile.csv', mode='w')
+		photfile_name = self.savepath+'/photfile.csv'
+		photfile = open(photfile_name, mode='w')
 		for t,f,e in zip(photfile_times, photfile_fluxes, photfile_errors):
 			photfile.write(str(t)+','+str(f)+','+str(e)+'\n')
 		photfile.close()
 
+		print('created '+photfile_name)
+
 
 
 def run_vespa(self):
-	self.make_vespa_starini
-	self.make_vespa_fppini
-	self.make_vespa_photfile
+	self.make_vespa_starini()
+	self.make_vespa_fppini()
+	self.make_vespa_photfile()
 
+
+	print("ATTEMPTING TO RUN VESPA....")
+	
 	try:
 		os.system('cd '+self.savepath+'; calcfpp -n 1000')
 	except RuntimeError:

@@ -5,17 +5,38 @@ import pandas
 import os
 import traceback
 from astropy.io import fits
-import exoplanet as xo
+try:
+	import exoplanet as xo
+except:
+	print('COULD NOT IMPORT the exoplanet package.')
 import astropy.units as u 
-import pymc3 as pm
-import pymc3_ext as pmx
-import arviz as az
+try:
+	import pymc3 as pm
+except:
+	print("COULD NOT IMPORT pymc3.")
+try:
+	import pymc3_ext as pmx
+except:
+	print('COULD NOT IMPORT pymc3_ext')
+
+try:
+	import arviz as az
+except:
+	print('COULD NOT IMPORT arviz.')
 try:
 	import corner
 except:
-	print('could not import corner.')
-from celerite2.theano import terms, GaussianProcess
-import aesara_theano_fallback.tensor as tt
+	print('COULD NOT IMPORT corner.')
+
+try:
+	from celerite2.theano import terms, GaussianProcess
+except:
+	print('COULD NOT IMPORT celerite2 modules.')
+
+try:
+	import aesara_theano_fallback.tensor as tt
+except:
+	print("COULD NOT IMPORT aesara_theano_fallback.tensor")
 import platform 
 from matplotlib import rcParams
 from moonpy import * 
