@@ -947,14 +947,14 @@ def make_vespa_starini(self):
 	if np.isfinite(self.st_met.__float__()):
 		feh_input = self.st_met
 		feh_err_input = np.nanmax((np.abs(self.st_meterr1), np.abs(self.st_meterr2)))
-		starini_file.write('feh = '+str(teff_input)+', '+str(teff_err_input)+' #value, uncertainty\n')
+		starini_file.write('feh = '+str(feh_input)+', '+str(feh_err_input)+' #value, uncertainty\n')
 
 
 	#### Logg 
 	if np.isfinite(self.st_logg.__float__()):
 		logg_input = self.st_logg
 		logg_err_input = np.nanmax((np.abs(self.st_loggerr1), np.abs(self.st_loggerr2)))
-		starini_file.write('logg = '+str(teff_input)+', '+str(logg_err_input)+' #value, uncertainty\n')	
+		starini_file.write('logg = '+str(logg_input)+', '+str(logg_err_input)+' #value, uncertainty\n')	
 
 	starini_file.write('\n')
 
