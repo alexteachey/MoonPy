@@ -9,34 +9,49 @@ try:
 	import exoplanet as xo
 except:
 	print('COULD NOT IMPORT the exoplanet package.')
+	print("type 'conda install -c conda-forge exoplanet' to install.")
+	print(' ')
 import astropy.units as u 
 try:
 	import pymc3 as pm
 except:
 	print("COULD NOT IMPORT pymc3.")
+	print("type 'conda install -c conda-forge pymc3' to install.")
+	print(' ')
 try:
 	import pymc3_ext as pmx
 except:
 	print('COULD NOT IMPORT pymc3_ext')
+	print("type 'conda install -c conda-forge pymc3_ext' to install.")
+	print(' ')
 
 try:
 	import arviz as az
 except:
 	print('COULD NOT IMPORT arviz.')
+	print("type 'conda install -c conda-forge arviz=0.11.0' to install.")
+	print(' ')
 try:
 	import corner
 except:
 	print('COULD NOT IMPORT corner.')
+	print("type conda install -c astropy corner' to install.")
+	print(' ')
 
 try:
 	from celerite2.theano import terms, GaussianProcess
 except:
 	print('COULD NOT IMPORT celerite2 modules.')
+	print("type 'conda install -c conda-forge celerite2' to install.")
+	print(' ')
 
 try:
 	import aesara_theano_fallback.tensor as tt
 except:
 	print("COULD NOT IMPORT aesara_theano_fallback.tensor")
+	print("type 'conda install -c conda-forge aesara-theano-fallback' to install.")
+	print(' ')
+
 import platform 
 from matplotlib import rcParams
 from moonpy import * 
