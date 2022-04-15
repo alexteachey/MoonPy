@@ -123,6 +123,28 @@ def find_aliases(self):
 
 
 
+def print_attributes(self, return_vals=False):
+	five_per_line = []
+	attributes = np.sort(self.__dir__())
+
+	for nattr, attr in enumerate(attributes):
+		if attr.startswith('_'):
+			continue
+		if len(five_per_line) < 5:
+			five_per_line.append(attr)
+		elif len(five_per_line) == 5:
+			print(five_per_line)
+			five_per_line = []
+
+	if return_vals == True:
+		return attributes 
+
+
+
+
+
+
+
 
 def get_coords(self):
 	print('calling _mp_attributes.py/get_coords().')
