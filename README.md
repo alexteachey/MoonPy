@@ -27,7 +27,7 @@ Note that calling ```python pathmaker.py``` from somplace *other* than the MoonP
 
 ## Prerequisites
 
-Users **may** be able to install the necessary dependencies using the ```moon_env.yml``` file. It is recommended to create a new ```conda``` environment as follows:
+Users **may** be able to install the necessary dependencies using the ```moonpy_env.yml``` file. It is recommended to create a new ```conda``` environment as follows:
 
 ```conda env create --file moon_env.yml```
 
