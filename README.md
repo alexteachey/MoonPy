@@ -66,7 +66,7 @@ Below you will find the details of some of these tools. At present the user will
 * **plot the light curve** using *plot_lc()*.
 * **generate a Lomb-Scargle** periodogram using *genLS()*.
 * **Detrend the light curve** using *detrend()*
-* **fit a transit model** to the light curve using *fit()*.
+* **fit a transit model** to the light curve using *fit()* or *run_planet_fit().*.
 * **plot a transit model from fiducial parameters** taken from the NASA Exoplanet Archive.
 * **plot the best fitting model** over the light curve using *plot_bestmodel()*.
 * **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
@@ -76,10 +76,69 @@ Below you will find the details of some of these tools. At present the user will
 Most of the above take keyword arguments that are described below. 
 
 
+## QUICKSTART
+
+MoonPy is built around manipulating light curves as objects. To start, simply import moonpy:
+
+```>>> from moonpy import *```
+
+Then you can initialize an object:
+
+*>>> lc_object=MoonpyLC(targetID=TARGET_NAME, clobber='y')*
+
+MoonPy will try to infer which telescope's data should be accessed based on the name of the object (KICs, KOIs, and Kepler- planets get Kepler data, K2 or EPIC numbers retrieve K2 data, TOIs and TICs access TESS data), but you may also specify the telescope if the target name is not one of these, or if you want to search for data from a different telescope. For example, some Kepler planets were observed by TESS, and vice-versa, so simply specify *telescope='kepler'*, etc, for more controlled access.
+
+You can then plot the light curve with
+
+*>>> lc_object.plot_lc()*
+
+A plot of all the available data should appear, and known transits should be flagged. To detrend this data, simply call
+
+*>>> lc_object.detrend(dmeth='cofiam')*
+
+Then you can *plot_lc()* again to see both the original data, the trend model, and the detrended light curve.
+
+You can also see the full list of attributes associated with this object (values, arrays, and functions) by calling
+
+*>>> lc_object.print_attributes()*
+
+Many of these attributes are taken directly from the NASA Exoplanet Archive, and have the same name. Therefore you can call up many values of interest for this target simply by calling the attribute of choice, for example:
+
+*>>> k1625.pl_orbper
+287.378949*
+
+From here, you might opt to run a planet transit fit. Simply call
+
+*>>> lc_object.run_planet_fit()*
+
+And you're off to the races. Or you might like to run Tim Morton's ```VESPA``` code (now rather tricky to get working as it is no longer maintained, but if you've got it working on your machine, awesome!). For this, simply use
+
+*>>> lc_object.run_vespa()*
+
+And you will generate the necessary input files for this target. 
+
+You can also generate a Lomb-Scargle periodogram simply by calling 
+
+*>>> lc_object.genLS()*
+
+
+Note that each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. 
+
+As you know, new TESS data continues to arrive, but MoonPy automatically identifies when new sectors are available and will download them if available. The planet archives (NASA Exoplanet Archive, and ExoFOP) are also regularly updated, so MoonPy checks to see how old your databases are and gives the option (once per day) of downloading a new version. Be advised, this can sometimes take several minutes, so if you are looking at a well-known target, chances are the parameters are more-or-less fixed.
+
+
+**Older instructions for use are below -- some may be a bit out of date. Working on updating this README, please bear with me.**
+
+
+
+
 
 ## INITIALIZE A LIGHT CURVE OBJECT.
 
 The core functionality of MoonPy revolves around generating and manipulating a **light curve object**. A large number of attributes are either initially associated with this object, or can be generated after calling functions for the object.
+
+
+
 
 Proper usage is:
 
@@ -130,79 +189,6 @@ Proper usage is:
 
 *clobber*: if 'y', any light curve file for the target will be overwritten. Sets *load_lc = 'n'*. If neither *load_lc* nor *clobber* are specified and a light curve for this target already exists, the user will be asked to decide whether the file should be clobbered.
 
-
-### ATTRIBUTES
-
-**The following attributes are available upon successfully downloading a light curve** (or in some cases after detrending). Hopefully their meanings are mostly self explanatory:
-
- 'Dec',
- 'DWstat',
- 'NEA_rowidx',
- 'NEA_targetname',
- 'RA',
- 'a_rstar',
- 'aliases',
- 'depth',
- 'duration_days',
- 'duration_days_err',
- 'duration_hours',
- 'duration_hours_err',
- 'eccen',
- 'eccen_err',
- 'errors',
- 'flags',
- 'fluxes',
- 'impact',
- 'impact_err',
- 'incl',
- 'incl_err',
- 'insol',
- 'insol_err',
- 'ldm_a1',
- 'ldm_a2',
- 'longp',
- 'longp_err',
- 'mask_multiple',
- 'neighbor_dict',
- 'neighbor_transit_IDs',
- 'neighbor_transit_list',
- 'neighbor_transit_times',
- 'neighbors',
- 'newlc',
- 'period',
- 'period_err',
- 'q1',
- 'q2',
- 'quarter_transit_dict',
- 'quarters',
- 'rp_meters',
- 'rp_rearth',
- 'rp_rearth_err',
- 'rp_rjup',
- 'rprstar',
- 'rprstar_err',
- 'rstar_meters',
- 'rstar_rsol',
- 'savepath',
- 'sma_AU',
- 'smass',
- 'smass_err',
- 'target',
- 'targetID',
- 'target_type',
- 'tau0',
- 'tau0_err',
- 'taus',
- 'telescope',
- 'times'
-
-*here's a quick explanation for some of the less obvious ones:*
-DWstat: the Durbin-Watson statistic (measuring autocorrelation post-detrend)
-ldm_a1 and ldm_a2: Limb-darkening coefficients.
-neighbor_dict: a dictionary of any other planets in the system. They should be their own light curve objects complete with attributes.
-smass: stellar mass
-longp: longitude of periapse
-mask_multiple: how wide (in units of transit duration) you mask on either side of the transit midtime, for detrending.
 
 
 
