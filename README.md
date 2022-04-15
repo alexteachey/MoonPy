@@ -8,7 +8,14 @@ last (non-exhaustive) update: April 15, 2022. Developed by [Alex Teachey](http:/
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
 This document will walk you through the basics of using the MoonPy code. 
-MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. We'd appreciate a shoutout, too... please cite  [![DOI](https://zenodo.org/badge/186446465.svg)](https://zenodo.org/badge/latestdoi/186446465)
+MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. We'd appreciate a shoutout, too... please cite:
+
+ [![DOI](https://zenodo.org/badge/186446465.svg)](https://zenodo.org/badge/latestdoi/186446465)
+
+ And I guess maybe the paper that first made use of this code?
+
+[\bibitem[Teachey \& Kipping(2021)]{2021MNRAS.508.2620T} Teachey, A. \& Kipping, D.\ 2021, \mnras, 508, 2620. doi:10.1093/mnras/stab2694](https://ui.adsabs.harvard.edu/abs/2021MNRAS.508.2620T/abstract).
+
 
 
 ## Installation
