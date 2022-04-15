@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last (non-exhaustive) update: August 10th, 2021. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: April 15, 2022. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
@@ -23,23 +23,23 @@ Note that calling ```python pathmaker.py``` from somplace *other* than the MoonP
 ## Prerequisites
 
 This code requires a number of packages:
-* [astropy]{https://www.astropy.org/} -- conda install -c anaconda astropy
-* [astroquery]{https://astroquery.readthedocs.io/en/latest/} -- conda install c astropy astroquery
-* [matplotlib]{https://matplotlib.org/} -- conda install -c conda-forge matplotlib
-* [pandas]{https://pandas.pydata.org/} -- conda install -c anaconda pandas
-* [scipy]{https://scipy.org/} -- conda install -c anaconda scipy
-* [numba]{https://numba.pydata.org/} -- conda install -c conda-forge numba
+* [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
+* [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
+* [matplotlib](https://matplotlib.org/) -- conda install -c conda-forge matplotlib
+* [pandas](https://pandas.pydata.org/) -- conda install -c anaconda pandas
+* [scipy](https://scipy.org/) -- conda install -c anaconda scipy
+* [numba](https://numba.pydata.org/) -- conda install -c conda-forge numba
 
 For full functionality, these packages will also be needed:
-* [exoplanet]{https://docs.exoplanet.codes/en/latest/} -- conda install -c conda-forge exoplanet
-* [pymc3]{https://docs.pymc.io/en/v3/} -- conda install -c conda-forge pymc3
+* [exoplanet](https://docs.exoplanet.codes/en/latest/) -- conda install -c conda-forge exoplanet
+* [pymc3](https://docs.pymc.io/en/v3/) -- conda install -c conda-forge pymc3
 * ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
-* [arviz]{https://arviz-devs.github.io/arviz/} -- conda install -c conda-forge arviz=0.11.0
+* [arviz](https://arviz-devs.github.io/arviz/) -- conda install -c conda-forge arviz=0.11.0
 * [corner](https://github.com/dfm/corner.py) -- conda install -c astropy corner
-* [celerite2]{https://celerite2.readthedocs.io/en/latest/} -- conda install -c conda-forge celerite2
+* [celerite2](https://celerite2.readthedocs.io/en/latest/) -- conda install -c conda-forge celerite2
 * ```aesara_theano_fallback``` -- conda install -c conda-forge aesara-theano-fallback
 * [george](https://george.readthedocs.io/en/latest/) -- conda install -c conda-forge george 
-* [untrendy]{https://github.com/dfm/untrendy} -- pip install untrendy
+* [untrendy](https://github.com/dfm/untrendy) -- pip install untrendy
 * [emcee](http://dfm.io/emcee/current/) -- conda install -c conda-forge emcee
 * [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - pip install batman-package
 * [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - pip install pymultinest 
