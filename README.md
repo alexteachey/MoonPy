@@ -22,6 +22,12 @@ Note that calling ```python pathmaker.py``` from somplace *other* than the MoonP
 
 ## Prerequisites
 
+Users **may** be able to install the necessary dependencies using the ```moon_env.yml``` file. It is recommended to create a new ```conda``` environment as follows:
+
+```conda env create --file moon_env.yml```
+
+If this fails consider removing the final version information on each line. Alternatively, packages may be installed individually with the commands below.
+
 This code requires a number of packages:
 * [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
 * [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
@@ -34,7 +40,7 @@ For full functionality, these packages will also be needed:
 * [exoplanet](https://docs.exoplanet.codes/en/latest/) -- conda install -c conda-forge exoplanet
 * [pymc3](https://docs.pymc.io/en/v3/) -- conda install -c conda-forge pymc3
 * ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
-* [arviz](https://arviz-devs.github.io/arviz/) -- conda install -c conda-forge arviz=0.11.0
+* [arviz](https://arviz-devs.github.io/arviz/) -- conda install -c conda-forge arviz=0.11.0 **NOTE:** this version is important to avoid a breakdown with ```pymc3```.
 * [corner](https://github.com/dfm/corner.py) -- conda install -c astropy corner
 * [celerite2](https://celerite2.readthedocs.io/en/latest/) -- conda install -c conda-forge celerite2
 * ```aesara_theano_fallback``` -- conda install -c conda-forge aesara-theano-fallback
