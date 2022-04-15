@@ -86,7 +86,7 @@ Then you can initialize an object:
 
 ```>>> lc_object=MoonpyLC(targetID=TARGET_NAME, clobber='y')```
 
-MoonPy will try to infer which telescope's data should be accessed based on the name of the object (KICs, KOIs, and Kepler- planets get Kepler data, K2 or EPIC numbers retrieve K2 data, TOIs and TICs access TESS data), but you may also specify the telescope if the target name is not one of these, or if you want to search for data from a different telescope. For example, some Kepler planets were observed by TESS, and vice-versa, so simply specify *telescope='kepler'*, etc, for more controlled access.
+MoonPy will try to infer which telescope's data should be accessed based on the name of the object (KICs, KOIs, and Kepler- planets get Kepler data, K2 or EPIC numbers retrieve K2 data, TOIs and TICs access TESS data), but you may also specify the telescope if the target name is not one of these, or if you want to search for data from a different telescope. For example, some Kepler planets were also observed by TESS, so simply specify *telescope='tess'*, etc, for more controlled access.
 
 It is also possible to use MoonPy tools on a light curve that the user supplies. In this case, the user will want to supply arrays for ```lc_times```, ```lc_fluxes```, and ```lc_errors``` when initializing a MoonpyLC object. In addition, the ```usr_dict``` containing important parameters for the planet can be included (keys are "period", "tau0", "impact", "duration_hours", "rprstar", "sma_AU", and "rp_rearth"). If these are not supplied, the user will be prompted to enter them.
 
