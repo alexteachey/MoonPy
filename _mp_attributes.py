@@ -14,6 +14,7 @@ from astropy.timeseries import LombScargle
 import socket 
 import warnings
 from datetime import datetime 
+import inspect
 
 
 #### BELOW ARE MOONPY PACKAGES
@@ -286,6 +287,19 @@ def get_file_age(filepath, format='days'):
 	elif format=='seconds':
 		return age_seconds 
 
+
+def show_function_inputs(func, return_vals=False):
+	args, defaults = inspect.getfullargspec(func).args, inspect.getfullargspec(func).defaults
+	print(str(func))
+	print('DEFAULTS: ')
+	try:
+		for arg, default in zip(args, defaults):
+			print(str(arg)+' = '+str(default))
+	except:
+		print(args, defaults)
+
+	if return_vals == True:
+		return args, defaults 
 
 
 

@@ -27,7 +27,7 @@ from cofiam import max_order
 from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
-from _mp_attributes import get_databases
+from _mp_attributes import get_databases, show_function_inputs
 from pathmaker import make_pathfile
 
 
