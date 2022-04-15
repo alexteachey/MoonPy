@@ -98,7 +98,7 @@ A plot of all the available data should appear, and known transits should be fla
 
 ```>>> lc_object.detrend(dmeth='cofiam')```
 
-Then you can *plot_lc()* again to see both the original data, the trend model, and the detrended light curve.
+Then you can ```plot_lc()``` again to see both the original data, the trend model, and the detrended light curve.
 
 You can also see the full list of attributes associated with this object (values, arrays, and functions) by calling
 
