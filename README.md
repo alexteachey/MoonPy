@@ -8,10 +8,8 @@ last (non-exhaustive) update: April 15, 2022. Developed by [Alex Teachey](http:/
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
 This document will walk you through the basics of using the MoonPy code. 
-MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. (We'd appreciate a shoutout, too).
+MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. We'd appreciate a shoutout, too... please cite  [![DOI](https://zenodo.org/badge/186446465.svg)](https://zenodo.org/badge/latestdoi/186446465)
 
-MoonPy is kind of like a streamlined astro package aggregator, but in time it will hopefully also contain brand new functionality. 
-In particular, support for modeling exomoon transits is coming! (Hence the name, MoonPy). It's not quite ready for prime time, so stay tuned!
 
 ## Installation
 Within the ```MoonPy``` directory, execute the ```pathmaker.py``` file by typing ```python pathmaker.py``` in the terminal. This code *should* generate a file called ```moonpy.pth```, containing the path to the MoonPy directory, and copy it to the directory where your Python distribution can see it. After this has been completed, you should be able to use ```from moonpy import *``` from any working directory.
