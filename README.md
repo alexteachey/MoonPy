@@ -19,7 +19,7 @@ MoonPy is designed to make downloading, plotting, detrending, and fitting light 
 
 
 ## Installation
-Within the ```MoonPy``` directory, execute the ```pathmaker.py``` file by typing ```python pathmaker.py``` in the terminal. This code *should* generate a file called ```moonpy.pth```, containing the path to the MoonPy directory, and copy it to the directory where your Python distribution can see it. After this has been completed, you should be able to use ```from moonpy import *``` from any working directory.
+Begin by cloning the repository wherever you see fit. Then, within the ```MoonPy``` directory, execute the ```pathmaker.py``` file by typing ```python pathmaker.py``` in the terminal. This code *should* generate a file called ```moonpy.pth```, containing the path to the MoonPy directory, and copy it to the directory where your Python distribution can see it. After this has been completed, you should be able to use ```from moonpy import *``` from any working directory.
 
 For example: If you type ```which python``` on the command line, you should see a path to your python distribution. It may be something like ```/home/user/anaconda3/envs/env_name/bin/python```. This means the ```moonpy.pth``` file should live within the directory ```/home/user/anaconda3/envs/env_name/lib/pythonX.Y/site-packages```, where ```pythonX.Y``` is the version of python you are running. If ```from moonpy import *``` does not work, first verify that you have the ```moonpy.pth``` file inside, and that that file contains the path to the MoonPy directory.
 
