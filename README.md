@@ -84,42 +84,42 @@ MoonPy is built around manipulating light curves as objects. To start, simply im
 
 Then you can initialize an object:
 
-*>>> lc_object=MoonpyLC(targetID=TARGET_NAME, clobber='y')*
+```>>> lc_object=MoonpyLC(targetID=TARGET_NAME, clobber='y')```
 
 MoonPy will try to infer which telescope's data should be accessed based on the name of the object (KICs, KOIs, and Kepler- planets get Kepler data, K2 or EPIC numbers retrieve K2 data, TOIs and TICs access TESS data), but you may also specify the telescope if the target name is not one of these, or if you want to search for data from a different telescope. For example, some Kepler planets were observed by TESS, and vice-versa, so simply specify *telescope='kepler'*, etc, for more controlled access.
 
 You can then plot the light curve with
 
-*>>> lc_object.plot_lc()*
+```>>> lc_object.plot_lc()```
 
 A plot of all the available data should appear, and known transits should be flagged. To detrend this data, simply call
 
-*>>> lc_object.detrend(dmeth='cofiam')*
+```>>> lc_object.detrend(dmeth='cofiam')```
 
 Then you can *plot_lc()* again to see both the original data, the trend model, and the detrended light curve.
 
 You can also see the full list of attributes associated with this object (values, arrays, and functions) by calling
 
-*>>> lc_object.print_attributes()*
+```>>> lc_object.print_attributes()```
 
 Many of these attributes are taken directly from the NASA Exoplanet Archive, and have the same name. Therefore you can call up many values of interest for this target simply by calling the attribute of choice, for example:
 
-*>>> k1625.pl_orbper
-287.378949*
+```>>> k1625.pl_orbper```
+```287.378949```
 
 From here, you might opt to run a planet transit fit. Simply call
 
-*>>> lc_object.run_planet_fit()*
+```>>> lc_object.run_planet_fit()```
 
 And you're off to the races. Or you might like to run Tim Morton's ```VESPA``` code (now rather tricky to get working as it is no longer maintained, but if you've got it working on your machine, awesome!). For this, simply use
 
-*>>> lc_object.run_vespa()*
+```>>> lc_object.run_vespa()```
 
 And you will generate the necessary input files for this target. 
 
 You can also generate a Lomb-Scargle periodogram simply by calling 
 
-*>>> lc_object.genLS()*
+```>>> lc_object.genLS()```
 
 
 Note that each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. 
