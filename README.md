@@ -22,16 +22,28 @@ Note that calling ```python pathmaker.py``` from somplace *other* than the MoonP
 
 ## Prerequisites
 
-This code requires a number of packages, including: 
+This code requires a number of packages:
+* [astropy]{https://www.astropy.org/} -- conda install -c anaconda astropy
+* [astroquery]{https://astroquery.readthedocs.io/en/latest/} -- conda install c astropy astroquery
+* [matplotlib]{https://matplotlib.org/} -- conda install -c conda-forge matplotlib
+* [pandas]{https://pandas.pydata.org/} -- conda install -c anaconda pandas
+* [scipy]{https://scipy.org/} -- conda install -c anaconda scipy
+* [numba]{https://numba.pydata.org/} -- conda install -c conda-forge numba
 
-* [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - standard parameter estimator and Bayesian evidence calculator, developed by Johannes Buchner as a wrapper to the standard MultiNest code (Feroz and Hobson)
-* [emcee](http://dfm.io/emcee/current/) -- alternative to MultiNest, for parameter estimation, developed by Dan Foreman-Mackey (DFM) et al
-* [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - Standard transit-modeling code by L. Kreidberg
-* [corner](https://github.com/dfm/corner.py) -- for visualizing fit parameters, developed by DFM
-* [george](https://george.readthedocs.io/en/latest/) -- a Gaussian process regression tool developed by (you guessed it) DFM
-* [untrendy](https://github.com/dfm/untrendy) -- another DFM package for fast and easy detrending (currently having difficulties here)
+For full functionality, these packages will also be needed:
+* [exoplanet]{https://docs.exoplanet.codes/en/latest/} -- conda install -c conda-forge exoplanet
+* [pymc3]{https://docs.pymc.io/en/v3/} -- conda install -c conda-forge pymc3
+* ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
+* [arviz]{https://arviz-devs.github.io/arviz/} -- conda install -c conda-forge arviz=0.11.0
+* [corner](https://github.com/dfm/corner.py) -- conda install -c astropy corner
+* [celerite2]{https://celerite2.readthedocs.io/en/latest/} -- conda install -c conda-forge celerite2
+* ```aesara_theano_fallback``` -- conda install -c conda-forge aesara-theano-fallback
+* [george](https://george.readthedocs.io/en/latest/) -- conda install -c conda-forge george 
+* [untrendy]{https://github.com/dfm/untrendy} -- pip install untrendy
+* [emcee](http://dfm.io/emcee/current/) -- conda install -c conda-forge emcee
+* [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - pip install batman-package
+* [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - pip install pymultinest 
 
-As well as several standard packages (numpy, scipy, astropy, matplotlib, pandas, etc) that likely came with your python distribution.
 
 Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
 
