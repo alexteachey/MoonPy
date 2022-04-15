@@ -28,7 +28,7 @@ Users **may** be able to install the necessary dependencies using the ```moon_en
 
 If this fails consider removing the final version information on each line. Alternatively, packages may be installed individually with the commands below.
 
-This code requires a number of packages:
+This code **requires** the following standard packages:
 * [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
 * [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
 * [matplotlib](https://matplotlib.org/) -- conda install -c conda-forge matplotlib
@@ -36,7 +36,7 @@ This code requires a number of packages:
 * [scipy](https://scipy.org/) -- conda install -c anaconda scipy
 * [numba](https://numba.pydata.org/) -- conda install -c conda-forge numba
 
-For full functionality, these packages will also be needed:
+For full functionality, the following packages will also be needed (but MoonPy can be run without them):
 * [exoplanet](https://docs.exoplanet.codes/en/latest/) -- conda install -c conda-forge exoplanet
 * [pymc3](https://docs.pymc.io/en/v3/) -- conda install -c conda-forge pymc3
 * ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
