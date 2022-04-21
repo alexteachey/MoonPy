@@ -47,17 +47,20 @@ This package is designed to do the following:
 """
 
 
-#### INITIALIZE USER WELCOME
-if os.get_terminal_size()[0] >= 145:
-	print_logo_big()
-else:
-	print_logo_small()
-print(' ')
-print(' ')
-print(' ')
-print('PLEASE BE SURE TO CLONE THE LATEST VERSION!!!')
-print(' ')
-print(' ')    
+
+if hasattr(__builtins__,'__IPYTHON__') == False:
+	##### IF YOU'RE RUNNING IN A TERMINAL, not in an Jupyter notebook...
+	#### INITIALIZE USER WELCOME
+	if os.get_terminal_size()[0] >= 145:
+		print_logo_big()
+	else:
+		print_logo_small()
+	print(' ')
+	print(' ')
+	print(' ')
+	print('PLEASE BE SURE TO CLONE THE LATEST VERSION!!!')
+	print(' ')
+	print(' ')    
 
 
 
