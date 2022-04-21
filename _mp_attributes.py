@@ -1164,12 +1164,6 @@ def run_vespa(self, clobber='n'):
 def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=None):
 	print("calling _mp_attributes.py/get_properties()...")
 
-
-	try:
-		self.make_NEA_dict()
-	except:
-		print('An Error occurred calling make_NEA_dict().')
-
 	if self.telescope.lower() == 'kepler':
 		if self.newlc == 'y':
 			NEA_rowidx, NEA_targetname = self.find_planet_row(row_known='y')
@@ -1522,6 +1516,11 @@ def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=No
 	if locate_neighbor=='y':
 		self.find_neighbors() ### new May 31st, 2019 -- identifies whether there are other known planets in the system!
 	
+	try:
+		self.make_NEA_dict()
+	except:
+		print('An Error occurred calling make_NEA_dict().')
+
 	try:
 		self.find_taus(times=times, fluxes=fluxes, errors=errors)
 	except:
