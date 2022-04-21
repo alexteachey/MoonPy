@@ -5,6 +5,7 @@ import pandas
 import os
 import traceback
 from astropy.io import fits
+import socket 
 try:
 	import exoplanet as xo
 except:
@@ -54,7 +55,7 @@ except:
 
 import platform 
 from matplotlib import rcParams
-from moonpy import * 
+#from moonpy import * 
 import pickle
 
 #rcParams['font.family'] = 'serif'

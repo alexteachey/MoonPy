@@ -28,6 +28,7 @@ from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from _mp_attributes import get_databases, show_function_inputs
+from mp_logo import print_logo_big, print_logo_small 
 #from pathmaker import make_pathfile
 
 
@@ -46,8 +47,19 @@ This package is designed to do the following:
 """
 
 
-print('NOTE TO ALEX: ')
-print('MAKE SURE YOU CLONE LATEST VERSION OF MOONPY BEFORE MAKING LOCAL CHANGES.')
+#### INITIALIZE USER WELCOME
+if os.get_terminal_size()[0] >= 145:
+	print_logo_big()
+else:
+	print_logo_small()
+print(' ')
+print(' ')
+print(' ')
+print('PLEASE BE SURE TO CLONE THE LATEST VERSION!!!')
+print(' ')
+print(' ')    
+
+
 
 first_kepler = 'y'
 first_koi = 'y'

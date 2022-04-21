@@ -18,7 +18,7 @@ import inspect
 
 
 #### BELOW ARE MOONPY PACKAGES
-from moonpy import *
+#from moonpy import *
 from mp_tools import *
 from mp_lcfind import *
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
@@ -29,7 +29,7 @@ from cofiam import max_order
 from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
-from moonpy import *
+#from moonpy import *
 from _mp_visuals import fold 
 import subprocess
 
