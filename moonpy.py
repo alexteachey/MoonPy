@@ -617,6 +617,7 @@ class MoonpyLC(object):
 				print('downloading via kplr...')
 				NEA_rowidx, NEA_targetname = self.find_planet_row(row_known='n') ### cannot access ExoFOP for Kepler without a login.
 				self.NEA_targetname = NEA_targetname
+				#self.NEA_rowidx = NEA_rowidx ### HANDLED BELOW.
 				try:
 					if user_supplied == 'n':
 						if download == 'y':

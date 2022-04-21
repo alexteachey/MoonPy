@@ -1177,6 +1177,8 @@ def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=No
 			NEA_rowidx, NEA_targetname = self.find_planet_row(row_known='n')	
 		print('NEA_rowidx = ', NEA_rowidx)
 
+		self.NEA_rowidx = NEA_rowidx 
+
 
 	#elif self.telescope.lower() == 'k2' or self.telescope.lower() == 'tess':
 	elif self.telescope.lower() == 'k2':
@@ -1184,6 +1186,9 @@ def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=No
 			NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='y')
 		elif self.newlc == 'n':
 			NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='n')
+
+		self.NEA_rowidx = NEA_rowidx 
+		self.exofop_rowidx = exofop_rowidx
 
 		print('NEA_rowidx = ', NEA_rowidx)
 		print('exofop_rowidx = ', exofop_rowidx)
@@ -1193,6 +1198,9 @@ def get_properties(self, locate_neighbor='n', times=None, fluxes=None, errors=No
 			NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='y')
 		elif self.newlc == 'n':
 			NEA_rowidx, exofop_rowidx, NEA_targetname = self.find_planet_row(row_known='n')	
+
+		self.NEA_rowidx = NEA_rowidx
+		self.exofop_rowidx = exofop_rowidx 
 
 		print('[gp] NEA_rowidx = ', NEA_rowidx)
 		print('[gp] exofop_rowidx = ', exofop_rowidx)
