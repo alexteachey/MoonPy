@@ -1031,7 +1031,7 @@ def make_vespa_starini(self, clobber='n'):
 
 
 
-def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
+def make_vespa_fppini(self, maxrad=12, secthresh=1e-4, clobber='n'):
 
 	if (clobber == 'y') or (clobber == True):
 		os.system('rm -rf '+self.savepath+'/fpp.ini')
