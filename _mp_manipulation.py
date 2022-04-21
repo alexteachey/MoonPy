@@ -634,18 +634,21 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 						#### if not in Holczer, or if it's not a Kepler target (which means its' definitely not in Holczer)
 						#### NEW -- MARCH 2022 -- re-center the mask on the flux minimum!
 						in_transit_idxs = np.where( (dtimes >= float(qtt) - (self.mask_multiple/2) *self.duration_days) & (dtimes <= float(qtt) + (self.mask_multiple/2)*self.duration_days))[0]						
-						in_transit_flux_minimum_idx = np.nanargmin(dfluxes[in_transit_idxs])
-						new_in_transit_center_idx = in_transit_idxs[in_transit_flux_minimum_idx]
-						new_in_transit_center_time = dtimes[new_in_transit_center_idx]
+						try:
+							in_transit_flux_minimum_idx = np.nanargmin(dfluxes[in_transit_idxs])
+							new_in_transit_center_idx = in_transit_idxs[in_transit_flux_minimum_idx]
+							new_in_transit_center_time = dtimes[new_in_transit_center_idx]
 
-						#### update the self.taus value!
-						self_tau_idx = np.where(qtt == self.taus)[0]
-						self.taus[self_tau_idx] = new_in_transit_center_time
-						print('UPDATED TAU!')
-						print('was: '+str(qtt)+'; now: '+str(new_in_transit_center_time))
+							#### update the self.taus value!
+							self_tau_idx = np.where(qtt == self.taus)[0]
+							self.taus[self_tau_idx] = new_in_transit_center_time
+							print('UPDATED TAU!')
+							print('was: '+str(qtt)+'; now: '+str(new_in_transit_center_time))
 
-						#### now update it
-						in_transit_idxs = np.where((dtimes >= float(new_in_transit_center_time) - (self.mask_multiple / 4)*self.duration_days) & (dtimes <= float(new_in_transit_center_time) + (self.mask_multiple / 4)*self.duration_days))[0]
+							#### now update it
+							in_transit_idxs = np.where((dtimes >= float(new_in_transit_center_time) - (self.mask_multiple / 4)*self.duration_days) & (dtimes <= float(new_in_transit_center_time) + (self.mask_multiple / 4)*self.duration_days))[0]
+						except:
+							print('there was a problem finding the minimum flux in the in_transit_idxs window (maybe empty).')
 
 
 					mask_transit_idxs.append(in_transit_idxs)
