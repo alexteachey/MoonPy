@@ -962,7 +962,11 @@ def make_NEA_dict(self):
 
 
 
-def make_vespa_starini(self):
+def make_vespa_starini(self, clobber='n'):
+
+	if (clobber == 'y') or (clobber == True):
+		os.system('rm -rf '+self.savepath+'/star.ini')
+
 	#if os.path.exists(moonpydir+'/vespa'):
 	#	pass
 	#else:
@@ -1028,6 +1032,9 @@ def make_vespa_starini(self):
 
 
 def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
+
+	if (clobber == 'y') or (clobber == True):
+		os.system('rm -rf '+self.savepath+'/fpp.ini')
 	#if os.path.exists(moonpydir+'/vespa'):
 	#	pass
 	#else:
@@ -1066,7 +1073,11 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4):
 
 
 
-def make_vespa_photfile(self, dmeth='cofiam'):
+def make_vespa_photfile(self, dmeth='cofiam', clobber='n'):
+
+	if (clobber == 'y') or (clobber == True):
+		os.system('rm -rf '+self.savepath+'/photfile.csv')
+
 	try:
 		print('fold times: ', self.fold_times)
 	
@@ -1096,10 +1107,20 @@ def make_vespa_photfile(self, dmeth='cofiam'):
 
 
 
-def run_vespa(self):
-	self.make_vespa_starini()
-	self.make_vespa_fppini()
-	self.make_vespa_photfile()
+def run_vespa(self, clobber='n'):
+	if (clobber == 'y') or (clobber == True):
+		print("CLOBBERING VESPA FILES AND STARTING FROM SCATCH!")
+		time.sleep(3)
+		#### scrub the existing files 
+		os.system('rm -rf '+self.savepath+'/mist*png')
+		os.system('rm -rf '+self.savepath+'/mist*h5')
+		os.system('rm -rf '+self.savepath+'/starfit.log')
+		os.system('rm -rf '+self.savepath+'/calcfpp/log')
+		os.system('rm -rf '+self.savepath+'/chains') 
+
+	self.make_vespa_starini(clobber=clobber)
+	self.make_vespa_fppini(clobber=clobber)
+	self.make_vespa_photfile(clobber=clobber)
 
 
 	print("ATTEMPTING TO RUN VESPA....")
