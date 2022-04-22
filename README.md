@@ -1,4 +1,4 @@
-![MoonPy_logo](https://github.com/alexteachey/MoonPy/blob/master/moonpy_logo_fixed.png)
+![MoonPy_logo](https://github.com/alexteachey/MoonPy/blob/master/moonpy_logo.png)
 
 
 
