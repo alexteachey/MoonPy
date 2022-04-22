@@ -9,8 +9,8 @@ pythonpaths = sys.path
 for pythonpath in pythonpaths:
 	if 'site-packages' in pythonpath:
 		desired_path = pythonpath
-
 orbitsdir = desired_path+'/vespa/orbits'
+
 
 #### UPDATE POPULATIONS.PY
 popsfile = open(orbitsdir+'/populations.py', mode='r')

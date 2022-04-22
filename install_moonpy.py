@@ -58,7 +58,7 @@ def build_env_and_install(packagename, standard_environment_name):
 		result = subprocess.run('source activate '+environment_name+' && python pathmaker.py && python vespa_script_updater.py && conda deactivate', shell=True, capture_output=True, text=True)
 
 	print('stdout: ', result.stdout)
-	pritn('stderr: ', result.stderr)		
+	print('stderr: ', result.stderr)		
 
 	try:
 		subprocess.Popen('conda env list', shell=True).wait()
