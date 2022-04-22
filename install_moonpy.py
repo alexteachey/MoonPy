@@ -50,11 +50,15 @@ def build_env_and_install(packagename, standard_environment_name):
 	print('creating the '+packagename+' path...')
 	if packagename.lower() == 'moonpy':
 		#### only need to do this for moonpy.
-		subprocess.run('source activate '+environment_name+' && python pathmaker.py && conda deactivate', shell=True)
+		result = subprocess.run('source activate '+environment_name+' && python pathmaker.py && conda deactivate', shell=True, capture_output=True, text=True)
+
 
 	elif packagename.lower() == 'vespa':
 		#### run the vespa updater 
-		subprocess.run('source activate '+environment_name+' && python pathmaker.py && python vespa_script_updater.py && conda deactivate', shell=True)		
+		result = subprocess.run('source activate '+environment_name+' && python pathmaker.py && python vespa_script_updater.py && conda deactivate', shell=True, capture_output=True, text=True)
+
+	print('stdout: ', result.stdout)
+	pritn('stderr: ', result.stderr)		
 
 	try:
 		subprocess.Popen('conda env list', shell=True).wait()
