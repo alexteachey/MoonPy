@@ -19,6 +19,13 @@ import copy
 
 moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/mp_lcfind.py')]
+curlscript_dir = moonpydir+'/tess_sector_curlscripts'
+
+if os.path.exists(curlscript_dir) == False:
+	os.system('mkdir '+curlscript_dir)
+	#### move existing curlscripts into this directory!
+	os.system('mv '+moonpydir+'/*curlscript.txt '+curlscript_dir+'/')
+
 
 hostname = socket.gethostname()
 if ('tethys' in hostname) and ('sinica' in hostname):
@@ -922,7 +929,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 				print('looking for sector: ', sector)
 
 				try:
-					if os.path.exists(moonpydir+'/sector'+str(sector)+"_curlscript.txt"):
+					if os.path.exists(curlscript_dir+'/sector'+str(sector)+"_curlscript.txt"):
 						print('curlscript exists.')
 						pass
 
@@ -931,9 +938,9 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 						print('attempting to download curlscript for the first time.')
 						sector_curl_URL = 'http://archive.stsci.edu/missions/tess/download_scripts/sector/tesscurl_sector_'+str(sector)+'_lc.sh'
 						print('sector_curl_URL')
-						os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+moonpydir+'/sector'+str(sector)+"_curlscript.txt")
+						os.system('wget --tries=1 -N "'+sector_curl_URL+'" -O '+curlscript_dir+'/sector'+str(sector)+"_curlscript.txt")
 
-					curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
+					curltxt = open(curlscript_dir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
 					first_line = curltxt.readline()
 					second_line = curltxt.readline()
 					sector_prefix = second_line[16:40]
@@ -962,7 +969,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 						empty_curlscript_sectors.append(sector)
 						nempty_in_a_row += 1
 						#### remove it!
-						os.system('rm -rf '+moonpydir+'/sector'+str(sector)+'_curlscript.txt')
+						os.system('rm -rf '+curlscript_dir+'/sector'+str(sector)+'_curlscript.txt')
 						#break
 						#continue
 						if nempty_in_a_row == 5:
@@ -1001,7 +1008,7 @@ def tess_target_download(targID, sectors='all', short_cadence=True, lc_format='p
 			for sector in sector_numbers:
 				#print('sector '+str(sector))
 
-				curltxt = open(moonpydir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
+				curltxt = open(curlscript_dir+'/sector'+str(sector)+'_curlscript.txt', mode='r')
 				first_line = curltxt.readline()
 				second_line = curltxt.readline()
 				sector_prefix = second_line[16:40]

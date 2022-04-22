@@ -58,7 +58,7 @@ if hasattr(__builtins__,'__IPYTHON__') == False:
 	print(' ')
 	print(' ')
 	print(' ')
-	print('PLEASE BE SURE TO CLONE THE LATEST VERSION!!!')
+	print('PLEASE BE SURE TO PULL THE LATEST VERSION!!!')
 	print(' ')
 	print(' ')    
 
