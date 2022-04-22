@@ -32,3 +32,6 @@ def make_pathfile(moonpydir):
 		print('copied '+source_path+' to '+destination_path)
 
 make_pathfile(os.getcwd())
+
+print('pathmaker.py exited successfully.')
+print(' ')

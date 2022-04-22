@@ -39,3 +39,7 @@ utilsfile.close()
 new_utilsfile.close()
 os.system('mv '+orbitsdir+'/utils.py '+orbitsdir+'/utils_DEPRECATED.py')
 os.system('mv '+orbitsdir+'/utils_new.py '+orbitsdir+'/utils.py')
+
+print(' ')
+print('UPDATED VESPA SCRIPTS! ')
+print('can be found at '+orbitsdir+'/utils.py and populations.py')
