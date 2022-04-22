@@ -35,7 +35,7 @@ where ```ENV_NAME``` is the name of the conda environment you have just establis
 
 And you're off to the races. **Please note:** The first time you boot up MoonPy it may take a few moments to load. After that it should be much faster!
 
-*If the installation process above fails, dependencies below can be installed individually. To ensure MoonPy loads correctly, users can call* ```python pathmaker.py``` *within the desired Python environment.*
+*If the installation process above fails, dependencies below can be installed individually. To ensure MoonPy loads correctly, users can call* ```python pathmaker.py``` *within the MoonPy directory, and with the desired conda environment activated.*
 
 ## Dependencies
 
