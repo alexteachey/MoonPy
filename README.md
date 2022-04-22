@@ -19,21 +19,25 @@ MoonPy is designed to make downloading, plotting, detrending, and fitting light 
 
 
 ## Installation
-Begin by cloning the repository wherever you see fit. Then, within the ```MoonPy``` directory, execute the ```pathmaker.py``` file by typing ```python pathmaker.py``` in the terminal. This code *should* generate a file called ```moonpy.pth```, containing the path to the MoonPy directory, and copy it to the directory where your Python distribution can see it. After this has been completed, you should be able to use ```from moonpy import *``` from any working directory.
+Installation is now a breeze. Begin by cloning the repository wherever you see fit.
 
-For example: If you type ```which python``` on the command line, you should see a path to your python distribution. It may be something like ```/home/user/anaconda3/envs/env_name/bin/python```. This means the ```moonpy.pth``` file should live within the directory ```/home/user/anaconda3/envs/env_name/lib/pythonX.Y/site-packages```, where ```pythonX.Y``` is the version of python you are running. If ```from moonpy import *``` does not work, first verify that you have the ```moonpy.pth``` file inside, and that that file contains the path to the MoonPy directory.
+Then navigate to the MoonPy directory you have just cloned, and within the terminal type
 
-Note that calling ```python pathmaker.py``` from somplace *other* than the MoonPy directory will give ```moonpy.pth``` the wrong information and you will not be able to import MoonPy normally. You only need to call ```pathmaker.py``` once!
+```python install_moonpy.py```
+
+This will 1) create a new conda environment of your choosing, 2) install a variety of required and recommended packages within that environment, and 3) create the path so that your Python can see MoonPy as an installable package. After this is complete, simply 
+
+```conda activate ENV_NAME```
+
+where ```ENV_NAME``` is the name of the conda environment you have just established. You should now be able to type
+
+```from moonpy import *```
+
+And you're off to the races. **Please note:** The first time you boot up MoonPy it may take a few moments to load. After that it should be much faster!
 
 ## Prerequisites
 
-Users **may** be able to install the necessary dependencies using the ```moonpy_env.yml``` or the ```moonpy_env_flexible.yml``` file (if the first one fails). It is recommended to create a new ```conda``` environment as follows:
-
-```conda env create --file moonpy_env.yml```
-
-If this fails consider removing the final version information on each line. Alternatively, packages may be installed individually with the commands below.
-
-This code **requires** the following standard packages:
+This code **requires** the following standard packages, which *should* be installed following the instructions above:
 * [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
 * [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
 * [matplotlib](https://matplotlib.org/) -- conda install -c conda-forge matplotlib
