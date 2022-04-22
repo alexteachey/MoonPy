@@ -1,4 +1,4 @@
-name: moonpy_env
+name: moonpy_env_linux
 channels:
   - astropy
   - conda-forge
@@ -145,4 +145,4 @@ dependencies:
   - zstd=1.5.0
   - pip:
     - celerite2==0.2.0
-prefix: /home/amteachey/anaconda3/envs/moonpy_env
+prefix: /home/amteachey/anaconda3/envs/moonpy_env_linux
