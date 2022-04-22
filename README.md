@@ -35,7 +35,9 @@ where ```ENV_NAME``` is the name of the conda environment you have just establis
 
 And you're off to the races. **Please note:** The first time you boot up MoonPy it may take a few moments to load. After that it should be much faster!
 
-## Prerequisites
+*If the installation process above fails, dependencies below can be installed individually. To ensure MoonPy loads correctly, users can call* ```python pathmaker.py``` *within the desired Python environment.*
+
+## Dependencies
 
 This code **requires** the following standard packages, which *should* be installed following the instructions above:
 * [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
