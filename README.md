@@ -119,7 +119,7 @@ From here, you might opt to run a planet transit fit. Simply call
 
 ```>>> lc_object.run_planet_fit()```
 
-And you're off to the races. Or you might like to run Tim Morton's ```VESPA``` code (now rather tricky to get working as it is no longer maintained, but if you've got it working on your machine, awesome!). For this, simply use
+And you're off to the races. Or you might like to run Tim Morton's ```VESPA``` code (now rather tricky to get installed and running, but MoonPy has you covered!). For this, simply use
 
 ```>>> lc_object.run_vespa()```
 
