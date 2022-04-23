@@ -109,7 +109,7 @@ You can also see the full list of attributes associated with this object (values
 
 ```>>> lc_object.print_attributes()```
 
-Many of these attributes are taken directly from the NASA Exoplanet Archive, and have the same name. Therefore you can call up many values of interest for this target simply by calling the attribute of choice, for example:
+Many of these [attributes are taken directly from the NASA Exoplanet Archive](https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html), and have the same name. Therefore you can call up many values of interest for this target simply by calling the attribute of choice, for example:
 
 ```>>> k1625.pl_orbper```
 
