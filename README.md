@@ -328,7 +328,7 @@ is masked on either side of the transit midtime. That is, the total mask is twic
 *mask_neighbors*: by default, transits of other planets in the system will also be masked for the detrending.
 
 *skip_ntqs*: this option allows you to only detrend the quarters that actually contain a transit of the planet you're interested in.
-This can be useful with cofiam, for example, since each quarter can take ~1 minute to detrend. Off by default.
+This can be useful with cofiam, for example, since each quarter can take about 1 minute to detrend. Off by default. 
 
 *medfilt_kernel_transit_multiple* specifies the how many times the transit duration you want to use as your median filter kernel (default: 5).
 
@@ -505,7 +505,7 @@ If *show_plots* is set to 'y', a plot of O-C values will be generated vs epoch n
 
 ## Prepare CNN-ready files
 
-*New June 5, 2019*: Teachey et al 2019b (in prep) is utilizing Convolutional Neural Networks (CNNs) to identify potential moon transits in the *Kepler* data. To that end, the new *prep_for_CNN(save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n')* function prepares your light curves to be fed into a CNN. The function also returns the filepath of the generated light curve array.
+[Teachey & Kipping (2021)](https://ui.adsabs.harvard.edu/abs/2021MNRAS.508.2620T/abstract) utilized Convolutional Neural Networks (CNNs) to identify potential moon transits in the *Kepler* data. To that end, the *prep_for_CNN(save_lc='y', window=6, cnn_len=493, exclude_neighbors='y', flag_neighbors='y', show_plot='n')* function prepares your light curves to be fed into a CNN. The function also returns the filepath of the generated light curve array.
 
 
 ### Keywords
