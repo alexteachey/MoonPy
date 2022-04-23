@@ -74,14 +74,11 @@ Below you will find the details of some of these tools. At present the user will
 * **plot the light curve** using *plot_lc()*.
 * **generate a Lomb-Scargle** periodogram using *genLS()*.
 * **Detrend the light curve** using *detrend()*
-* **fit a transit model** to the light curve using *fit()* or *run_planet_fit().*.
-* **plot a transit model from fiducial parameters** taken from the NASA Exoplanet Archive.
-* **plot the best fitting model** over the light curve using *plot_bestmodel()*.
-* **generate a corner plot** of your the parameters from your fit using *plot_corner()*.
-* **get target neighbor attributes** using *get_neighbors()*.
-* **identify possible TTVs** using *find_TTVs()*.
+* **fit a transit model** to the light curve using *run_planet_fit()*.
+* **run a false positive calculation with VESPA** using *run_vespa()*.
 
-Most of the above take keyword arguments that are described below. 
+*And more!*
+
 
 
 ## QUICKSTART
