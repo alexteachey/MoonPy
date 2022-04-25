@@ -1127,7 +1127,7 @@ def make_vespa_photfile(self, dmeth='cofiam', clobber=False):
 
 
 
-def run_vespa(self, clobber_inputs=False, clobber_outputs=False, sim_size=1000, dmeth='cofiam'):
+def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dmeth='cofiam'):
 
 	if (clobber_inputs == True) or (clobber_inputs == 'y'):
 		print(' ')
@@ -1151,36 +1151,39 @@ def run_vespa(self, clobber_inputs=False, clobber_outputs=False, sim_size=1000, 
 	self.make_vespa_photfile(clobber=clobber_inputs, dmeth=dmeth)
 
 	print("ATTEMPTING TO RUN VESPA....")
-
+	"""
 	try:
 		print(' ')
 		print('try #1')
 		#os.system('cd '+self.savepath+'; calcfpp -n 1000')
-		subprocess.Popen('cd '+self.savepath+'; calcfpp -n '+str(sim_size)+' --recalc')
+		subprocess.Popen('cd '+self.savepath+'; calcfpp -n '+str(nsims)+' --recalc')
 		print(' ')
+
+
+	except:
+		traceback.print_exc()
+	"""
+	try:
+		print(' ')
+		print('try #1') #### THIS IS THE ONE!!!! (BUT MAYBE WE STILL NEED TRY #1 FOR STARFIT ALL)
+		print(' ')
+		#os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
+		subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n '+str(nsims)+' --recalc', shell=True)
 	except:
 		traceback.print_exc()
 		try:
 			print(' ')
-			print('try #2') #### THIS IS THE ONE!!!! (BUT MAYBE WE STILL NEED TRY #1 FOR STARFIT ALL)
+			print('try #2')
 			print(' ')
-			#os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n '+str(sim_size)+' --recalc', shell=True)
+			#os.system('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
+			subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n '+str(nsims)+' --recalc', shell=True)
 		except:
 			traceback.print_exc()
-			try:
-				print(' ')
-				print('try #3')
-				print(' ')
-				#os.system('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n '+str(sim_size)+' --recalc', shell=True)
-			except:
-				traceback.print_exc()
-				print(' ')
-				print('last except.')
-				print(' ')
-				#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
-				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n '+str(sim_size)+' --recalc', shell=True)
+			print(' ')
+			print('last except.')
+			print(' ')
+			#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
+			subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n '+str(nsims)+' --recalc', shell=True)
 
 
 
