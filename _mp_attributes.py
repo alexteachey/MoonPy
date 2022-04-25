@@ -1127,7 +1127,7 @@ def make_vespa_photfile(self, dmeth='cofiam', clobber=False):
 
 
 
-def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dmeth='cofiam'):
+def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dmeth='cofiam', clobber_fpp=None, clobber_star=None, clobber_photfile=None):
 
 	if (clobber_inputs == True) or (clobber_inputs == 'y'):
 		print(' ')
@@ -1146,9 +1146,18 @@ def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dme
 		os.system('rm -rf '+self.savepath+'/calcfpp/log')
 		os.system('rm -rf '+self.savepath+'/chains') 
 
-	self.make_vespa_starini(clobber=clobber_inputs)
-	self.make_vespa_fppini(clobber=clobber_inputs)
-	self.make_vespa_photfile(clobber=clobber_inputs, dmeth=dmeth)
+	if type(clobber_star) == type(None):
+		clobber_star = clobber_inputs 
+
+	if type(clobber_fpp) == type(None):
+		clobber_fpp = clobber_inputs 
+
+	if type(clobber_photfile) == type(None):
+		clobber_photfile = clobber_inputs
+
+	self.make_vespa_starini(clobber=clobber_star)
+	self.make_vespa_fppini(clobber=clobber_fpp)
+	self.make_vespa_photfile(clobber=clobber_photfile, dmeth=dmeth)
 
 	print("ATTEMPTING TO RUN VESPA....")
 	"""
