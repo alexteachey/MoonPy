@@ -37,7 +37,7 @@ where ```ENV_NAME``` is the name of the conda environment you have just establis
 
 And you're off to the races. **Please note:** The first time you boot up MoonPy it may take a few moments to load. After that it should be much faster!
 
-*If the installation process above fails, dependencies below can be installed individually. To ensure MoonPy loads correctly, users can call* ```python pathmaker.py``` *within the MoonPy directory, and with the desired conda environment activated. On linux machines, if you opt to install VESPA, you may also need to call* ```python vespa_script_updater.py``` *to fix a deprecated keyword in some vespa scripts. This should be done within the separate VESPA conda environment.*
+*If the installation process above fails, dependencies below can be installed individually. **LINUX USERS:** To ensure MoonPy loads correctly, users may need to call* ```python pathmaker.py``` *within the MoonPy directory, and with the desired conda environment activated. If you opt to install VESPA, you may also need to call* ```python vespa_script_updater.py``` *to fix a deprecated keyword in some vespa scripts. This should be done within the separate VESPA conda environment. (breakdowns include a deprecated 'representation' keyword, and/or a missing 'TESS' keyword. These errors are fixed by vespa_script_updater.py .*
 
 ## Dependencies
 
