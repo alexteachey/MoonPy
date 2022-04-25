@@ -962,7 +962,7 @@ def make_NEA_dict(self):
 
 
 
-def make_vespa_starini(self, clobber='n'):
+def make_vespa_starini(self, clobber=False):
 
 
 	if os.path.exists(self.savepath+'/star.ini') == False:
@@ -1036,7 +1036,7 @@ def make_vespa_starini(self, clobber='n'):
 
 
 
-def make_vespa_fppini(self, maxrad=12, secthresh=1e-4, clobber='n'):
+def make_vespa_fppini(self, maxrad=12, secthresh=1e-4, clobber=False):
 
 	if os.path.exists(self.savepath+'/fpp.ini') == False:
 		#### doesn't exist, so you need to make it!
@@ -1082,7 +1082,7 @@ def make_vespa_fppini(self, maxrad=12, secthresh=1e-4, clobber='n'):
 
 
 
-def make_vespa_photfile(self, dmeth='cofiam', clobber='n'):
+def make_vespa_photfile(self, dmeth='cofiam', clobber=False):
 
 	if os.path.exists(self.savepath+'/photfile.csv') == False:
 		#### doesn't exist, so you have to make it!
