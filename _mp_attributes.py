@@ -1107,7 +1107,7 @@ def make_vespa_photfile(self, dmeth='cofiam', clobber='n'):
 
 
 
-def run_vespa(self, clobber='n'):
+def run_vespa(self, clobber='n', dmeth='cofiam'):
 	if (clobber == 'y') or (clobber == True):
 		print("CLOBBERING VESPA FILES AND STARTING FROM SCATCH!")
 		time.sleep(3)
@@ -1120,7 +1120,7 @@ def run_vespa(self, clobber='n'):
 
 	self.make_vespa_starini(clobber=clobber)
 	self.make_vespa_fppini(clobber=clobber)
-	self.make_vespa_photfile(clobber=clobber)
+	self.make_vespa_photfile(clobber=clobber, dmeth=dmeth)
 
 
 	print("ATTEMPTING TO RUN VESPA....")
@@ -1129,7 +1129,7 @@ def run_vespa(self, clobber='n'):
 		print(' ')
 		print('try #1')
 		#os.system('cd '+self.savepath+'; calcfpp -n 1000')
-		subprocess.Popen('cd '+self.savepath+'; calcfpp -n 1000')
+		subprocess.Popen('cd '+self.savepath+'; calcfpp -n 1000 --recalc')
 		print(' ')
 	except:
 		traceback.print_exc()
@@ -1138,7 +1138,7 @@ def run_vespa(self, clobber='n'):
 			print('try #2') #### THIS IS THE ONE!!!! (BUT MAYBE WE STILL NEED TRY #1 FOR STARFIT ALL)
 			print(' ')
 			#os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n 1000', shell=True)
+			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n 1000 --recalc', shell=True)
 		except:
 			traceback.print_exc()
 			try:
@@ -1146,14 +1146,14 @@ def run_vespa(self, clobber='n'):
 				print('try #3')
 				print(' ')
 				#os.system('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000', shell=True)
+				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000 --recalc', shell=True)
 			except:
 				traceback.print_exc()
 				print(' ')
 				print('last except.')
 				print(' ')
 				#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
-				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000', shell=True)
+				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000 --recalc', shell=True)
 
 
 
