@@ -1127,7 +1127,7 @@ def make_vespa_photfile(self, dmeth='cofiam', clobber='n'):
 
 
 
-def run_vespa(self, clobber_inputs='n', clobber_outputs='n', sim_size=1000, dmeth='cofiam'):
+def run_vespa(self, clobber_inputs=False, clobber_outputs=False, sim_size=1000, dmeth='cofiam'):
 
 	if (clobber_inputs == True) or (clobber_inputs == 'y'):
 		print(' ')
