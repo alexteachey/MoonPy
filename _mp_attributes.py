@@ -964,164 +964,191 @@ def make_NEA_dict(self):
 
 def make_vespa_starini(self, clobber='n'):
 
+
+	if os.path.exists(self.savepath+'/star.ini') == False:
+		#### doesn't exist, so you have to write it!
+		print(self.savepath+"/star.ini doesn't exist... making it now.")
+		clobber = True
+
+
 	if (clobber == 'y') or (clobber == True):
 		os.system('rm -rf '+self.savepath+'/star.ini')
 
-	#if os.path.exists(moonpydir+'/vespa'):
-	#	pass
-	#else:
-	#	os.system('mkdir '+moonpydir+'/vespa')
+		print(' ')
+		print("making a new "+self.savepath+'/star.ini file.')
+		print(' ')
+		starini_filename = self.savepath+'/star.ini'
+		starini_file = open(starini_filename, mode='w')
+		starini_file.write('#provide spectroscopic properties if available\n')
 
-	starini_filename = self.savepath+'/star.ini'
-	starini_file = open(starini_filename, mode='w')
-	starini_file.write('#provide spectroscopic properties if available\n')
-
-	#### EFFECTIVE TEMPERATURE
-	if np.isfinite(self.st_teff.__float__()):
-		teff_input = self.st_teff
-		teff_err_input = np.nanmax((np.abs(self.st_tefferr1), np.abs(self.st_tefferr2)))
-		starini_file.write('Teff = '+str(teff_input)+', '+str(teff_err_input)+' #value, uncertainty\n')
+		#### EFFECTIVE TEMPERATURE
+		if np.isfinite(self.st_teff.__float__()):
+			teff_input = self.st_teff
+			teff_err_input = np.nanmax((np.abs(self.st_tefferr1), np.abs(self.st_tefferr2)))
+			starini_file.write('Teff = '+str(teff_input)+', '+str(teff_err_input)+' #value, uncertainty\n')
 
 
-	#### Metallicity feh
-	if np.isfinite(self.st_met.__float__()):
-		feh_input = self.st_met
-		feh_err_input = np.nanmax((np.abs(self.st_meterr1), np.abs(self.st_meterr2)))
-		starini_file.write('feh = '+str(feh_input)+', '+str(feh_err_input)+' #value, uncertainty\n')
+		#### Metallicity feh
+		if np.isfinite(self.st_met.__float__()):
+			feh_input = self.st_met
+			feh_err_input = np.nanmax((np.abs(self.st_meterr1), np.abs(self.st_meterr2)))
+			starini_file.write('feh = '+str(feh_input)+', '+str(feh_err_input)+' #value, uncertainty\n')
 
 
-	#### Logg 
-	if np.isfinite(self.st_logg.__float__()):
-		logg_input = self.st_logg
-		logg_err_input = np.nanmax((np.abs(self.st_loggerr1), np.abs(self.st_loggerr2)))
-		starini_file.write('logg = '+str(logg_input)+', '+str(logg_err_input)+' #value, uncertainty\n')	
+		#### Logg 
+		if np.isfinite(self.st_logg.__float__()):
+			logg_input = self.st_logg
+			logg_err_input = np.nanmax((np.abs(self.st_loggerr1), np.abs(self.st_loggerr2)))
+			starini_file.write('logg = '+str(logg_input)+', '+str(logg_err_input)+' #value, uncertainty\n')	
 
-	starini_file.write('\n')
+		starini_file.write('\n')
 
-	#### JMAG 
-	if np.isfinite(self.sy_jmag.__float__()):
-		jmag_input = self.sy_jmag
-		jmag_err_input = np.nanmax((np.abs(self.sy_jmagerr1), np.abs(self.sy_jmagerr2)))
-		starini_file.write('J = '+str(jmag_input)+', '+str(jmag_err_input)+' #value, uncertainty\n')
+		#### JMAG 
+		if np.isfinite(self.sy_jmag.__float__()):
+			jmag_input = self.sy_jmag
+			jmag_err_input = np.nanmax((np.abs(self.sy_jmagerr1), np.abs(self.sy_jmagerr2)))
+			starini_file.write('J = '+str(jmag_input)+', '+str(jmag_err_input)+' #value, uncertainty\n')
 
-	#### HMAG
-	if np.isfinite(self.sy_hmag.__float__()):
-		hmag_input = self.sy_hmag
-		hmag_err_input = np.nanmax((np.abs(self.sy_hmagerr1), np.abs(self.sy_hmagerr2)))
-		starini_file.write('H = '+str(hmag_input)+', '+str(hmag_err_input)+' #value, uncertainty\n')		
+		#### HMAG
+		if np.isfinite(self.sy_hmag.__float__()):
+			hmag_input = self.sy_hmag
+			hmag_err_input = np.nanmax((np.abs(self.sy_hmagerr1), np.abs(self.sy_hmagerr2)))
+			starini_file.write('H = '+str(hmag_input)+', '+str(hmag_err_input)+' #value, uncertainty\n')		
 
-	#### KMAG
-	if np.isfinite(self.sy_kmag.__float__()):
-		kmag_input = self.sy_kmag
-		kmag_err_input = np.nanmax((np.abs(self.sy_kmagerr1), np.abs(self.sy_kmagerr2)))
-		starini_file.write('K = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')
-
-
-	#### Kepler mag
-	if np.isfinite(self.sy_kepmag.__float__()):
-		kepmag_input = self.sy_kepmag
-		kepmag_err_input = np.nanmax((np.abs(self.sy_kepmagerr1), np.abs(self.sy_kepmagerr2)))
-		starini_file.write('Kepler = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')				
+		#### KMAG
+		if np.isfinite(self.sy_kmag.__float__()):
+			kmag_input = self.sy_kmag
+			kmag_err_input = np.nanmax((np.abs(self.sy_kmagerr1), np.abs(self.sy_kmagerr2)))
+			starini_file.write('K = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')
 
 
-	starini_file.close()
+		#### Kepler mag
+		if np.isfinite(self.sy_kepmag.__float__()):
+			kepmag_input = self.sy_kepmag
+			kepmag_err_input = np.nanmax((np.abs(self.sy_kepmagerr1), np.abs(self.sy_kepmagerr2)))
+			starini_file.write('Kepler = '+str(kmag_input)+', '+str(kmag_err_input)+' #value, uncertainty\n')				
 
-	print('created '+starini_filename)
+
+		starini_file.close()
+
+		print('created '+starini_filename)
 	
 
 
 
 def make_vespa_fppini(self, maxrad=12, secthresh=1e-4, clobber='n'):
 
+	if os.path.exists(self.savepath+'/fpp.ini') == False:
+		#### doesn't exist, so you need to make it!
+		print(self.savepath+"/fpp.ini doesn't exist... making it now.")
+		clobber = True
+
+
 	if (clobber == 'y') or (clobber == True):
 		os.system('rm -rf '+self.savepath+'/fpp.ini')
-	#if os.path.exists(moonpydir+'/vespa'):
-	#	pass
-	#else:
-	#	os.system('mkdir '+moonpydir+'/vespa')
 
+		#compute the cadence
+		timediffs = []
+		for i in np.arange(1,len(self.times[0]), 1):
+			#### use the first quarter / sector, that should do well enough
+			timediffs.append(self.times[0][i] - self.times[0][i-1])
+		timediffs = np.array(timediffs)
+		cadence_days = np.nanmedian(timediffs)
 
-	#compute the cadence
-	timediffs = []
-	for i in np.arange(1,len(self.times[0]), 1):
-		#### use the first quarter / sector, that should do well enough
-		timediffs.append(self.times[0][i] - self.times[0][i-1])
-	timediffs = np.array(timediffs)
-	cadence_days = np.nanmedian(timediffs)
+		print(' ')
+		print("Making a new "+self.savepath+'/fpp.ini file.')
+		print(' ')
+		fppini_filename = self.savepath+'/fpp.ini'
+		fppini_file = open(fppini_filename, mode='w')
 
-	fppini_filename = self.savepath+'/fpp.ini'
-	fppini_file = open(fppini_filename, mode='w')
+		fppini_file.write('name = '+str(self.target)+'\n')
+		fppini_file.write('ra = '+str(self.ra)+'\n')
+		fppini_file.write('dec = '+str(self.dec)+'\n')
+		fppini_file.write('\n')
+		fppini_file.write('period = '+str(self.period)+' #days\n')
+		fppini_file.write('rprs = '+str(self.rprstar)+' #Rp/Rstar\n')
+		fppini_file.write('cadence = '+str(cadence_days)+' #cadence [days]\n')
+		if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
+			fppini_file.write('band = Kepler\n')
+		fppini_file.write('photfile = '+self.savepath+'/photfile.csv #contains transit photometry\n')
+		fppini_file.write('\n')
+		fppini_file.write('[constraints]\n')
+		fppini_file.write('maxrad = '+str(maxrad)+' # aperture radius [arcsec]\n')
+		fppini_file.write('secthres = '+str(secthresh)+' # Maximum allowed depth of potential secondary eclipse\n')
 
-	fppini_file.write('name = '+str(self.target)+'\n')
-	fppini_file.write('ra = '+str(self.ra)+'\n')
-	fppini_file.write('dec = '+str(self.dec)+'\n')
-	fppini_file.write('\n')
-	fppini_file.write('period = '+str(self.period)+' #days\n')
-	fppini_file.write('rprs = '+str(self.rprstar)+' #Rp/Rstar\n')
-	fppini_file.write('cadence = '+str(cadence_days)+' #cadence [days]\n')
-	if self.telescope.lower() == 'kepler' or self.telescope.lower() == 'k2':
-		fppini_file.write('band = Kepler\n')
-	fppini_file.write('photfile = '+self.savepath+'/photfile.csv #contains transit photometry\n')
-	fppini_file.write('\n')
-	fppini_file.write('[constraints]\n')
-	fppini_file.write('maxrad = '+str(maxrad)+' # aperture radius [arcsec]\n')
-	fppini_file.write('secthres = '+str(secthresh)+' # Maximum allowed depth of potential secondary eclipse\n')
+		fppini_file.close()
 
-	fppini_file.close()
-
-	print('created '+fppini_filename)
+		print('created '+fppini_filename)
 
 
 
 def make_vespa_photfile(self, dmeth='cofiam', clobber='n'):
 
+	if os.path.exists(self.savepath+'/photfile.csv') == False:
+		#### doesn't exist, so you have to make it!
+		print(self.savepath+"/photfile.csv doesn't exists... making it now.")
+		clobber = True 
+
 	if (clobber == 'y') or (clobber == True):
 		os.system('rm -rf '+self.savepath+'/photfile.csv')
 
-	try:
-		print('fold times: ', self.fold_times)
-	
-	except:
-		#### probably means it's not detrended yet
-		self.detrend(dmeth=dmeth)
-
 		try:
-			fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors
-		except:
 			self.fold()
-			fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors 
+			print('fold times: ', self.fold_times)
+		
+		except:
+			#### probably means it's not detrended yet
+			self.detrend(dmeth=dmeth)
 
-		#### fold times are in terms of phase, so to transfor into days from tmid, you need to multiply by the period
-		fold_times_from_tmid = fold_times * self.period 
+			try:
+				fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors
+			except:
+				self.fold()
+				fold_times, fold_fluxes, fold_errors = self.fold_times, self.fold_fluxes, self.fold_errors 
 
-		photfile_idxs = np.where((fold_times_from_tmid >= -3) & (fold_times_from_tmid <= 3))[0]
-		photfile_times, photfile_fluxes, photfile_errors = fold_times_from_tmid[photfile_idxs], fold_fluxes[photfile_idxs], fold_errors[photfile_idxs]
+			#### fold times are in terms of phase, so to transfor into days from tmid, you need to multiply by the period
+			fold_times_from_tmid = fold_times * self.period 
 
-		photfile_name = self.savepath+'/photfile.csv'
-		photfile = open(photfile_name, mode='w')
-		for t,f,e in zip(photfile_times, photfile_fluxes, photfile_errors):
-			photfile.write(str(t)+','+str(f)+','+str(e)+'\n')
-		photfile.close()
+			photfile_idxs = np.where((fold_times_from_tmid >= -3) & (fold_times_from_tmid <= 3))[0]
+			photfile_times, photfile_fluxes, photfile_errors = fold_times_from_tmid[photfile_idxs], fold_fluxes[photfile_idxs], fold_errors[photfile_idxs]
 
-		print('created '+photfile_name)
+			print(' ')
+			print('Making a new '+self.savepath+'/photfile.csv file.')
+			print(' ')
+			photfile_name = self.savepath+'/photfile.csv'
+			photfile = open(photfile_name, mode='w')
+			for t,f,e in zip(photfile_times, photfile_fluxes, photfile_errors):
+				photfile.write(str(t)+','+str(f)+','+str(e)+'\n')
+			photfile.close()
+
+			print('created '+photfile_name)
 
 
 
-def run_vespa(self, clobber='n', dmeth='cofiam'):
-	if (clobber == 'y') or (clobber == True):
-		print("CLOBBERING VESPA FILES AND STARTING FROM SCATCH!")
+
+
+def run_vespa(self, clobber_inputs='n', clobber_outputs='n', sim_size=1000, dmeth='cofiam'):
+
+	if (clobber_inputs == True) or (clobber_inputs == 'y'):
+		print(' ')
+		print('CLOBBERING VESPA INPUTS.')
+		print(' ')
+
+	#### scrub the existing output files
+	if (clobber_outputs==True) or (clobber_outputs=='y'):
+		print(' ')
+		print("CLOBBERING VESPA OUTPUTS AND STARTING FROM SCATCH!")
+		print(' ')
 		time.sleep(3)
-		#### scrub the existing files 
 		os.system('rm -rf '+self.savepath+'/mist*png')
 		os.system('rm -rf '+self.savepath+'/mist*h5')
 		os.system('rm -rf '+self.savepath+'/starfit.log')
 		os.system('rm -rf '+self.savepath+'/calcfpp/log')
 		os.system('rm -rf '+self.savepath+'/chains') 
 
-	self.make_vespa_starini(clobber=clobber)
-	self.make_vespa_fppini(clobber=clobber)
-	self.make_vespa_photfile(clobber=clobber, dmeth=dmeth)
-
+	self.make_vespa_starini(clobber=clobber_inputs)
+	self.make_vespa_fppini(clobber=clobber_inputs)
+	self.make_vespa_photfile(clobber=clobber_inputs, dmeth=dmeth)
 
 	print("ATTEMPTING TO RUN VESPA....")
 
@@ -1129,7 +1156,7 @@ def run_vespa(self, clobber='n', dmeth='cofiam'):
 		print(' ')
 		print('try #1')
 		#os.system('cd '+self.savepath+'; calcfpp -n 1000')
-		subprocess.Popen('cd '+self.savepath+'; calcfpp -n 1000 --recalc')
+		subprocess.Popen('cd '+self.savepath+'; calcfpp -n '+str(sim_size)+' --recalc')
 		print(' ')
 	except:
 		traceback.print_exc()
@@ -1138,7 +1165,7 @@ def run_vespa(self, clobber='n', dmeth='cofiam'):
 			print('try #2') #### THIS IS THE ONE!!!! (BUT MAYBE WE STILL NEED TRY #1 FOR STARFIT ALL)
 			print(' ')
 			#os.system('cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n 1000 --recalc', shell=True)
+			subprocess.Popen('cd '+self.savepath+'; starfit --all .&& calcfpp -n '+str(sim_size)+' --recalc', shell=True)
 		except:
 			traceback.print_exc()
 			try:
@@ -1146,14 +1173,14 @@ def run_vespa(self, clobber='n', dmeth='cofiam'):
 				print('try #3')
 				print(' ')
 				#os.system('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000')
-				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n 1000 --recalc', shell=True)
+				subprocess.Popen('cp *h5 '+self.savepath+'; cd '+self.savepath+'; starfit --all . && calcfpp -n '+str(sim_size)+' --recalc', shell=True)
 			except:
 				traceback.print_exc()
 				print(' ')
 				print('last except.')
 				print(' ')
 				#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
-				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000 --recalc', shell=True)
+				subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n '+str(sim_size)+' --recalc', shell=True)
 
 
 
