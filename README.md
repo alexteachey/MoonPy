@@ -5,8 +5,6 @@
 # Welcome to MoonPy!
 last (non-exhaustive) update: April 27, 2022. Developed by [Alex Teachey](http://www.alexteachey.com).
 
-*Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
-
 This document will walk you through the basics of using the MoonPy code. 
 MoonPy is designed to make downloading, plotting, detrending, and fitting light curves a breeze, and simply would not exist if not for a number of incredibly powerful packages that have been developed by other scientists (more on that below). Thank you to all those developers! And if you use MoonPy in your research please remember to cite/acknowledge the authors of the packages that have been utilized here. We'd appreciate a shoutout, too... please cite:
 
