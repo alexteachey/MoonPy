@@ -2,6 +2,9 @@ import sys
 import subprocess
 import time
 import os
+from pathlib import Path 
+
+homepath = str(Path.home())
 
 
 def build_env_and_install(packagename, standard_environment_name):
@@ -108,19 +111,20 @@ build_env_and_install(packagename='MoonPy', standard_environment_name=standard_m
 setup_vespa = input("Do you want to install Tim Morton's VESPA code (recommended)? y/n: ")
 
 if (setup_vespa == 'y') or (setup_vespa == ''):
-	if os.path.exists('~/.isochrones'):
+	if os.path.exists(homepath+'/.isochrones'):
 		print(' ')
 		print('This distribution is using an older, compatible version of Isochrones (v.1.1.1). ')
 		print('It is recommended that any existing version of ~/.isochrones be clobbered to ensure proper performance.')
 		print('We propose instead to rename it in case of an installation error. ')
+		print(' ')
 		rename_or_clobber_or_nothing = input("Do you want to 'r'ename, 'c'lobber, or do 'n'othing with ~/.isochrones? ")
 		if rename_or_clobber.lower() == 'r':
-			os.system('mv ~/.isochrones ~/.isochrones_BACKUP')
+			os.system('mv '+homepath+'/.isochrones '+homepath+'/.isochrones_BACKUP')
 			print('renamed ~/.isochrones to ~/.isochrones_BACKUP')
 			print('isochrones will be downloaded automatically upon first run of VESPA.')
 
 		elif rename_or_clobber.lower() == 'c':
-			os.system('rm -rf ~/.isochrones')
+			os.system('rm -rf '+homepath+'/.isochrones')
 			print('removed ~/.isochrones')
 			print('isochrones will be downloaded automatically upon first run of VESPA.')		
 				
