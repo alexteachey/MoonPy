@@ -5,14 +5,14 @@ import os
 
 
 def build_env_and_install(packagename, standard_environment_name):
-	standard_environment_yml = standard_environment_name+'.yml'
+	standard_environment_yml = 'env_setup_files/'+standard_environment_name+'.yml'
 
 	print('You are about to create a new conda environment and install '+packagename)
 
 	user_environment_name = input('What do you want to call the environment for '+packagename+'? [press ENTER to use '+standard_environment_name+']: ')
 	if len(user_environment_name) == 0:
 		user_environment_name = standard_environment_name 
-	user_environment_yml = user_environment_name+'.yml'
+	user_environment_yml = 'env_setup_files/'+user_environment_name+'.yml'
 
 	if user_environment_name != standard_environment_name:
 		#### now we're going to alter that file
@@ -90,8 +90,8 @@ elif (sys.platform == 'linux') or (sys.platform == 'linux2'):
 	standard_moonpy_environment_name = 'moonpy_env_linux'
 	standard_vespa_env_name = 'vespa_for_linux'
 	#install_command = 'conda env create --file moonpy_env_linux.yml'
-standard_moonpy_environment_yml = standard_moonpy_environment_name+'.yml'
-standard_vespa_env_yml = standard_vespa_env_name+'.yml'
+standard_moonpy_environment_yml = 'env_setup_files/'+standard_moonpy_environment_name+'.yml'
+standard_vespa_env_yml = 'env_setup_files/'+standard_vespa_env_name+'.yml'
 
 	
 print(' ')
