@@ -3,7 +3,7 @@
 
 
 # Welcome to MoonPy!
-last (non-exhaustive) update: April 22, 2022. Developed by [Alex Teachey](http://www.alexteachey.com).
+last (non-exhaustive) update: April 27, 2022. Developed by [Alex Teachey](http://www.alexteachey.com).
 
 *Check out the [companion blog](https://moonpy.home.blog/) for a detailed description of changes as they roll out.* (not really managing this anymore).
 
@@ -130,7 +130,7 @@ You can also generate a Lomb-Scargle periodogram simply by calling
 ```>>> lc_object.genLS()```
 
 
-Note that each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. 
+Note that each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. You can see the location of these files by calling ```lc_object.savepath```. VESPA runs will also be carried out and saved within this same directory, and it *should* be possible to run multiple VESPA fits at once as a result.
 
 As you know, new TESS data continues to arrive, but MoonPy automatically identifies when new sectors are available and will download them if available. The planet archives (NASA Exoplanet Archive, and ExoFOP) are also regularly updated, so MoonPy checks to see how old your databases are and gives the option (once per day) of downloading a new version. Be advised, this can sometimes take several minutes, so if you are looking at a well-known target, chances are the parameters are more-or-less fixed.
 
