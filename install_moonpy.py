@@ -106,7 +106,25 @@ build_env_and_install(packagename='MoonPy', standard_environment_name=standard_m
 
 
 setup_vespa = input("Do you want to install Tim Morton's VESPA code (recommended)? y/n: ")
+
 if (setup_vespa == 'y') or (setup_vespa == ''):
+	if os.path.exists('~/.isochrones'):
+		print(' ')
+		print('This distribution is using an older, compatible version of Isochrones (v.1.1.1). ')
+		print('It is recommended that any existing version of ~/.isochrones be clobbered to ensure proper performance.')
+		print('We propose instead to rename it in case of an installation error. ')
+		rename_or_clobber = input("Do you want to 'r'ename or 'c'lobber ~/.isochrones? ")
+		if rename_or_clobber.lower() == 'r':
+			os.system('mv ~/.isochrones ~/.isochrones_BACKUP')
+			print('renamed ~/.isochrones to ~/.isochrones_BACKUP')
+		elif rename_or_clobber.lower() == 'c':
+			os.system('rm -rf ~/.isochrones')
+			print('removed ~/.isochrones')
+
+		print('isochrones will be downloaded automatically upon first run of VESPA.')
+	time.sleep(3)
+
+	#### NOW INSTALL VESPA!
 	build_env_and_install(packagename='vespa', standard_environment_name=standard_vespa_env_name)
 
 
