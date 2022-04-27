@@ -25,7 +25,7 @@ Then navigate to the MoonPy directory you have just cloned, and within the termi
 
 ```python install_moonpy.py```
 
-This will 1) create a new conda environment of your choosing, 2) install a variety of required and recommended packages within that environment, and 3) create the path so that your Python can see MoonPy as an installable package. After this is complete, simply 
+This will 1) create a new conda environment for MoonPy with a name of your choosing, 2) install a variety of required and recommended packages within that environment, and 3) create the path so that your Python can see MoonPy as an Python-importable package. After this is complete, simply 
 
 ```conda activate ENV_NAME```
 
