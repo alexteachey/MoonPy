@@ -1135,18 +1135,18 @@ def get_isochrone_files():
 	### now check if these critical files exist -- if they don't, download them!
 	if os.path.exists(homepath+'/.isochrones/mist.tgz') == False:
 		#### download mist.tgz 
-		subprocess.Popen("gdown --id 1PrzkUpGG_jEA6YobhWNdSvHI2Tc-7gJ-", shell=False).wait()	
-		subprocess.Popen('mv mist.tgz '+homepath+'/.isochrones/',shell=False).wait()		
+		subprocess.Popen("gdown 1PrzkUpGG_jEA6YobhWNdSvHI2Tc-7gJ-", shell=True).wait()	
+		subprocess.Popen('mv mist.tgz '+homepath+'/.isochrones/',shell=True).wait()		
 
 	if os.path.exists(homepath+'/.isochrones/dartmouth.tri') == False:
 		#### download dartmouth.tri
-		subprocess.Popen("gdown --id 1Jqc19oupaiEqxa8PfVJohv74lVnr8QxL", shell=False).wait()	
-		subprocess.Popen('mv dartmouth.tri '+homepath+'/.isochrones/', shell=False).wait()			
+		subprocess.Popen("gdown 1Jqc19oupaiEqxa8PfVJohv74lVnr8QxL", shell=True).wait()	
+		subprocess.Popen('mv dartmouth.tri '+homepath+'/.isochrones/', shell=True).wait()			
 
 	if os.path.exists(homepath+'/.isochrones/dartmouth.tgz') == False:
 		#### dartmouth.tgz 
-		subprocess.Popen("gdown 1PLn87pJhIKIXN7a8q1D7empsTvONDZE7", shell=False).wait()
-		subprocess.Popen('mv dartmouth.tgz '+homepath+'/.isochrones/', shell=False).wait()		
+		subprocess.Popen("gdown 1PLn87pJhIKIXN7a8q1D7empsTvONDZE7", shell=True).wait()
+		subprocess.Popen('mv dartmouth.tgz '+homepath+'/.isochrones/', shell=True).wait()		
 
 	### pip install gdown==4.4.0
 
