@@ -15,6 +15,7 @@ import socket
 import warnings
 from datetime import datetime 
 import inspect
+from pathlib import Path 
 
 
 #### BELOW ARE MOONPY PACKAGES
@@ -35,6 +36,7 @@ import subprocess
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
+homepath = str(Path.home())
 
 
 plt.rcParams["font.family"] = 'serif'
@@ -1125,9 +1127,38 @@ def make_vespa_photfile(self, dmeth='cofiam', clobber=False):
 
 
 
+def get_isochrone_files():
+
+	if os.path.exists(homepath+'/.isochrones') == False:
+		os.system('mkdir '+homepath+'/.isochrones')
+
+	### now check if these critical files exist -- if they don't, download them!
+	if os.path.exists(homepath+'/.isochrones/mist.tgz') == False:
+		#### download mist.tgz 
+		subprocess.Popen("gdown --id 1PrzkUpGG_jEA6YobhWNdSvHI2Tc-7gJ-", shell=False).wait()	
+		subprocess.Popen('mv mist.tgz '+homepath+'/.isochrones/',shell=False).wait()		
+
+	if os.path.exists(homepath+'/.isochrones/dartmouth.tri') == False:
+		#### download dartmouth.tri
+		subprocess.Popen("gdown --id 1Jqc19oupaiEqxa8PfVJohv74lVnr8QxL", shell=False).wait()	
+		subprocess.Popen('mv dartmouth.tri '+homepath+'/.isochrones/', shell=False).wait()			
+
+	if os.path.exists(homepath+'/.isochrones/dartmouth.tgz') == False:
+		#### dartmouth.tgz 
+		subprocess.Popen("gdown 1PLn87pJhIKIXN7a8q1D7empsTvONDZE7", shell=False).wait()
+		subprocess.Popen('mv dartmouth.tgz '+homepath+'/.isochrones/', shell=False).wait()		
+
+	### pip install gdown==4.4.0
+
+
+
+
 
 
 def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dmeth='cofiam', clobber_fpp=None, clobber_star=None, clobber_photfile=None):
+
+	get_isochrone_files()
+
 
 	if (clobber_inputs == True) or (clobber_inputs == 'y'):
 		print(' ')

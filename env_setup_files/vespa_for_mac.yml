@@ -86,6 +86,7 @@ dependencies:
     - cryptography==3.4.7
     - cython==0.29.23
     - emcee==3.0.2
+    - gdown==4.4.0
     - html5lib==1.1
     - idna==2.10
     - importlib-metadata==4.5.0
