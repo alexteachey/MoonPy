@@ -2,7 +2,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-from mp_tools import * 
+#from mp_tools import * 
+import mp_tools
 import socket
 from astropy.constants import G
 import time
@@ -37,6 +38,10 @@ if (master_LUNAdir != local_LUNAdir):
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+LUNAdir+'/output')
 
+else:
+	LUNAdir = master_LUNAdir
+
+print(LUNAdir)
 
 """
 #### make the make.sh file DIRECTORY SPECIFIC!
@@ -113,7 +118,7 @@ def prepare_files(all_times, ntaus, nparam, nparamorig):
 
 
 #def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
-def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None, rhoplan=None, sat_sma=None, sat_phase=None, sat_inc=None, sat_omega=None, MsatMp=None, RsatRp=None, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None, rhoplan=None, sat_sma=None, sat_phase=None, sat_inc=None, sat_omega=None, MsatMp=None, RsatRp=None, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', suppress_secondary='y', secondary_pct_pplan=0.1, print_params='n', binned_output='n', **kwargs):
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
@@ -315,11 +320,31 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None,
 	print("calling plotit.")
 	os.system('cd '+LUNAdir+' ; ./plotit')
 
-
 	### now you should have light curves... load them and plot them
 	#moon_file = np.genfromtxt(outputdir+'/PRI_full.0.jam')
 	moon_file = np.genfromtxt(LUNAdir+'/output/PRI_full.0.jam')
 	output_times, output_fluxes = moon_file.T[0], moon_file.T[1]
+
+	if suppress_secondary == 'y':
+		#### need to suppress the secondary eclipse! 			
+		taus_in_baseline = []
+		first_tau = tau0
+		while first_tau < np.nanmin(output_times):
+			first_tau += Pplan 
+		taus_in_baseline.append(first_tau)
+		while taus_in_baseline[-1] < np.nanmax(output_times):
+			taus_in_baseline.append(taus_in_baseline[-1] + Pplan)
+		taus_in_baseline = np.array(taus_in_baseline)
+
+		#### now turn all fluxes that are more than some distance away from the transit times into unit.
+		for otidx,ot in enumerate(output_times):
+			if np.all(np.abs(taus_in_baseline - ot) > secondary_pct_pplan * Pplan):
+				### means this point is greater than the designated percent of the planet period from EVERY tau.
+				output_fluxes[otidx] = 1 
+
+
+
+
 
 	#if np.all(output_fluxes == 1):
 	#	raise Exception('flat light curve.')
