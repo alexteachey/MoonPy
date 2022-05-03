@@ -62,7 +62,10 @@ HERE IS THE MASTER FUNCTION! THIS IS WHAT YOU WILL CALL TO GENERATE THE MOONS YO
 #	assert len(sat_params) == 6
 
 def prepare_files(all_times, ntaus, nparam, nparamorig):
-	#seriesP_file = open(LUNAdir+'/seriesP.jam', mode='w')
+	#### ntaus is the number of transit times you will fit!
+	#### if you are fitting TTVs, ntaus = the number of transits.
+	#### if you are not fitting TTVs, ntaus = 1. 
+
 	seriesP_file = open(LUNAdir+'/seriesP.jam', mode='w')
 
 	for at in all_times:
