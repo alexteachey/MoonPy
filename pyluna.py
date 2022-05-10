@@ -119,6 +119,18 @@ def prepare_files(all_times, ntaus, nparam, nparamorig):
 
 #def run_LUNA(all_times, tau0, Rstar, Mstar q1, q2, RpRstar, bplan, Pplan, RsatRp, MsatMp, sat_sma, sat_inc, sat_phase, sat_omega, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n'):
 def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None, rhoplan=None, sat_sma=None, sat_phase=None, sat_inc=None, sat_omega=None, MsatMp=None, RsatRp=None, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', suppress_secondary='y', secondary_pct_pplan=0.1, print_params='n', binned_output='n', **kwargs):
+	
+	if model == 'P':
+		rhoplan == 1326.2 #kg/m^3 -- the density of Jupiter
+		Psat = 16.69 #### period of Callisto -- irrelevant, but needs to be input for LUNA
+		sat_sma = 26.92 #a/Rp for Callisto 
+		sat_phase = 0.
+		sat_inc = 0.
+		sat_omega = 0.
+		MsatMp = 0.0000001 ### can't use scientific notation, and it can't be zero
+		RsatRp = 0.0000001 ### can't use scientific notation, and it can't be zero
+
+
 	#Rstar, Mstar, q1, q2 = star_params
 	#Rplan, Mplan, bplan, Pplan = plan_params
 	#Rsat, Msat, sat_sma, sat_inc, sat_phase, sat_omega = sat_params
@@ -171,6 +183,24 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None,
 	#print('generating the input file...')
 	### now you have to generate the input file!
 	#input_file = open(LUNAdir+'/inputs.jam', mode='w')
+
+
+	RpRstar = float(RpRstar)
+	rhostar = float(rhostar)
+	bplan = float(bplan)
+	Pplan = float(Pplan)
+	tau0 = float(tau0)
+	q1 = float(q1)
+	q2 = float(q2)
+	Psat = float(Psat)
+	rhoplan = float(rhoplan)
+	sat_sma = float(sat_sma)
+	sat_phase = float(sat_phase)
+	sat_inc = float(sat_inc)
+	sat_omega = float(sat_omega)
+	MsatMp = float(MsatMp)
+	RsatRp = float(RsatRp)
+
 	input_file = open(LUNAdir+'/inputs.jam', mode='w')	
 	### inputs are 1) Rp/Rstar, rhostar, impact, Pplan, tau0, q1, q2, rho_plan, asp, phi_s, is, )s, Msp, Rsp.
 	if 'e' in str(RpRstar):
@@ -317,7 +347,7 @@ def run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None,
 		print(" ")
 
 	### now it's time to run plotit!
-	print("calling plotit.")
+	#print("calling plotit.")
 	os.system('cd '+LUNAdir+' ; ./plotit')
 
 	### now you should have light curves... load them and plot them
