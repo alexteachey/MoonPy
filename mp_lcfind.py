@@ -1313,7 +1313,7 @@ def TESS_QLP_download(tic, sectors='all', clobber='n'):
 		if sectors == 'all':
 			#sector_nums = np.array([1, 14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
 			ntess_sectors = len(os.listdir(curlscript_dir))
-			sector_nums = np.arange(1,ntess_sectors,1)
+			sector_nums = np.arange(1,ntess_sectors+1,1)
 			sector_nums = np.insert(sector_nums, 1, 14) #### puts 14 up front so that it can be checked.
 			print('checking sectors: ', sector_nums)
 
