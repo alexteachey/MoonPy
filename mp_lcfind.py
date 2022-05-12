@@ -1216,7 +1216,9 @@ def TESS_QLP_load(tic, sectors='all', clobber='n'):
 
 	if os.path.exists(central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs') == False:
 		os.system('mkdir '+central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs')
-	download_directory = central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs/TIC'+str(ticnum)	
+	download_directory = central_data_dir+'/TESS_lightcurves/TIC_FFI_LCs/TIC'+str(ticnum)
+	if os.path.exists(download_directory) == False:
+		os.system('mkdir '+download_directory)
 	QLP_files = os.listdir(download_directory)
 
 	#for sector in np.arange(1,nsectors+1,1):
@@ -1309,7 +1311,12 @@ def TESS_QLP_download(tic, sectors='all', clobber='n'):
 
 	if proceed_to_download == 'y':
 		if sectors == 'all':
-			sector_nums = np.array([1, 14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
+			#sector_nums = np.array([1, 14, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26])
+			ntess_sectors = len(os.listdir(curlscript_dir))
+			sector_nums = np.arange(1,ntess_sectors,1)
+			sector_nums = np.insert(sector_nums, 1, 14) #### puts 14 up front so that it can be checked.
+			print('checking sectors: ', sector_nums)
+
 		else:
 			sector_nums = sectors 
 
