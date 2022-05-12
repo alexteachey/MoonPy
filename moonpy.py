@@ -917,12 +917,12 @@ class MoonpyLC(object):
 
 				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					#lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
-					if ffi_source.lower() == 'qlp:'
+					if ffi_source.lower() == 'qlp':
 						print('Looking for FFI light curves from the Quick Look Pipeline (QLP)...')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = TESS_QLP_load(targetID, sectors=quarters, clobber=clobber)
 					elif ffi_source.lower() == 'eleanor':
 						print('Looking for FFI light curves from Eleanor...')
-						lc_times. lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
+						lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 
 
 				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters		
