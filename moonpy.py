@@ -150,7 +150,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, usr_dict=None, mask_multiple=10, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, lc_sectors=None, usr_dict=None, mask_multiple=10, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', ffi_source='QLP', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', clobber=None):
 		
 		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
@@ -917,7 +917,12 @@ class MoonpyLC(object):
 
 				if ffi == 'y': ### eleanor is designed to download FFI light curves.
 					#lc_times, lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
-					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = TESS_QLP_load(targetID, sectors=quarters, clobber=clobber)
+					if ffi_source.lower() == 'qlp:'
+						print('Looking for FFI light curves from the Quick Look Pipeline (QLP)...')
+						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = TESS_QLP_load(targetID, sectors=quarters, clobber=clobber)
+					elif ffi_source.lower() == 'eleanor':
+						print('Looking for FFI light curves from Eleanor...')
+						lc_times. lc_fluxes, lc_errors = eleanor_target_download(targetID, lc_format=lc_format, sectors=quarters)
 
 
 				self.times, self.fluxes, self.errors, self.flags, self.quarters = lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters		
@@ -961,6 +966,7 @@ class MoonpyLC(object):
 						print('calling tess_coord_download().')
 						lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = tess_coord_download(RA, Dec)
 					except:
+						print('attempting download with eleanor.')
 						lc_times, lc_fluxes, lc_errors = eleanor_coord_download(RA, Dec)
 				elif telescope.lower() == 'user':
 					lc_times, lc_fluxes, lc_errors, lc_flags, lc_quarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
