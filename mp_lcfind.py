@@ -3,6 +3,7 @@ import numpy as np
 import astropy
 from astroquery.simbad import Simbad 
 from astroquery.mast import Observations
+from astropy.coordinates import SkyCoord
 import astropy.coordinates as coord 
 from astropy import units as u
 import os
@@ -14,6 +15,8 @@ from urllib.request import urlretrieve
 import requests 
 from mp_tools import * 
 import copy 
+import subprocess
+import shutil 
 
 #moonpydir = os.getcwd()
 
@@ -1270,8 +1273,61 @@ def TESS_QLP_load(tic, sectors='all', clobber='n'):
 
 
 
+def TESS_direct_FFI_download(tic, RA_hh=None, RA_deg=None, Dec_deg=None, npix_per_side=10, clobber='n'):
+
+	if (type(RA_hh) == type(None)) and (type(RA_deg) == type(None)):
+		raise Exception('Must specify RA_hh (hour angle) or RA_deg (degrees)!')
+
+	TESSdir = central_data_dir+'/TESS_lightcurves'
+	if os.path.exists(TESSdir) == False:
+		os.system('mkdir '+TESSdir)
+
+	TIC_raw_FFIs = TESSdir+'/TIC_raw_FFIs'
+	if os.path.exists(TIC_raw_FFIs) == False:
+		os.system('mkdir '+TIC_raw_FFIs)
 
 
+	if tic.lower().startswith('tic'):
+		tic = tic[3:]
+	if tic.lower().startswith('-') or tic.lower().startswith(' '):
+		tic = tic[1:]
+
+	TIC_filedir = TIC_raw_FFIs+'/TIC'+str(tic)
+	if os.path.exists(TIC_filedir) == False:
+		clobber='y' ### means it doesn't exist, so you have to download!
+		os.system('mkdir '+TIC_filedir)
+
+	#### this will use the ra and dec to download the FFI directly
+
+	if type(RA_hh) != type(None):
+		#tic_coord = SkyCoord(ra=RA_hh*u.hourangle, dec=Dec_deg*u.deg, frame='icrs')
+		tic_coord = SkyCoord(str(RA_hh)+' '+str(Dec_deg), unit=(u.hourangle, u.deg))
+	elif type(RA_deg) != type(None):
+		#tic_coord = SkyCoord(ra=RA_deg*u.deg, dec=Dec_deg*u.deg, frame='icrs')	
+		tic_coord = SkyCoord(str(RA_deg)+' '+str(Dec_deg), unit=(u.deg, u.deg))
+	else:
+		#tic_coord = SkyCoord(ra=RA_deg*u.deg, dec=Dec_deg*u.deg, frame='icrs')		
+		tic_coord = SkyCoord(str(RA_deg)+' '+str(Dec_deg), unit=(u.deg, u.deg))	
+
+	tic_ra_deg, tic_dec_deg = tic_coord.ra.value, tic_coord.dec.value #### now in degrees 
+
+	if clobber == 'y':
+		subprocess.Popen('cd '+TIC_filedir+' && curl -L "https://mast.stsci.edu/tesscut/api/v0.1/astrocut?ra='+str(tic_ra_deg)+'&dec='+str(tic_dec_deg)+'&y='+str(npix_per_side)+'&x='+str(npix_per_side)+'" -o "astrocut.zip"', shell=True).wait()
+		#### now unpack it
+		shutil.unpack_archive(TIC_filedir+'/astrocut.zip', TIC_filedir+'/astrocut')
+
+		FFI_files = os.listdir(TIC_filedir+'/astrocut')
+
+		#### move them up a level
+		for FFI_file in FFI_files:
+			subprocess.Popen('mv '+TIC_filedir+'/astrocut/'+FFI_file+' '+TIC_filedir+'/'+FFI_file, shell=True).wait()
+		subprocess.Popen('rm -rf '+TIC_filedir+'/astrocut.zip', shell=True).wait()
+		subprocess.Popen('rm -rf '+TIC_filedir+'/astrocut', shell=True).wait()
+
+	else:
+		FFI_files = os.listdir(TIC_filedir)
+
+	return TIC_filedir, FFI_files 
 
 
 

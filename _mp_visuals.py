@@ -28,6 +28,7 @@ from cofiam import max_order
 from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
+from mp_animate import * 
 
 
 plt.rcParams["font.family"] = 'serif'
@@ -496,6 +497,42 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 
+def animate_FFI(self, sector=None, ffi_idx=None, save_animation=False, clobber='n', normalize_flux=True, return_arrays=True):
+	from mp_lcfind import TESS_direct_FFI_download 
+	#def TESS_direct_FFI_download(tic, RA_hh=None, RA_deg=None, Dec_deg=None, npix_per_side=10, clobber='n'):
+	TIC_filedir, FFI_files = TESS_direct_FFI_download(tic=self.target, RA_hh=self.RA, Dec_deg=self.Dec, clobber=clobber)
+
+	for nFFI,FFI in enumerate(FFI_files):
+		print(nFFI, FFI)
+
+	if type(sector) == type(None) and type(ffi_idx) == type(None):
+		#### as the user to specify which sector index they want to animate
+		for nFFI,FFI in enumerate(FFI_files):
+			print(nFFI, FFI)
+
+		print(' ')
+		ffi_idx = int(input('Enter the index number of the sector you want to animate: '))
+
+	elif type(sector) != type(None):
+		#### need to figure out the ffi_idx of this
+		sector_string = str(sector)
+		while len(sector_string) < 4:
+			sector_string = '0'+sector_string
+		sector_string = 's'+sector_string 
+
+		for nffi,ffi in enumerate(FFI_files):
+			if sector_string in ffi:
+				ffi_idx = nffi 
+				print('sector: ', sector_string)
+				print('ffi_idx = ', ffi_idx)				
+
+	#### call the animation function
+	if return_arrays == True:
+		times, flux = animate_TESS_FFI(filedir=TIC_filedir, filename=FFI_files[ffi_idx], save_animation=save_animation, return_arrays=return_arrays)
+		return times, flux 
+
+	else:
+		animate_TESS_FFI(filedir=TIC_filedir, filename=FFI_files[ffi_idx], save_animation=save_animation, normalize_flux=normalize_flux, return_arrays=return_arrays)
 
 
 
