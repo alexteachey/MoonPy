@@ -311,4 +311,9 @@ def DWstat(data, model):
 	return DW 
 
 
+def flux_from_mags(target_mag, ref_mag, ref_flux):
+	### computes the flux based on a known target magnitude, reference magnitude, and reference flux.
+	target_flux = ref_flux * 10**( (ref_mag - target_mag) / 2.5)
+	return target_flux 
+
 

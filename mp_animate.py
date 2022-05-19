@@ -166,7 +166,7 @@ def animate_TESS_FFI(filedir=None, filename=None, filepath=None, save_animation=
 	#### alex's modification
 	a = flux[0] #### start with the first page
 	#a = flux[0] / np.nanmedian(flux, axis=0)
-	im = plt.imshow(a, interpolation='none', origin='lower')
+	im = plt.imshow(a, vmin=np.nanmin(flux), vmax=np.nanmax(flux), interpolation='none', origin='lower')
 
 
 
@@ -183,7 +183,10 @@ def animate_TESS_FFI(filedir=None, filename=None, filepath=None, save_animation=
 
 		ax.invert_xaxis() #### because RA increases to the left (EAST)	
 
-		ax.scatter(objx_pix, objy_pix, color='red', marker='*', s=100)
+		#ax.scatter(objx_pix, objy_pix, color='red', marker='*', s=100)
+		ax.scatter(objx_pix, objy_pix, color='red', marker='*', s=100, label='obj')
+		ax.scatter(refx_pix, refy_pix, color='green', marker='s', s=100, label='ref')
+
 		try:
 			ax.set_xticks(ticks=xticks, labels=xtick_coords)
 			ax.set_yticks(ticks=yticks, labels=ytick_coords)
@@ -211,8 +214,8 @@ def animate_TESS_FFI(filedir=None, filename=None, filepath=None, save_animation=
 		#im.set_array(a) #### ORIGINAL
 		ax.set_title('BKJD = '+str(round(times[i],2)))
 		#ax.scatter(refx_pix, refy_pix, color='red', marker='*', s=100)
-		ax.scatter(objx_pix, objy_pix, color='red', marker='*', s=100, label='obj')
-		ax.scatter(refx_pix, refy_pix, color='green', marker='s', s=100, label='ref')
+		#ax.scatter(objx_pix, objy_pix, color='red', marker='*', s=100, label='obj')
+		#ax.scatter(refx_pix, refy_pix, color='green', marker='s', s=100, label='ref')
 		"""
 		try:
 			ax.set_xticks(ticks=xticks, labels=xtick_coords)
@@ -236,6 +239,7 @@ def animate_TESS_FFI(filedir=None, filename=None, filepath=None, save_animation=
 	#                               frames=flux.shape[0], interval=20, blit=True)
 
 	anim = animation.FuncAnimation(fig=fig, func=animate, init_func=init, frames=flux.shape[0], repeat=False, interval=20, blit=True)
+	#anim = animation.FuncAnimation(fig=fig, func=animate, frames=flux.shape[0], repeat=False, interval=20, blit=True)	
 
 	# save the animation as an mp4.  This requires ffmpeg or mencoder to be
 	# installed.  The extra_args ensure that the x264 codec is used, so that

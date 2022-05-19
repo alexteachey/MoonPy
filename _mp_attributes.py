@@ -8,7 +8,9 @@ from astropy.time import Time
 import time
 import pandas
 import traceback
-from astroquery.simbad import Simbad 
+from astroquery.simbad import Simbad
+from astroquery.mast import Catalogs
+import astropy.units as u
 from astropy.constants import G, c, M_earth, M_jup, M_sun, R_earth, R_jup, R_sun, au 
 from astropy.timeseries import LombScargle
 import socket 
@@ -1264,6 +1266,57 @@ def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dme
 			print(' ')
 			#os.system('starfit --all . && cd '+self.savepath+'; calcfpp -n 1000')
 			subprocess.Popen('starfit --all . && cd '+self.savepath+'; calcfpp -n '+str(nsims)+' --recalc', shell=True)
+
+
+
+
+def get_TIC_neighbors(self, radius_deg=0.1, additional_columns=None):
+	#### following the instructions here -- https://astroquery.readthedocs.io/en/latest/mast/mast.html 
+	tic_catalog_data = Catalogs.query_object(self.target, catalog='TIC', radius=radius_deg*u.deg)
+	tic_neighbor_dict = {}
+
+	tic_neighbor_dict['ID'] = np.array(tic_catalog_data['ID'])
+	tic_neighbor_dict['Tmag'] = np.array(tic_catalog_data['Tmag'])
+	tic_neighbor_dict['ra'] = np.array(tic_catalog_data['ra'])
+	tic_neighbor_dict['dec'] = np.array(tic_catalog_data['dec'])
+
+	if type(additional_columns) != type(None):
+		for arg in additional_columns:
+			try:
+				tic_neighbor_dict[arg] = np.array(tic_catalog_data[arg])
+			except:
+				print('column '+arg+' is not in the TIC catalog.')
+
+	self.tic_neighbor_dict = tic_neighbor_dict 
+	#return tic_neighbor_dict 
+
+
+
+
+def compute_TIC_fluxes(self, radius_deg=0.1, flux_ref=10, additional_columns=None):
+	#### first call get_TIC_neighbors
+
+	try:
+		tic_neighbor_dict = self.tic_neighbor_dict
+	except:
+		self.get_TIC_neighbors(radius_deg=radius_deg, additional_columns=additional_columns)
+		tic_neighbor_dict = self.tic_neighbor_dict
+
+	#### find the dimmest star and let that be the reference magnitude
+	mag_ref = np.nanmax(tic_neighbor_dict['Tmag']) 
+
+	tic_neighbor_dict['Faintest_star_flux'] = flux_ref 
+	tic_neighbor_dict['FLUX'] = []
+
+	for ntic, tic in enumerate(tic_neighbor_dict['ID']):
+		tic_flux = flux_from_mags(target_mag=tic_neighbor_dict['Tmag'][ntic], ref_mag=mag_ref, ref_flux=flux_ref)
+		tic_neighbor_dict['FLUX'].append(tic_flux)
+
+	tic_neighbor_dict['FLUX'] = np.array(tic_neighbor_dict['FLUX'])
+	### update the tic_neighbor_dict
+	self.tic_neighbor_dict = tic_neighbor_dict
+	#return tic_neighbor_dict 
+
 
 
 
