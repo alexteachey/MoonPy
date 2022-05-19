@@ -18,6 +18,7 @@ import warnings
 from datetime import datetime 
 import inspect
 from pathlib import Path 
+from scipy import signal
 
 
 #### BELOW ARE MOONPY PACKAGES
@@ -25,6 +26,7 @@ from pathlib import Path
 from mp_tools import *
 from mp_lcfind import *
 from mp_detrend import untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
+from mp_tess_prf import get_PRF 
 from mp_batman import run_batman
 from mp_fit import mp_multinest, mp_emcee
 from mp_plotter import *
@@ -1320,7 +1322,54 @@ def compute_TIC_fluxes(self, radius_deg=0.1, flux_ref=10, additional_columns=Non
 
 
 
+def gen_TESS_starfield(self, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+	#### generate the star field based on the TIC targets nearby.
 
+	self.compute_TIC_fluxes(radius_deg=radius_deg, flux_ref=flux_ref, additional_columns=additional_columns)
+
+	#### generate the star field
+	ra,dec,flux,mags = self.tic_neighbor_dict['ra'], self.tic_neighbor_dict['dec'], self.tic_neighbor_dict['FLUX'], self.tic_neighbor_dict['Tmag']
+	h, xedges, yedges, image = plt.hist2d(x=ra, y=dec, bins=(dims[0], dims[1]), weights=flux)
+	if (show_plots == True) or (show_plots == 'y'):
+		plt.scatter(ra[mags<scatter_mag_lim], dec[mags<scatter_mag_lim], marker='*', s=20, color='red')
+		plt.gca().invert_xaxis()
+		plt.show()
+
+	return h, image 
+
+
+
+def gen_TESS_PRF_starfield(self, camera, ccd, target_row, target_col, sector, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+	#### generate the starfield, and then convolve it with the 
+
+	lowres_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=(10,10), additional_columns=additional_columns, show_plots=show_plots)[0]
+	hires_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=dims, additional_columns=additional_columns)[0]
+	PRF = get_PRF(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector)
+
+	print('hires_starfield.shape = ', hires_starfield.shape)
+	print('PRF.shape = ', PRF.shape)
+
+	convolution = signal.convolve2d(in1=hires_starfield, in2=PRF, mode='same')
+	#convolution = signal.convolve2d(in1=PRF, in2=hires_starfield, mode='same')
+
+	if (show_plots == True) or (show_plots == 'y'):
+		plt.imshow(convolution, origin='lower', interpolation='none')
+		plt.gca().invert_xaxis()
+		plt.title('convolution')
+		plt.show()
+
+	return lowres_starfield, hires_starfield, PRF, convolution
+
+
+def gen_PRF_plots(self, camera, ccd, target_row, target_col, sector, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+
+	lrs, hrs, prf, conv = self.gen_TESS_PRF_starfield(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector, show_plots=True)
+
+	fig, ax = plt.subplots(3)
+	ax[0].imshow(lrs.T, origin='lower', interpolation='none')
+	ax[1].imshow(prf, origin='lower', interpolation='none')
+	ax[2].imshow(conv.T, origin='lower', interpolation='none')
+	plt.show()
 
 
 

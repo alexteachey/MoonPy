@@ -135,7 +135,7 @@ def get_PRF(camera, ccd, target_row, target_col, sector, show_plots=False):
 
 
 	##### see if it worked!
-	if (show_plots == True) or (show_plots == 'y')
+	if (show_plots == True) or (show_plots == 'y'):
 		plt.imshow(first_row_interp_grid, origin='lower', interpolation='none')
 		plt.title('first row')
 		plt.show()
@@ -149,6 +149,7 @@ def get_PRF(camera, ccd, target_row, target_col, sector, show_plots=False):
 		plt.show()
 
 
+	return final_interp_grid
 
 
 
