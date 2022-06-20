@@ -1322,7 +1322,7 @@ def compute_TIC_fluxes(self, radius_deg=0.1, flux_ref=10, additional_columns=Non
 
 
 
-def gen_TESS_starfield(self, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+def gen_TESS_starfield(self, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False, plot_title=None):
 	#### generate the star field based on the TIC targets nearby.
 
 	self.compute_TIC_fluxes(radius_deg=radius_deg, flux_ref=flux_ref, additional_columns=additional_columns)
@@ -1332,19 +1332,23 @@ def gen_TESS_starfield(self, radius_deg=0.1, flux_ref=10, dims=(117,117), additi
 	h, xedges, yedges, image = plt.hist2d(x=ra, y=dec, bins=(dims[0], dims[1]), weights=flux)
 	if (show_plots == True) or (show_plots == 'y'):
 		plt.scatter(ra[mags<scatter_mag_lim], dec[mags<scatter_mag_lim], marker='*', s=20, color='red')
+		plt.xlabel('RA')
+		plt.ylabel('Dec')
 		plt.gca().invert_xaxis()
+		if type(plot_title) != type(None):
+			plt.title(plot_title)
 		plt.show()
 
 	return h, image 
 
 
 
-def gen_TESS_PRF_starfield(self, camera, ccd, target_row, target_col, sector, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+def gen_TESS_PRF_starfield(self, camera=1, ccd=1, target_row=70, target_col=70, sector=5, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
 	#### generate the starfield, and then convolve it with the 
 
-	lowres_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=(10,10), additional_columns=additional_columns, show_plots=show_plots)[0]
-	hires_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=dims, additional_columns=additional_columns)[0]
-	PRF = get_PRF(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector)
+	lowres_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=(13,13), additional_columns=additional_columns, show_plots=show_plots, plot_title='low resolution')[0]
+	hires_starfield = self.gen_TESS_starfield(radius_deg=radius_deg, flux_ref=flux_ref, dims=dims, additional_columns=additional_columns, show_plots=show_plots, plot_title='high resolution')[0]
+	PRF = get_PRF(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector, show_plots=show_plots)
 
 	print('hires_starfield.shape = ', hires_starfield.shape)
 	print('PRF.shape = ', PRF.shape)
@@ -1352,24 +1356,80 @@ def gen_TESS_PRF_starfield(self, camera, ccd, target_row, target_col, sector, ra
 	convolution = signal.convolve2d(in1=hires_starfield, in2=PRF, mode='same')
 	#convolution = signal.convolve2d(in1=PRF, in2=hires_starfield, mode='same')
 
+	#### the correct orientation of the image is convolution.T !!!! And then NOT REVERSED! (it's already the correct orientation)
+	#### BUT! down below we are flipping the x-axis, just like the other arrays (because RA increases to the right!)
+	convolution = convolution.T
+
+	#### gen_PRF_plots below shows that the starfield itself should be fliplr and rotated 3 times to be consistent with the convolved starfield.
+	lowres_starfield = np.fliplr(np.rot90(lowres_starfield, k=3))
+	hires_starfield = np.fliplr(np.rot90(hires_starfield, k=3))
+
 	if (show_plots == True) or (show_plots == 'y'):
 		plt.imshow(convolution, origin='lower', interpolation='none')
 		plt.gca().invert_xaxis()
 		plt.title('convolution')
 		plt.show()
 
+	self.PRF = PRF 
+	self.hires_starfield_convolution = convolution 
+
 	return lowres_starfield, hires_starfield, PRF, convolution
 
 
-def gen_PRF_plots(self, camera, ccd, target_row, target_col, sector, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
+def gen_PRF_plots(self, camera=1, ccd=1, target_row=70, target_col=70, sector=5, radius_deg=0.1, flux_ref=10, dims=(117,117), additional_columns=None, scatter_mag_lim=15, show_plots=False):
 
-	lrs, hrs, prf, conv = self.gen_TESS_PRF_starfield(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector, show_plots=True)
+	lrs, hrs, prf, hires_conv = self.gen_TESS_PRF_starfield(camera=camera, ccd=ccd, target_row=target_row, target_col=target_col, sector=sector, show_plots=True)
 
-	fig, ax = plt.subplots(3)
-	ax[0].imshow(lrs.T, origin='lower', interpolation='none')
-	ax[1].imshow(prf, origin='lower', interpolation='none')
-	ax[2].imshow(conv.T, origin='lower', interpolation='none')
+	lowres_conv = self.reduce_resolution()
+	#lrs = np.fliplr(np.rot90(lrs, k=3))
+	#conv = np.fliplr(conv)
+
+	fig, ax = plt.subplots(2,2)
+	ax[0,0].imshow(lrs, origin='lower', interpolation='none')
+	#ax[0,0].scatter(self.tic_neighbor_dict['ra'], self.tic_neighbor_dict['dec'], color='red', marker='*')
+	ax[0,0].invert_xaxis()
+	ax[0,1].imshow(prf, origin='lower', interpolation='none')
+	ax[1,0].imshow(hires_conv, origin='lower', interpolation='none')
+	#ax[1,0].scatter(self.tic_neighbor_dict['ra'], self.tic_neighbor_dict['dec'], color='red', marker='*')
+	ax[1,0].invert_xaxis()
+	ax[1,1].imshow(lowres_conv, origin='lower', interpolation='none')
+	#ax[1,1].scatter(self.tic_neighbor_dict['ra'], self.tic_neighbor_dict['dec'], color='red', marker='*')
+	ax[1,1].invert_xaxis()
 	plt.show()
+
+
+def reduce_resolution(self, new_dims=(10,10)):
+	#### take a high-resolution convolution of the star field and the PRF and reduce it to specified dimensions
+	hires_starfield_convolution = self.hires_starfield_convolution
+
+	orig_dims = hires_starfield_convolution.shape 
+
+	dimensional_ratio0 = int(orig_dims[0] / new_dims[0])
+	dimensional_ratio1 = int(orig_dims[1] / new_dims[1])
+
+	lowres_starfield_convolution = np.zeros(shape=new_dims)
+
+	####
+	for i in np.arange(new_dims[0]):
+		for j in np.arange(new_dims[1]):
+			hires_icoords = (i*dimensional_ratio0) + np.arange(dimensional_ratio0)
+			hires_jcoords = (j*dimensional_ratio1) + np.arange(dimensional_ratio1)
+
+			print('i,j = ', i, j)
+			print('hires_icoords: ', hires_icoords)
+			print('hires_jcoords: ', hires_jcoords)
+			print(' ')
+
+			hires_sum = 0
+			for hri in hires_icoords:
+				for hrj in hires_jcoords:
+					hires_sum += hires_starfield_convolution[int(hri)][int(hrj)]
+
+			lowres_starfield_convolution[i][j] = hires_sum 
+
+	self.lowres_starfield_convolution = lowres_starfield_convolution
+	return lowres_starfield_convolution 
+
 
 
 
