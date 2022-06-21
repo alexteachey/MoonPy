@@ -10,7 +10,7 @@ homepath = str(Path.home())
 possible_paths = sys.path
 site_packages_paths = []
 for possible_path in possible_paths:
-	if 'site-packages' in possible_path:
+	if ('site-packages' in possible_path) and ('conda' in possible_path) and ('site-packages/' not in possible_path):
 		site_packages_path = possible_path 
 		site_packages_paths.append(site_packages_path)
 		print('site-packages path: ', site_packages_path)
@@ -130,6 +130,7 @@ try:
 	if your_OS == 'macOS':
 		#### should just be able to pip install directly
 		subprocess.run('source activate '+moonpy_envname+' && pip install pandoramoon && conda deactivate', shell=True, capture_output=True, text=True)
+
 
 	elif your_OS == 'linux':
 		#### need to delete a file first
