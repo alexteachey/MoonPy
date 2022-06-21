@@ -4,6 +4,7 @@ import time
 import os
 from pathlib import Path 
 import traceback
+import time
 
 homepath = str(Path.home())
 
@@ -16,7 +17,7 @@ for possible_path in possible_paths:
 		print('site-packages path: ', site_packages_path)
 if len(site_packages_paths) > 1:
 	print("WARNING: multiple site-packages paths found. Pandora installation may be affected.")
-
+	time.sleep(3)
 
 def build_env_and_install(packagename, standard_environment_name):
 
@@ -142,6 +143,7 @@ except:
 	print(' ')
 	print(' ')
 	print('PANDORA installation failed.')
+	time.sleep(3)
 	print(' ')
 	print(' ')
 
