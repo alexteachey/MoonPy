@@ -92,7 +92,7 @@ def build_env_and_install(packagename, standard_environment_name):
 	if your_OS == 'linux':
 		print(' ')
 		print(' ')
-		print("LINUX USERS: first 'conda activate '"+environment_name+"', the type 'python pathmaker.py to complete installation.'")
+		print("LINUX USERS: first 'conda activate "+environment_name+"', then type 'python pathmaker.py to complete installation.'")
 		print(' ')
 		print(' ')
 
