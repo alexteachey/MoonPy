@@ -88,6 +88,9 @@ def build_env_and_install(packagename, standard_environment_name):
 	print('You have created a new environment for '+packagename+' called '+environment_name)
 	print("To use "+packagename+", remember to type 'conda activate "+environment_name+"'. ")
 	print('You can now import it like any other python package.')
+	print(' ')
+	if your_OS == 'linux':
+		print("LINUX USERS: first 'conda activate '"+environment_name+"', the type 'python pathmaker.py to complete installation.'")
 
 	return environment_name 
 
@@ -123,6 +126,8 @@ print('established you are running '+your_OS+'.')
 
 ### INSTALL MOONPY
 moonpy_envname = build_env_and_install(packagename='MoonPy', standard_environment_name=standard_moonpy_environment_name)
+
+
 
 
 
