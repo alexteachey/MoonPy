@@ -130,7 +130,7 @@ try:
 		#### need to delete a file first
 		for site_packages_path in site_packages_paths:
 			#### remove this conflicting file, and then pip install
-			subprocess.run('rm -f '+site_packages_path+'/llvmlite*egg-info && pip install pandoramoon', shell=True, capture_output=True, text=True)
+			subprocess.run('rm -f '+site_packages_path+'/llvmlite*egg-info && source activate '+environment_name+'&& pip install pandoramoon && conda deactivate', shell=True, capture_output=True, text=True)
 except:
 	traceback.print_exc()
 	print(' ')
