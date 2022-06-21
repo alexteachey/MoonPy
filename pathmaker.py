@@ -38,6 +38,7 @@ def make_pathfile(moonpydir, install_pandora=True):
 	if install_pandora == True:
 		#### set up Pandora
 		print('Attempting to install up PANDORA...')
+		print('if this hangs up, exit and try again!')
 
 		try:
 			try:
