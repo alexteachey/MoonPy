@@ -124,7 +124,7 @@ print('Attempting to install up PANDORA...')
 try:
 	if your_OS == 'macOS':
 		#### should just be able to pip install directly
-		subprocess.run('pip install pandoramoon', shell=True, capture_output=True, text=True)
+		subprocess.run('source activate '+environment_name+' && pip install pandoramoon && conda deactivate', shell=True, capture_output=True, text=True)
 
 	elif your_OS == 'linux':
 		#### need to delete a file first
