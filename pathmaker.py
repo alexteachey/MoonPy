@@ -4,7 +4,7 @@ import os
 #moonpydir = os.path.realpath(__file__)
 #moonpydir = moonpydir[:moonpydir.find('/pathmaker.py')]
 
-def make_pathfile(moonpydir):
+def make_pathfile(moonpydir, install_pandora=True):
 	#### create the moonpy.pth file
 	os.system('touch '+moonpydir+'/moonpy.pth')
 	moonpy_pthfile = open(moonpydir+'/moonpy.pth', mode='w')
@@ -30,6 +30,28 @@ def make_pathfile(moonpydir):
 	else:
 		os.system('cp '+source_path+' '+destination_path)
 		print('copied '+source_path+' to '+destination_path)
+
+
+	if install_pandora == True:
+		#### set up Pandora
+		print('Attempting to install up PANDORA...')
+		try:
+
+			try:
+				subprocess.run('rm -f 'site_packages_path+'/llvmlite*egg-info', shell=True, capture_output=True, text=True)
+			except:
+				print('could not delete the llvmlite egg-info file.')
+
+			subprocess.run('pip install pandoramoon', shell=True, capture_output=True, text=True)
+
+		except:
+			traceback.print_exc()
+			print(' ')
+			print(' ')
+			print('PANDORA installation failed.')
+			time.sleep(3)
+			print(' ')
+			print(' ')
 
 make_pathfile(os.getcwd())
 

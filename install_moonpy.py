@@ -125,38 +125,8 @@ print('established you are running '+your_OS+'.')
 moonpy_envname = build_env_and_install(packagename='MoonPy', standard_environment_name=standard_moonpy_environment_name)
 
 
-#### set up Pandora
-print('Attempting to install up PANDORA...')
-try:
-	if your_OS == 'macOS':
-		#### should just be able to pip install directly
-		subprocess.run('source activate '+moonpy_envname+' && pip install pandoramoon && conda deactivate', shell=True, capture_output=True, text=True)
 
-
-	elif your_OS == 'linux':
-		#### need to delete a file first
-		for site_packages_path in site_packages_paths:
-			#### remove this conflicting file, and then pip install
-			subprocess.run('rm -f '+site_packages_path+'/llvmlite*egg-info && source activate '+moonpy_envname+' && pip install pandoramoon && conda deactivate', shell=True, capture_output=True, text=True)
-except:
-	traceback.print_exc()
-	print(' ')
-	print(' ')
-	print('PANDORA installation failed.')
-	time.sleep(3)
-	print(' ')
-	print(' ')
-
-
-
-
-
-
-
-
-
-
-
+#### VESPA INSTALLATION 
 setup_vespa = input("Do you want to install Tim Morton's VESPA code (recommended)? y/n: ")
 
 if (setup_vespa == 'y') or (setup_vespa == ''):
