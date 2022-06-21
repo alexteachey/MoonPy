@@ -38,14 +38,13 @@ def make_pathfile(moonpydir, install_pandora=True):
 	if install_pandora == True:
 		#### set up Pandora
 		print('Attempting to install up PANDORA...')
-		try:
 
+		try:
 			try:
 				subprocess.run('rm -f '+site_packages_path+'/llvmlite*egg-info && pip install pandoramoon', shell=True, capture_output=True, text=True)
 			except:
-				print('could not delete the llvmlite egg-info file.')
-
-			subprocess.run('pip install pandoramoon', shell=True, capture_output=True, text=True)
+				print("could not delete the llvmlite egg-info file (maybe it doesn't exist!.")
+				subprocess.run('pip install pandoramoon', shell=True, capture_output=True, text=True)
 
 		except:
 			traceback.print_exc()
