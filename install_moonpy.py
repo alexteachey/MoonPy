@@ -3,8 +3,19 @@ import subprocess
 import time
 import os
 from pathlib import Path 
+import traceback
 
 homepath = str(Path.home())
+
+possible_paths = sys.path
+site_packages_paths = []
+for possible_path in possible_paths:
+	if 'site-packages' in possible_path:
+		site_packages_path = path 
+		site_packages_paths.append(site_packages_path)
+		print('site-packages path: ', site_packages_path)
+if len(site_packages_paths) > 1:
+	print("WARNING: multiple site-packages paths found. Pandora installation may be affected.")
 
 
 def build_env_and_install(packagename, standard_environment_name):
@@ -106,6 +117,36 @@ print('established you are running '+your_OS+'.')
 
 ### INSTALL MOONPY
 build_env_and_install(packagename='MoonPy', standard_environment_name=standard_moonpy_environment_name)
+
+
+#### set up Pandora
+print('Attempting to install up PANDORA...')
+try:
+	if your_OS == 'macOS':
+		#### should just be able to pip install directly
+		subprocess.run('pip install pandoramoon', shell=True, capture_output=True, text=True)
+
+	elif your_OS == 'linux':
+		#### need to delete a file first
+		for site_packages_path in site_packages_paths:
+			#### remove this conflicting file, and then pip install
+			subprocess.run('rm -f '+site_packages_path+'/llvmlite*egg-info && pip install pandoramoon', shell=True, capture_output=True, text=True)
+except:
+	traceback.print_exc()
+	print(' ')
+	print(' ')
+	print('PANDORA installation failed.')
+	print(' ')
+	print(' ')
+
+
+
+
+
+
+
+
+
 
 
 setup_vespa = input("Do you want to install Tim Morton's VESPA code (recommended)? y/n: ")
