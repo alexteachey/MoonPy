@@ -11,7 +11,7 @@ possible_paths = sys.path
 site_packages_paths = []
 for possible_path in possible_paths:
 	if 'site-packages' in possible_path:
-		site_packages_path = path 
+		site_packages_path = possible_path 
 		site_packages_paths.append(site_packages_path)
 		print('site-packages path: ', site_packages_path)
 if len(site_packages_paths) > 1:
