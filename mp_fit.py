@@ -398,7 +398,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_fixed_labels.append(parlab)
 			un_fixed_prior_forms.append(parprior)
 			un_fixed_limit_tuple.append(partup)
-			
+
 		else:
 			un_variable_labels.append(parlab)
 			un_variable_prior_forms.append(parprior)
@@ -428,7 +428,10 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 	if modelcode == 'Pandora':
+		#### MODEL CODE
 		#pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+		
+		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
 		sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume=True, verbose=True)
 
 		sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
