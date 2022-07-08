@@ -7,36 +7,101 @@ import matplotlib.pyplot as plt
 import os
 import sys
 from mp_batman import run_batman
+from scipy.stats import norm 
 try:
 	import pyluna
 except:
 	print('Unable to load pyluna.')
 
 
-### MULTINEST CUBE TRANSFORMATIONS
-### note that in this context 'x' is the cube!
-def transform_uniform(x,a,b):
-    return a + (b-a)*x
 
-def transform_loguniform(x,a,b):
-    la=np.log(a)
-    lb=np.log(b)
-    return np.exp(la + x*(lb-la))
+
+### MULTINEST / ULTRANEST CUBE TRANSFORMATIONS
+### note that in this context 'x' is the cube!
+def transform_uniform(x,lower,upper):
+    return lower + (upper-lower)*x
+
+def transform_loguniform(x,lower,upper):
+    l_lower=np.log(lower)
+    l_upper=np.log(lower)
+    return np.exp(l_lower + x*(l_upper-l_lower))
+
 
 def transform_normal(x,mu,sigma):
     return norm.ppf(x,loc=mu,scale=sigma)
 
-def transform_beta(x,a,b):
-    return beta.ppf(x,a,b)
+def transform_beta(x,lower,upper):
+    return beta.ppf(x,lower,upper)
 
-def transform_truncated_normal(x,mu,sigma,a=0.,b=1.):
-    ar, br = (a - mu) / sigma, (b - mu) / sigma
+def transform_truncated_normal(x,mu,sigma,lower=0.,upper=1.):
+    ar, br = (lower - mu) / sigma, (upper - mu) / sigma
     return truncnorm.ppf(x,ar,br,loc=mu,scale=sigma)
+
+def transform_gauss(x, mu, sigma):
+	#### redundant with transform_normal above
+	gaussian = norm(loc=mu, scale=sigma)
+	return gaussian.ppf(x)
+
+
+
+
+
+
+
+#### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
+def ultn_transform(cube, ndim, nparams):
+	#### this is the equivalent of pymn_prior, I believe.
+	transform_parameters = np.empty_like(cube)
+
+	##### the loop below uses GLOBALS
+	for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
+		if parprior == 'uniform':
+			transformed_parameters[pidx] = transform_uniform(cube[pidx], partuple[0], partuple[1])
+		elif parprior == 'loguniform':
+			transformed_parameters[pidx] = transform_loguniform(cube[pidx], partuple[0], partuple[1])
+		elif (parprior == 'normal') or (parprior == 'gaussian'):
+			transformed_parameters[pidx] = transform_normal(cube[pidx], partuple[0], partuple[1])
+		elif parprior == 'beta':
+			transformed_parameters[pidx] = transform_beta(cube[pidx], partuple[0], partuple[1])
+		elif parprior == 'truncnorm':
+			transformed_parameters[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
+
+	return transformed_parameters 
+
+
+def ultn_loglike_Pandora(cube, ndim, nparams):
+
+	ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
+	ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
+
+	for pidx, parlab in enumerate(un_variable_labels):
+		ultn_var_dict[parlab] = cube[pidx]
+
+	for pidx, parlab in enumerate(un_fixed_labels):
+		ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+	### now you should be able to run_LUNA(param_dict)
+	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
+	Pandora_times, Pandora_fluxes = pyluna.run_Pandora(data_times, **ultn_var_dict, **ultn_fixed_dict, model=un_model, add_noise='n', show_plots='n')
+
+	loglikelihood = np.nansum(-0.5 * ((Pandora_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	return loglikelihood 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 ### PYMULTINEST FUNCTIONS 
-
 def pymn_prior(cube, ndim, nparams):
 	#for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(mn_prior_forms),1), mn_param_labels, mn_prior_forms, mn_limit_tuple):
 	for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(mn_variable_prior_forms),1), mn_variable_labels, mn_variable_prior_forms, mn_variable_limit_tuple):
@@ -50,7 +115,6 @@ def pymn_prior(cube, ndim, nparams):
 			cube[pidx] = transform_beta(cube[pidx], partuple[0], partuple[1])
 		elif parprior == 'truncnorm':
 			cube[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
-
 
 
 def pymn_loglike_LUNA(cube, ndim, nparams):
@@ -72,7 +136,6 @@ def pymn_loglike_LUNA(cube, ndim, nparams):
 	return loglikelihood 
 
 
-
 def pymn_loglike_batman(cube, ndim, nparams):
 
 	pymn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
@@ -92,96 +155,12 @@ def pymn_loglike_batman(cube, ndim, nparams):
 	return loglikelihood 
 
 
-#def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, modelcode="LUNA", show_plot='y'):
-def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='LUNA', show_plot='y'):
-	import pymultinest
-	### this function will start PyMultiNest!
-
-	global mn_param_labels ### all inputs, fixed and variable
-	global mn_fixed_labels ### all fixed inputs, not variable
-	global mn_variable_labels ### al variable inputs, not fixed
-	global mn_prior_forms
-	global mn_variable_prior_forms
-	global mn_fixed_prior_forms
-	global mn_limit_tuple
-	global mn_variable_limit_tuple
-	global mn_fixed_limit_tuple
-	global data_times
-	global data_fluxes
-	global data_errors
-	global mn_param_dict
-	global mn_model
-
-	mn_param_labels = []
-	mn_fixed_labels = []
-	mn_variable_labels = []
-	mn_prior_forms = []
-	mn_fixed_prior_forms = []
-	mn_variable_prior_forms = []
-	mn_limit_tuple = []
-	mn_fixed_limit_tuple = []
-	mn_variable_limit_tuple = []
-	data_times = []
-	data_fluxes = []
-	data_errors = []
-	mn_param_dict = param_dict
-	mn_model = model
-
-	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
-	for parlab in param_dict.keys():
-		parprior, partup = param_dict[parlab][0], param_dict[parlab][1]
-		mn_param_labels.append(parlab)
-		mn_prior_forms.append(parprior)
-		mn_limit_tuple.append(partup)
-		
-		if parprior == 'fixed':
-			mn_fixed_labels.append(parlab)
-			mn_fixed_prior_forms.append(parprior)
-			mn_fixed_limit_tuple.append(partup)
-		else:
-			mn_variable_labels.append(parlab)
-			mn_variable_prior_forms.append(parprior)
-			mn_variable_limit_tuple.append(partup)
-
-
-	for t,f,e in zip(times, fluxes, errors):
-		data_times.append(t)
-		data_fluxes.append(f)
-		data_errors.append(e)
-
-	outputdir = 'MultiNest_fits'
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### create MultiNest_fits directory
-	outputdir = outputdir+'/'+str(modelcode)
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### creates modelcode directory
-	outputdir = outputdir+'/'+str(targetID)
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### creates target directory
-	outputdir = outputdir+'/'+str(mn_model)
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### creates model directory
-	outputdir = outputdir+'/chains'
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### creates chains directory
-
-
-	if modelcode == 'LUNA':
-		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-	elif modelcode == "batman":
-		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-	
-	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
-
-
-
 
 
 
 
 
 #### EMCEE FUNCTIONS
-
 def emcee_lnprior(params):
 
 	in_bounds = 'y'
@@ -269,6 +248,203 @@ def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
 	if not np.isfinite(lp):
 		return -np.inf 
 	return lp + emcee_lnlike_batman(params, data_times, data_fluxes, data_errors)
+
+
+
+
+
+
+
+
+
+
+
+
+###### SAMPLERS BELOW !##########################
+
+
+def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='LUNA', show_plot='y'):
+	import pymultinest
+	### this function will start PyMultiNest!
+
+	global mn_param_labels ### all inputs, fixed and variable
+	global mn_fixed_labels ### all fixed inputs, not variable
+	global mn_variable_labels ### al variable inputs, not fixed
+	global mn_prior_forms
+	global mn_variable_prior_forms
+	global mn_fixed_prior_forms
+	global mn_limit_tuple
+	global mn_variable_limit_tuple
+	global mn_fixed_limit_tuple
+	global data_times
+	global data_fluxes
+	global data_errors
+	global mn_param_dict
+	global mn_model
+
+	mn_param_labels = []
+	mn_fixed_labels = []
+	mn_variable_labels = []
+	mn_prior_forms = []
+	mn_fixed_prior_forms = []
+	mn_variable_prior_forms = []
+	mn_limit_tuple = []
+	mn_fixed_limit_tuple = []
+	mn_variable_limit_tuple = []
+	data_times = []
+	data_fluxes = []
+	data_errors = []
+	mn_param_dict = param_dict
+	mn_model = model
+
+	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
+	for parlab in param_dict.keys():
+		parprior, partup = param_dict[parlab][0], param_dict[parlab][1]
+		mn_param_labels.append(parlab)
+		mn_prior_forms.append(parprior)
+		mn_limit_tuple.append(partup)
+		
+		if parprior == 'fixed':
+			mn_fixed_labels.append(parlab)
+			mn_fixed_prior_forms.append(parprior)
+			mn_fixed_limit_tuple.append(partup)
+		else:
+			mn_variable_labels.append(parlab)
+			mn_variable_prior_forms.append(parprior)
+			mn_variable_limit_tuple.append(partup)
+
+
+	for t,f,e in zip(times, fluxes, errors):
+		data_times.append(t)
+		data_fluxes.append(f)
+		data_errors.append(e)
+
+	outputdir = 'MultiNest_fits'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### create MultiNest_fits directory
+	outputdir = outputdir+'/'+str(modelcode)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates modelcode directory
+	outputdir = outputdir+'/'+str(targetID)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates target directory
+	outputdir = outputdir+'/'+str(mn_model)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates model directory
+	outputdir = outputdir+'/chains'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates chains directory
+
+
+	if modelcode == 'LUNA':
+		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+	elif modelcode == "batman":
+		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+	
+	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
+
+
+
+
+
+
+#def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, modelcode="LUNA", show_plot='y'):
+def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
+	import pymultinest
+	### this function will start UltraNest 
+
+	global un_param_labels ### all inputs, fixed and variable
+	global un_fixed_labels ### all fixed inputs, not variable
+	global un_variable_labels ### al variable inputs, not fixed
+	global un_prior_forms
+	global un_variable_prior_forms
+	global un_fixed_prior_forms
+	global un_limit_tuple
+	global un_variable_limit_tuple
+	global un_fixed_limit_tuple
+	global data_times
+	global data_fluxes
+	global data_errors
+	global un_param_dict
+	global un_model
+
+	un_param_labels = []
+	un_fixed_labels = []
+	un_variable_labels = []
+	un_prior_forms = []
+	un_fixed_prior_forms = []
+	un_variable_prior_forms = []
+	un_limit_tuple = []
+	un_fixed_limit_tuple = []
+	un_variable_limit_tuple = []
+	data_times = []
+	data_fluxes = []
+	data_errors = []
+	un_param_dict = param_dict
+	un_model = model
+
+	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
+	for parlab in param_dict.keys():
+		parprior, partup = param_dict[parlab][0], param_dict[parlab][1]
+		un_param_labels.append(parlab)
+		un_prior_forms.append(parprior)
+		un_limit_tuple.append(partup)
+		
+		if parprior == 'fixed':
+			un_fixed_labels.append(parlab)
+			un_fixed_prior_forms.append(parprior)
+			un_fixed_limit_tuple.append(partup)
+		else:
+			un_variable_labels.append(parlab)
+			un_variable_prior_forms.append(parprior)
+			un_variable_limit_tuple.append(partup)
+
+
+	for t,f,e in zip(times, fluxes, errors):
+		data_times.append(t)
+		data_fluxes.append(f)
+		data_errors.append(e)
+
+	outputdir = 'UltraNest_fits'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
+	outputdir = outputdir+'/'+str(modelcode)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates modelcode directory
+	outputdir = outputdir+'/'+str(targetID)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates target directory
+	outputdir = outputdir+'/'+str(un_model)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates model directory
+	outputdir = outputdir+'/chains'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates chains directory
+
+
+	if modelcode == 'Pandora':
+		#pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
+		sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputfiles_basename, resume=True, verbose=True)
+
+		sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+		sampler.print_results()
+		sampler.plot()
+		sampler.plot_trace()
+
+
+	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
