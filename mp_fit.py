@@ -98,9 +98,6 @@ def ultn_loglike_Pandora(cube, ndim, nparams):
 
 
 
-
-
-
 ### PYMULTINEST FUNCTIONS 
 def pymn_prior(cube, ndim, nparams):
 	#for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(mn_prior_forms),1), mn_param_labels, mn_prior_forms, mn_limit_tuple):
@@ -348,11 +345,18 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 
-#def mp_multinest(times, fluxes, errors, param_labels, param_prior_forms, param_limit_tuple, nlive, targetID, modelcode="LUNA", show_plot='y'):
+
 def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
-	import pymultinest
+	import ultranest 
+	import ultranest.stepsampler 
+	from ultranest import ReactiveNestedSampler 
+	from ultranest.plot import cornerplot 
+
+
 	### this function will start UltraNest 
 
+
+	#### DEFINE THESE GLOBALS, BECAUSE THEY WILL BE NEEDED -- I FORGOT WHY, BUT TRUST ME.
 	global un_param_labels ### all inputs, fixed and variable
 	global un_fixed_labels ### all fixed inputs, not variable
 	global un_variable_labels ### al variable inputs, not fixed
@@ -394,6 +398,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_fixed_labels.append(parlab)
 			un_fixed_prior_forms.append(parprior)
 			un_fixed_limit_tuple.append(partup)
+			
 		else:
 			un_variable_labels.append(parlab)
 			un_variable_prior_forms.append(parprior)
@@ -424,7 +429,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 	if modelcode == 'Pandora':
 		#pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-		sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputfiles_basename, resume=True, verbose=True)
+		sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume=True, verbose=True)
 
 		sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
 		sampler.print_results()

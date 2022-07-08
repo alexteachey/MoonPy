@@ -54,6 +54,47 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_attributes.py')]
 #dummy = MoonpyLC(targetID='Kepler-1625b')
 
 
+
+def make_Pandora_dict(self, Psat=0, sat_sma=20, sat_phase=0, sat_inc=0, sat_omega=0, MsatMp=1e-8, RsatRp=1e-8):
+	Pandora_planet_dict = {}
+	Pandora_moon_dict = {}
+	#run_LUNA(all_times, RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, Psat=None, rhoplan=None, sat_sma=None, sat_phase=None, sat_inc=None, sat_omega=None, MsatMp=None, RsatRp=None, model="M", tau1=None, tau2=None, tau3=None, tau4=None, tau5=None, tau6=None, cadence_minutes=29.42, noise_ppm=None, munit='kg', runit='meters', ang_unit='radians', add_noise='n', show_plots='n', print_params='n', binned_output='n', **kwargs):
+	try:
+		Pandora_planet_dict['all_times'] = np.concatenate(self.times)
+	except:
+		Pandora_planet_dict['all_times'] = self.times
+
+	time_seps = []
+	for nti in np.arange(1,len(Pandora_planet_dict['all_times']),1):
+		time_sep = Pandora_planet_dict['all_times'][nti] - Pandora_planet_dict['all_times'][nti-1]
+		time_seps.append(time_sep)
+	median_time_sep = np.nanmedian(time_seps)
+	cadence_days = median_time_sep
+	cadence_minutes = cadence_days * 24 * 60 
+
+	Pandora_planet_dict['RpRstar'] = self.rprstar
+	Pandora_planet_dict['rhostar'] = self.st_dens * 1000 ### LUNA wants kg/m^3, NEA is natively in g/cm^3 .
+	Pandora_planet_dict['bplan'] = self.pl_imppar 
+	Pandora_planet_dict['Pplan'] = self.pl_orbper
+	Pandora_planet_dict['tau0'] = self.tau0
+	Pandora_planet_dict['q1'] = self.q1
+	Pandora_planet_dict['q2'] = self.q2 
+	Pandora_planet_dict['cadence_minutes'] = cadence_minutes 
+
+	Pandora_moon_dict['rhoplan'] = self.pl_dens * 1000 #### LUNA wants kg/m^3, NEA is natively in g/cm^3.
+	Pandora_moon_dict['Psat'] = Psat
+	Pandora_moon_dict['sat_sma'] = sat_sma
+	Pandora_moon_dict['sat_phase'] = sat_phase 
+	Pandora_moon_dict['sat_inc'] = sat_inc 
+	Pandora_moon_dict['sat_omega'] = sat_omega 
+	Pandora_moon_dict['MsatMp'] = MsatMp
+	Pandora_moon_dict['RsatRp'] = RsatRp
+
+	self.Pandora_planet_dict = Pandora_planet_dict
+	self.Pandora_moon_dict = Pandora_moon_dict 
+
+
+
 def make_LUNA_dict(self, Psat=0, sat_sma=20, sat_phase=0, sat_inc=0, sat_omega=0, MsatMp=1e-6, RsatRp=1e-6):
 	LUNA_planet_dict = {}
 	LUNA_moon_dict = {}
