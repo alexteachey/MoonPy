@@ -356,6 +356,7 @@ def initialize_priors(self, modelcode):
 	param_uber_dict['q1'] = ['uniform', (0,1)]
 	param_uber_dict['q2'] = ['uniform', (0,1)]
 	param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
+	
 	if modelcode.lower() == "luna":
 		### these parameters are only relevant for LUNA!
 		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
@@ -363,20 +364,44 @@ def initialize_priors(self, modelcode):
 		param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
 		param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
 		param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
+	
 	if modelcode.lower() == 'batman':
 		### these parameters are only relevant for batman!
-		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
+		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)] #### meters!
 		param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
 		param_uber_dict['ecc'] = ['uniform', (0,1)]
+
+	if modelcode.lower() == 'pandora':
+		param_uber_dict['Rstar_meters'] = ['loguniform', (1e6, 1e11)]
+
 
 	### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
 	self.get_properties(locate_neighbor='n')
 	param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 	param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
+
 	if modelcode.lower() == "luna":
 		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
 
+	if modelcode.lower() == 'pandora':
+		param_uber_dict['apRstar'] = ['uniform', (0.001, 2000)] #### a_saturn / R_sol = 2051 for reference
+		param_uber_dict['Mplan_kg'] = ['loguniform', (1e23, 1e29)] ### sub-Mercury mass to ~50 Jupiter masses 
+		param_uber_dict['eccplan'] = ['uniform', (0,1)]
+		param_uber_dict['RsRstar'] = ['loguniform', (1e-4, 1e-2)]
+		param_uber_dict['Psat'] = ['loguniform', (1e-1, 1e2)] ### 0.1 days to 100 days
+		param_uber_dict['sat_phase'] = ['uniform', (0, 360)] #### pandora takes degrees!
+		param_uber_dict['sat_inc'] = ['uniform', (0, 360)]
+		param_uber_dict['sat_omega'] = ['uniform', (0, 360)]
+		param_uber_dict['Msat_kg'] = ['loguniform', (1e18, 1e29)] ### can be down to 1e-5 of the planet mass, up to 1-to-1.
+		  
+
+
 	self.param_uber_dict = param_uber_dict
+
+	#### finished building the param_uber_dict!
+
+
+
 
 	### OK TO LEAVE HERE, SO LONG AS IT ALSO STAYS WITHIN THE FIT() FUNCTION.
 	param_labels = []
