@@ -13,6 +13,9 @@ try:
 except:
 	print('Unable to load pyluna.')
 
+try:
+	from run_pandora import run_pandora 
+
 
 
 
@@ -49,7 +52,7 @@ def transform_gauss(x, mu, sigma):
 
 
 #### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
-def ultn_transform(cube, ndim, nparams):
+def ultn_transform(cube):
 	#### this is the equivalent of pymn_prior, I believe.
 	transform_parameters = np.empty_like(cube)
 
@@ -69,7 +72,7 @@ def ultn_transform(cube, ndim, nparams):
 	return transformed_parameters 
 
 
-def ultn_loglike_Pandora(cube, ndim, nparams):
+def ultn_loglike_Pandora(cube):
 
 	ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
 	ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
@@ -82,7 +85,7 @@ def ultn_loglike_Pandora(cube, ndim, nparams):
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
-	Pandora_times, Pandora_fluxes = pyluna.run_Pandora(data_times, **ultn_var_dict, **ultn_fixed_dict, model=un_model, add_noise='n', show_plots='n')
+	Pandora_times, Pandora_fluxes = run_Pandora(data_times, **ultn_var_dict, **ultn_fixed_dict, model=un_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((Pandora_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	return loglikelihood 
@@ -99,7 +102,7 @@ def ultn_loglike_Pandora(cube, ndim, nparams):
 
 
 ### PYMULTINEST FUNCTIONS 
-def pymn_prior(cube, ndim, nparams):
+def pymn_prior(cube):
 	#for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(mn_prior_forms),1), mn_param_labels, mn_prior_forms, mn_limit_tuple):
 	for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(mn_variable_prior_forms),1), mn_variable_labels, mn_variable_prior_forms, mn_variable_limit_tuple):
 		if parprior == 'uniform':
@@ -114,7 +117,7 @@ def pymn_prior(cube, ndim, nparams):
 			cube[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
 
 
-def pymn_loglike_LUNA(cube, ndim, nparams):
+def pymn_loglike_LUNA(cube):
 
 	pymn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
 	pymn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
@@ -133,7 +136,7 @@ def pymn_loglike_LUNA(cube, ndim, nparams):
 	return loglikelihood 
 
 
-def pymn_loglike_batman(cube, ndim, nparams):
+def pymn_loglike_batman(cube):
 
 	pymn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
 	pymn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
@@ -346,7 +349,8 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 
-def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
+#def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
+def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", modelcode='Pandora', show_plot='y'):	
 	import ultranest 
 	import ultranest.stepsampler 
 	from ultranest import ReactiveNestedSampler 

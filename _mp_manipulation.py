@@ -20,7 +20,7 @@ from mp_tools import *
 from mp_lcfind import *
 from mp_detrend import phasma_detrend, untrendy_detrend, cofiam_detrend, george_detrend, medfilt_detrend, polyAM_detrend
 from mp_batman import run_batman
-from mp_fit import mp_multinest, mp_emcee
+from mp_fit import mp_multinest, mp_ultranest, mp_emcee
 from mp_plotter import *
 from cofiam import max_order
 #from pyluna import run_LUNA, prepare_files
@@ -44,7 +44,7 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 	### FOUR MODELS MAY BE RUN: a planet-only model (P) with no TTVs, a TTV model (T), freely fitting the transit times, 
 	### a (Z) model, which gives the moon a mass but no radius, and an (M) model, which is a fully physical moon fit.
 
-	if modelcode == "LUNA":
+	if modelcode.lower() == "luna":
 		folded = False ### you should not be fitting a moon model to a folded light curve!
 
 	##### LIGHT CURVES NEED TO HAVE THE DATA POINTS WELL OUTSIDE THE TRANSITS REMOVED,
@@ -207,8 +207,14 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 	if fitter == 'multinest':
 		mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode, model=model, nparams=nvars)
 
+	elif fitter == 'ultranest':
+		mp_ultranest(times=fit_times, fluxes=fit_fluxes, errors=fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, model="M", modelcode='Pandora', show_plot='y')
+
 	elif fitter == 'emcee':
 		mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, model=model, resume=resume, nparams=nvars) ### outputs to a file
+
+
+
 
 	### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
 	self.initialize_priors(modelcode=modelcode)		
@@ -350,14 +356,14 @@ def initialize_priors(self, modelcode):
 	param_uber_dict['q1'] = ['uniform', (0,1)]
 	param_uber_dict['q2'] = ['uniform', (0,1)]
 	param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
-	if modelcode == "LUNA":
+	if modelcode.lower() == "luna":
 		### these parameters are only relevant for LUNA!
 		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
 		param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
 		param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
 		param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
 		param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
-	if modelcode == 'batman':
+	if modelcode.lower() == 'batman':
 		### these parameters are only relevant for batman!
 		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)]
 		param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
@@ -367,7 +373,7 @@ def initialize_priors(self, modelcode):
 	self.get_properties(locate_neighbor='n')
 	param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
 	param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
-	if modelcode == "LUNA":
+	if modelcode.lower() == "luna":
 		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
 
 	self.param_uber_dict = param_uber_dict
