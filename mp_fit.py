@@ -14,7 +14,7 @@ except:
 	print('Unable to load pyluna.')
 
 try:
-	from run_pandora import run_pandora 
+	from run_pandora import run_Pandora 
 except:
 	print('Unable to load run_pandora')
 
@@ -55,7 +55,7 @@ def transform_gauss(x, mu, sigma):
 #### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
 def ultn_transform(cube):
 	#### this is the equivalent of pymn_prior, I believe.
-	transform_parameters = np.empty_like(cube)
+	transformed_parameters = np.empty_like(cube)
 
 	##### the loop below uses GLOBALS
 	for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
@@ -86,9 +86,9 @@ def ultn_loglike_Pandora(cube):
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
-	Pandora_times, Pandora_fluxes = run_Pandora(data_times, **ultn_var_dict, **ultn_fixed_dict, model=un_model, add_noise='n', show_plots='n')
+	Pandora_times, Pandora_total_fluxes, Pandora_planet_fluxes, Pandora_moon_fluxes = run_Pandora(np.array(data_times), **ultn_var_dict, **ultn_fixed_dict, model=un_model, input_ang_unit='degrees', add_noise='n', show_plots='n')
 
-	loglikelihood = np.nansum(-0.5 * ((Pandora_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
 	return loglikelihood 
 
 
@@ -351,7 +351,7 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 #def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
-def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", modelcode='Pandora', show_plot='y'):	
+def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", modelcode='Pandora', resume='resume', show_plot='y'):	
 	import ultranest 
 	import ultranest.stepsampler 
 	from ultranest import ReactiveNestedSampler 
@@ -377,18 +377,28 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	global un_param_dict
 	global un_model
 
+	### labels
 	un_param_labels = []
 	un_fixed_labels = []
 	un_variable_labels = []
+
+	#### prior forms
 	un_prior_forms = []
 	un_fixed_prior_forms = []
 	un_variable_prior_forms = []
+	wrapped_params = []
+
+	#### limit tuples
 	un_limit_tuple = []
 	un_fixed_limit_tuple = []
 	un_variable_limit_tuple = []
+
+
+
 	data_times = []
 	data_fluxes = []
 	data_errors = []
+
 	un_param_dict = param_dict
 	un_model = model
 
@@ -408,6 +418,12 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_variable_labels.append(parlab)
 			un_variable_prior_forms.append(parprior)
 			un_variable_limit_tuple.append(partup)
+		
+		if parlab == 'tau':
+			wrapped_params.append(True)
+		else:
+			wrapped_params.append(False)
+
 
 
 	for t,f,e in zip(times, fluxes, errors):
@@ -433,13 +449,24 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 	if modelcode == 'Pandora':
+
 		#### MODEL CODE
 		#pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 		
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
-		sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume=True, verbose=True)
+		try:
+			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='resume')
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='resume')
 
-		sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+		except:
+			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
+			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
+			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
+
+
+
+		#sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+		sampler.run(min_num_live_points=nlive)
 		sampler.print_results()
 		sampler.plot()
 		sampler.plot_trace()

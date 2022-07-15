@@ -173,10 +173,11 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 		nparamorig = 14
 		nvars = 13 ### not fitting Rsat/Rp 
 
-	try:
-		prepare_files(np.hstack(fit_times), ntaus, nparam, nparamorig)
-	except:
-		prepare_files(fit_times, ntaus, nparam, nparamorig)
+	if modelcode.lower() == 'luna':
+		try:
+			prepare_files(np.hstack(fit_times), ntaus, nparam, nparamorig)
+		except:
+			prepare_files(fit_times, ntaus, nparam, nparamorig)
 
 
 	if custom_param_dict != None:
@@ -208,7 +209,11 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 		mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode, model=model, nparams=nvars)
 
 	elif fitter == 'ultranest':
-		mp_ultranest(times=fit_times, fluxes=fit_fluxes, errors=fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, model="M", modelcode='Pandora', show_plot='y')
+		if resume == True:
+			ultranest_resume = 'resume'
+		else:
+			ultranest_resume = 'overwrite'
+		mp_ultranest(times=fit_times, fluxes=fit_fluxes, errors=fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, model="M", modelcode='Pandora', resume=ultranest_resume, show_plot='y')
 
 	elif fitter == 'emcee':
 		mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, model=model, resume=resume, nparams=nvars) ### outputs to a file
@@ -350,50 +355,79 @@ def initialize_priors(self, modelcode):
 	print('calling _mp_manipulation.py/intialize_priors().')
 	param_uber_dict = {}
 
-	param_uber_dict['RpRstar'] = ['uniform', (0, 1)]
-	param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.
-	param_uber_dict['bplan'] = ['uniform', (0,1)]
-	param_uber_dict['q1'] = ['uniform', (0,1)]
-	param_uber_dict['q2'] = ['uniform', (0,1)]
-	param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
+
+
+	### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
+	self.get_properties(locate_neighbor='n')
+
+	#### used for LUNA, batman, and pandora.
+
+
+	if (modelcode.lower() == 'luna') or (modelcode.lower() == 'batman'):
+		param_uber_dict['RpRstar'] = ['uniform', (1e-6, 0.9999)]
+		param_uber_dict['bplan'] = ['uniform', (0,1)]
+		param_uber_dict['rhostar'] = ['uniform', (1, 1e6)] ## roughly the density of betelgeuse to the density of Mercury.		
+		param_uber_dict['rhoplan'] = ['uniform', (1, 1e6)]
+		param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
+		param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
+		param_uber_dict['q1'] = ['uniform', (0,1)]
+		param_uber_dict['q2'] = ['uniform', (0,1)]		
 	
 	if modelcode.lower() == "luna":
 		### these parameters are only relevant for LUNA!
 		param_uber_dict['sat_phase'] = ['uniform', (0,2*np.pi)]
 		param_uber_dict['sat_inc'] = ['uniform', (-1,3)] ### actually cos(i_s), natively.
 		param_uber_dict['sat_omega'] = ['uniform', (-np.pi,np.pi)]
-		param_uber_dict['MsatMp'] = ['uniform', (0, 1)]
-		param_uber_dict['RsatRp'] = ['uniform', (-1, 1)]
+		param_uber_dict['MsatMp'] = ['uniform', (1e-8, 1)]
+		param_uber_dict['RsatRp'] = ['uniform', (1e-8, 1)]
+		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]		
 	
+
 	if modelcode.lower() == 'batman':
 		### these parameters are only relevant for batman!
-		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e11)] #### meters!
+		param_uber_dict['Rstar'] = ['loguniform', (1e6,1e16)] #### meters!
 		param_uber_dict['long_peri'] = ['uniform', (0,4*np.pi)] ### longitude of periastron is the sum of the ascending node  (0-2pi) and the argument of periaspe (also 0-2pi).
 		param_uber_dict['ecc'] = ['uniform', (0,1)]
 
-	if modelcode.lower() == 'pandora':
-		param_uber_dict['Rstar_meters'] = ['loguniform', (1e6, 1e11)]
-
-
-	### THE FOLLOWING PARAMETERS ARE PLANET-SPECIFIC.
-	self.get_properties(locate_neighbor='n')
-	param_uber_dict['tau0'] = ['uniform', (self.tau0-0.1, self.tau0+0.1)]
-	param_uber_dict['Pplan'] = ['uniform', (self.period-1, self.period+1)]
-
-	if modelcode.lower() == "luna":
-		param_uber_dict['sat_sma'] = ['uniform', (2,7.897*(self.period**(2/3)))]
 
 	if modelcode.lower() == 'pandora':
-		param_uber_dict['apRstar'] = ['uniform', (0.001, 2000)] #### a_saturn / R_sol = 2051 for reference
-		param_uber_dict['Mplan_kg'] = ['loguniform', (1e23, 1e29)] ### sub-Mercury mass to ~50 Jupiter masses 
-		param_uber_dict['eccplan'] = ['uniform', (0,1)]
-		param_uber_dict['RsRstar'] = ['loguniform', (1e-4, 1e-2)]
-		param_uber_dict['Psat'] = ['loguniform', (1e-1, 1e2)] ### 0.1 days to 100 days
-		param_uber_dict['sat_phase'] = ['uniform', (0, 360)] #### pandora takes degrees!
-		param_uber_dict['sat_inc'] = ['uniform', (0, 360)]
-		param_uber_dict['sat_omega'] = ['uniform', (0, 360)]
-		param_uber_dict['Msat_kg'] = ['loguniform', (1e18, 1e29)] ### can be down to 1e-5 of the planet mass, up to 1-to-1.
-		  
+		param_uber_dict['R_star'] = ['loguniform', (1e6, 1e11)] #### meters 
+		param_uber_dict['per_bary'] = ['uniform', (self.period-1, self.period+1)] #[days]
+		param_uber_dict['a_bary'] = ['uniform', (2, 7.897*(self.period**(2/3)))] ### [Rstar]
+		param_uber_dict['r_planet'] = ['loguniform', (1e-6, 1)] ### Rstar
+		param_uber_dict['b_bary'] = ['uniform', (0,1)] ### 0 - 1
+		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 1)] ## [days]
+		param_uber_dict['M_planet'] = ['loguniform', (1e23, 1e29)] # [kg]
+		param_uber_dict['r_moon'] = ['loguniform', (1e-6, 1)] ### [Rstar]
+		param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
+		param_uber_dict['tau'] = ['uniform', (0,1)] ### 0 - 1 normalized phase
+		param_uber_dict['Omega_moon'] = ['uniform', (0, 180)] ### 0 - 180 
+		param_uber_dict['i_moon'] = ['uniform', (0, 180)] # 0 - 180 
+		param_uber_dict['M_moon'] = ['loguniform', (1e18, 1e29)] # [kg]
+		param_uber_dict['q1'] = ['uniform', (0,1)] # 0 -1 
+		param_uber_dict['q2'] = ['uniform', (0,1)] # 0 - 1		
+
+		#### FIXED PARAMETERS!
+		param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+		param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
+		param_uber_dict['w_moon'] = ['fixed', 0.]
+		param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+		param_uber_dict['nepochs'] = ['fixed', len(self.taus)]
+
+
+
+	#if modelcode.lower() == 'pandora':
+	#	param_uber_dict['apRstar'] = ['uniform', (0.001, 2000)] #### a_saturn / R_sol = 2051 for reference
+	#	param_uber_dict['Mplan_kg'] = ['loguniform', (1e23, 1e29)] ### sub-Mercury mass to ~50 Jupiter masses 
+	#	param_uber_dict['eccplan'] = ['uniform', (0,1)]
+	#	param_uber_dict['RsRstar'] = ['loguniform', (1e-6, 0.9999)]
+	#	param_uber_dict['Psat'] = ['loguniform', (1e-1, 1e2)] ### 0.1 days to 100 days
+	#	param_uber_dict['sat_phase'] = ['uniform', (0, 360)] #### pandora takes degrees!
+	#	param_uber_dict['sat_inc'] = ['uniform', (0, 360)]
+	#	param_uber_dict['sat_omega'] = ['uniform', (0, 360)]
+	#	param_uber_dict['Msat_kg'] = ['loguniform', (1e18, 1e29)] ### can be down to 1e-5 of the planet mass, up to 1-to-1.
+	#	param_uber_dict['Tdur_days'] = ['uniform', (0.5*self.duration_days, 2*self.duration_days)]
+
 
 
 	self.param_uber_dict = param_uber_dict

@@ -23,7 +23,8 @@ hostname = socket.gethostname()
 ### probably should be written as a massive function that can be called.
 
 
-def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, Mplan_kg, eccplan, RsRstar, Psat, sat_phase, sat_inc, sat_omega, Msat_kg, q1, q2, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
+#def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, Mplan_kg, eccplan, Tdur_days, RsRstar, Psat, sat_phase, sat_inc, sat_omega, Msat_kg, q1, q2, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
+def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, t0_bary, Tdur_days, nepochs, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
 
 	if input_ang_unit=='radians':
 		#### PANDORA WANTS DEGREES
@@ -36,27 +37,34 @@ def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, M
 		pass
 
 	### misc conversions
-	native_cadence = 0.2942439984 ### minutes
-	native_cadence_days = native_cadence / (60 * 24) ### native for seriesP.jam
 	cadence_days = cadence_minutes / (60 * 24)
 
-
-	Rstar_meters = float(Rstar_meters)
-	Pplan = float(Pplan)
-	apRstar = float(apRstar)
-	RpRstar = float(RpRstar)
-	bplan = float(bplan)
-	tau0 = float(tau0)
-	Mplan_kg = float(Mplan_kg)
-	eccplan = float(eccplan)
-	RsRstar = float(RsRstar)
-	Psat = float(Psat)
-	sat_phase = float(sat_phase)
-	sat_inc = float(sat_inc)
-	sat_omega = float(sat_omega)
-	Msat_kg = float(Msat_kg)
+	"""
+	R_star = float(R_star)
+	per_bary = float(per_bary)
+	a_bary = float(a_bary)
+	r_planet = float(r_planet)
+	b_bary = float(b_bary)
+	t0_bary_offset = float(t0_bary_offset)
+	M_planet = float(M_planet)
+	#eccplan = float(eccplan)
+	#RsRstar = float(RsRstar)
+	r_moon = float(r_moon)
+	#Psat = float(Psat)
+	per_moon = float(per_moon)
+	tau = float(tau)
+	Omega_moon = float(Omega_moon)
+	i_moon = float(i_moon)
+	M_moon = float(M_moon)
 	q1 = float(q1)
 	q2 = float(q2)
+	"""
+	#sat_phase = float(sat_phase)
+	#sat_inc = float(sat_inc)
+	#sat_omega = float(sat_omega)
+	#Msat_kg = float(Msat_kg)
+	#q1 = float(q1)
+	#q2 = float(q2)
 
 
 
@@ -67,34 +75,36 @@ def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, M
 	#### VARIABLE PARAMETERS (FOR FITTING)
 	u1, u2 = ld_convert(q1, q2) 
 	
-	params.R_star = Rstar_meters #### FIT PARAM #0 
-	params.per_bary = Pplan #### PARAM #1 Pplan [days]
-	params.a_bary = apRstar  #### PARAM #2 
-	params.r_planet = RpRstar #### PARAM #3 
-	params.b_bary = bplan #### PARAM # 4
-	params.t0_bary_offset = 0.01 #### PARAM #5 what is this? 
-	params.M_planet = Mplan_kg #### PARAM #6 [kg]
+	params.R_star = float(R_star) #### FIT PARAM #0 
+	params.per_bary = float(per_bary) #### PARAM #1 Pplan [days]
+	params.a_bary = float(a_bary)  #### PARAM #2 
+	params.r_planet = float(r_planet) #### PARAM #3 
+	params.b_bary = float(b_bary) #### PARAM # 4
+	params.t0_bary_offset = float(t0_bary_offset) #### PARAM #5 what is this? 
+	params.M_planet = float(M_planet) #### PARAM #6 [kg]
 	#### moon parameters
-	params.r_moon = RsRstar #### PARAM #7 -- satellite radius divided by stellar radius
-	params.per_moon = Psat #### PARAM #8 -- need to define above
-	params.tau_moon = sat_phase / (2*np.pi) #### PARAM #9-- must be between zero and one -- I think this is the phase...
-	params.Omega_moon = 0 #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
-	params.i_moon = sat_inc #### PARAM #11 -- between 0 and 180 degrees
-	params.M_moon = MsatMp * Mplan_kg #### PARAM # 12 need to define Mp! [kg]
-	params.u1 = u1 #### PARAM #13 need to define above!
-	params.u2 = u2 #### PARAM #14 need to define above!
+	params.r_moon = float(r_moon) #### PARAM #7 -- satellite radius divided by stellar radius
+	params.per_moon = float(per_moon) #### PARAM #8 -- need to define above
+	params.tau_moon = float(tau) #### PARAM #9-- must be between zero and one -- I think this is the phase...
+	params.Omega_moon = float(Omega_moon) #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+	params.i_moon = float(i_moon) #### PARAM #11 -- between 0 and 180 degrees
+	#params.M_moon = MsatMp * Mplan_kg #### PARAM # 12 need to define Mp! [kg]
+	params.M_moon = float(M_moon) 
+	params.u1 = float(u1) #### PARAM #13 need to define above!
+	params.u2 = float(u2) #### PARAM #14 need to define above!
 
 
 	#### FIXED PARAMETERS -- BUT I"m NOT SURE WHY ... 
-	params.t0_bary = tau0 #### FIXED?
-	params.ecc_bary = eccplan #### FIXED? -- need to define above!	
-	params.w_moon = sat_omega #### degrees
+	params.t0_bary = float(t0_bary) #### FIXED?
+	params.ecc_bary = float(ecc_bary) #### FIXED? -- need to define above!	
+	params.w_moon = float(w_moon) #### degrees
 
 	#### other inputs
-	params.epochs = 3 #### needs to be defined above!
+	params.epochs = nepochs #### needs to be defined above!
 	params.epoch_duration = 20*Tdur_days #### need to be defined above
 	params.cadences_per_day = 48 
-	params.epoch_distance = Pplan 
+	#params.epoch_distance = Pplan 
+	params.epoch_distance = per_bary 
 	params.supersampling_factor = 1
 	params.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
 	params.hill_sphere_threshold = 1.2 #### what does this mean?
@@ -102,7 +112,9 @@ def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, M
 
 	pdtime = pandora.time(params).grid()
 	pdmodel = pandora.moon_model(params)
-	total_flux, planet_flux, moon_flux = model.light_curve(pdtime)
+
+	#total_flux, planet_flux, moon_flux = pdmodel.light_curve(pdtime)
+	total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
 
 
 	if print_params == 'y':
@@ -126,6 +138,7 @@ def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, M
 		print(" ")
 
 
-	return output_times, output_fluxes 
+	#return output_times, output_fluxes 
+	return pdtime, total_flux, planet_flux, moon_flux
 
 
