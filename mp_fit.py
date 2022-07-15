@@ -15,30 +15,31 @@ except:
 
 try:
 	from run_pandora import run_pandora 
-
+except:
+	print('Unable to load run_pandora')
 
 
 
 ### MULTINEST / ULTRANEST CUBE TRANSFORMATIONS
 ### note that in this context 'x' is the cube!
 def transform_uniform(x,lower,upper):
-    return lower + (upper-lower)*x
+	return lower + (upper-lower)*x
 
 def transform_loguniform(x,lower,upper):
-    l_lower=np.log(lower)
-    l_upper=np.log(lower)
-    return np.exp(l_lower + x*(l_upper-l_lower))
+	l_lower=np.log(lower)
+	l_upper=np.log(lower)
+	return np.exp(l_lower + x*(l_upper-l_lower))
 
 
 def transform_normal(x,mu,sigma):
-    return norm.ppf(x,loc=mu,scale=sigma)
+	return norm.ppf(x,loc=mu,scale=sigma)
 
 def transform_beta(x,lower,upper):
-    return beta.ppf(x,lower,upper)
+	return beta.ppf(x,lower,upper)
 
 def transform_truncated_normal(x,mu,sigma,lower=0.,upper=1.):
-    ar, br = (lower - mu) / sigma, (upper - mu) / sigma
-    return truncnorm.ppf(x,ar,br,loc=mu,scale=sigma)
+	ar, br = (lower - mu) / sigma, (upper - mu) / sigma
+	return truncnorm.ppf(x,ar,br,loc=mu,scale=sigma)
 
 def transform_gauss(x, mu, sigma):
 	#### redundant with transform_normal above
@@ -638,8 +639,8 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 
 
 	#for i, result in enumerate(sampler.sample(p0, iterations=10000)):
-	#    if (i+1) % 100 == 0:
-	#       print("{0:5.1%}".format(float(i) / nsteps))
+	#	if (i+1) % 100 == 0:
+	#	   print("{0:5.1%}".format(float(i) / nsteps))
 	if storechain == True:
 		### note that 'samples' should have shape = ((nsteps - n_burnin) * nwalkers, ndim)
 		### example: if you have nwalkers=30, n_burning=10, nsteps=200, and ndim=11,
