@@ -398,7 +398,7 @@ def initialize_priors(self, modelcode):
 		param_uber_dict['a_bary'] = ['uniform', (2., 7.897*(self.period**(2/3)))] ### [Rstar]
 		#param_uber_dict['r_planet'] = ['loguniform', (1e-6, 0.99999)] ### Rstar
 
-		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### Pandora wants units of Rsol
+		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
 
 		#param_uber_dict['r_planet'] = ['uniform', (0.5 * NEA_RpRsol, 2 * NEA_RpRsol)]
 		param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, 0.05 * NEA_RpRstar)] ### units of Rstar 
@@ -435,25 +435,13 @@ def initialize_priors(self, modelcode):
 
 
 
-	#if modelcode.lower() == 'pandora':
-	#	param_uber_dict['apRstar'] = ['uniform', (0.001, 2000)] #### a_saturn / R_sol = 2051 for reference
-	#	param_uber_dict['Mplan_kg'] = ['loguniform', (1e23, 1e29)] ### sub-Mercury mass to ~50 Jupiter masses 
-	#	param_uber_dict['eccplan'] = ['uniform', (0,1)]
-	#	param_uber_dict['RsRstar'] = ['loguniform', (1e-6, 0.9999)]
-	#	param_uber_dict['Psat'] = ['loguniform', (1e-1, 1e2)] ### 0.1 days to 100 days
-	#	param_uber_dict['sat_phase'] = ['uniform', (0, 360)] #### pandora takes degrees!
-	#	param_uber_dict['sat_inc'] = ['uniform', (0, 360)]
-	#	param_uber_dict['sat_omega'] = ['uniform', (0, 360)]
-	#	param_uber_dict['Msat_kg'] = ['loguniform', (1e18, 1e29)] ### can be down to 1e-5 of the planet mass, up to 1-to-1.
-	#	param_uber_dict['Tdur_days'] = ['uniform', (0.5*self.duration_days, 2*self.duration_days)]
+
 
 
 
 	self.param_uber_dict = param_uber_dict
 
 	#### finished building the param_uber_dict!
-
-
 
 
 	### OK TO LEAVE HERE, SO LONG AS IT ALSO STAYS WITHIN THE FIT() FUNCTION.
