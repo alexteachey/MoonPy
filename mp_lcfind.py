@@ -185,13 +185,17 @@ def find_KIC_alias(target_name):
 
 	target_aliases = []
 	alias_search_results = Simbad.query_objectids(star_number)
-	for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
-		target_alias = alias_search_results[alidx][0]
-		target_aliases.append(target_alias)
+	if type(alias_search_results) != type(None):
+		for alidx in np.arange(0,np.array(alias_search_results).shape[0],1):
+			target_alias = alias_search_results[alidx][0]
+			target_aliases.append(target_alias)
 
-		if target_alias.lower().startswith('kic'):
-			kic_number = target_alias
-			break
+			if target_alias.lower().startswith('kic'):
+				kic_number = target_alias
+				break
+
+	else:
+		kic_number = target_name
 	try:
 		return kic_number
 	except:		
