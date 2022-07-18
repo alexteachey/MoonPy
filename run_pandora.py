@@ -26,6 +26,9 @@ hostname = socket.gethostname()
 #def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, Mplan_kg, eccplan, Tdur_days, RsRstar, Psat, sat_phase, sat_inc, sat_omega, Msat_kg, q1, q2, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
 def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, t0_bary, Tdur_days, nepochs, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
 
+	#### removed t0_bary 
+	#def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, Tdur_days, nepochs, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
+
 	if input_ang_unit=='radians':
 		#### PANDORA WANTS DEGREES
 		sat_inc = rad2deg(sat_inc)

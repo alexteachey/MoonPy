@@ -391,28 +391,47 @@ def initialize_priors(self, modelcode):
 
 
 	if modelcode.lower() == 'pandora':
-		param_uber_dict['R_star'] = ['loguniform', (1e6, 1e11)] #### meters 
-		param_uber_dict['per_bary'] = ['uniform', (self.period-1, self.period+1)] #[days]
-		param_uber_dict['a_bary'] = ['uniform', (2, 7.897*(self.period**(2/3)))] ### [Rstar]
-		param_uber_dict['r_planet'] = ['loguniform', (1e-6, 1)] ### Rstar
-		param_uber_dict['b_bary'] = ['uniform', (0,1)] ### 0 - 1
-		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 1)] ## [days]
-		param_uber_dict['M_planet'] = ['loguniform', (1e23, 1e29)] # [kg]
-		param_uber_dict['r_moon'] = ['loguniform', (1e-6, 1)] ### [Rstar]
+		#param_uber_dict['R_star'] = ['loguniform', (1e6, 1e11)] #### meters 
+		param_uber_dict['R_star'] = ['uniform', (0.5 * self.st_rad * R_sun.value, 2 * self.st_rad * R_sun.value)] #### meters 
+		#param_uber_dict['per_bary'] = ['uniform', (self.period-1, self.period+1)] #[days]
+		param_uber_dict['per_bary'] = ['normal', (self.period, 0.1)] ### normal supplies mu, sigma
+		param_uber_dict['a_bary'] = ['uniform', (2., 7.897*(self.period**(2/3)))] ### [Rstar]
+		#param_uber_dict['r_planet'] = ['loguniform', (1e-6, 0.99999)] ### Rstar
+
+		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### Pandora wants units of Rsol
+
+		#param_uber_dict['r_planet'] = ['uniform', (0.5 * NEA_RpRsol, 2 * NEA_RpRsol)]
+		param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, 0.05 * NEA_RpRstar)] ### units of Rstar 
+		param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
+		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 2.)] ## [days]
+		param_uber_dict['M_planet'] = ['loguniform', (1e22, 1e29)] # [kg]
+		param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-6, NEA_RpRstar)] ### [Rstar] 
 		param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
-		param_uber_dict['tau'] = ['uniform', (0,1)] ### 0 - 1 normalized phase
-		param_uber_dict['Omega_moon'] = ['uniform', (0, 180)] ### 0 - 180 
-		param_uber_dict['i_moon'] = ['uniform', (0, 180)] # 0 - 180 
+		param_uber_dict['tau'] = ['uniform', (0,1)] ### 0 - 1 time of perapsis passage normalized by the period. 
+		param_uber_dict['Omega_moon'] = ['uniform', (0, 180.)] ### 0 - 180 
+		param_uber_dict['i_moon'] = ['uniform', (0, 180.)] # 0 - 180 
 		param_uber_dict['M_moon'] = ['loguniform', (1e18, 1e29)] # [kg]
-		param_uber_dict['q1'] = ['uniform', (0,1)] # 0 -1 
-		param_uber_dict['q2'] = ['uniform', (0,1)] # 0 - 1		
+		param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
+		param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1		
 
 		#### FIXED PARAMETERS!
-		param_uber_dict['t0_bary'] = ['fixed', self.tau0]
-		param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
-		param_uber_dict['w_moon'] = ['fixed', 0.]
-		param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
-		param_uber_dict['nepochs'] = ['fixed', len(self.taus)]
+		#param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+		#param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
+		#param_uber_dict['w_moon'] = ['fixed', 0.]
+		#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+		#param_uber_dict['nepochs'] = ['fixed', len(self.taus)]
+		#param_uber_dict['epoch_duration'] = ['fixed', 2]
+		#param_uber_dict['cadences_per_day'] = ['fixed', 48] 
+		#param_uber_dict['epoch_distance'] = ['fixed', self.period] 
+
+		#### TRYING THESE AS VARIABLES
+		param_uber_dict['t0_bary'] = ['normal', (self.tau0, 0.1)]
+		#param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
+		#param_uber_dict['w_moon'] = ['fixed', 0.]
+		#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+		param_uber_dict['Tdur_days'] = ['normal', (self.duration_days, 0.1)]
+		param_uber_dict['nepochs'] = ['fixed', len(self.taus)]	
+
 
 
 

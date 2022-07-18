@@ -4,6 +4,8 @@ import astropy
 from scipy.stats import norm,beta,truncnorm
 import json
 import matplotlib.pyplot as plt 
+import traceback
+import time
 import os
 import sys
 from mp_batman import run_batman
@@ -23,12 +25,15 @@ except:
 ### MULTINEST / ULTRANEST CUBE TRANSFORMATIONS
 ### note that in this context 'x' is the cube!
 def transform_uniform(x,lower,upper):
-	return lower + (upper-lower)*x
+	valrange = upper - lower 
+	return lower + (valrange)*x
 
 def transform_loguniform(x,lower,upper):
-	l_lower=np.log(lower)
-	l_upper=np.log(lower)
-	return np.exp(l_lower + x*(l_upper-l_lower))
+	l_lower=np.log10(lower)
+	l_upper=np.log10(upper)
+	valrange = l_upper - l_lower 
+	#return np.exp(l_lower + x*(l_upper-l_lower))
+	return 10**(l_lower + (valrange * x))
 
 
 def transform_normal(x,mu,sigma):
@@ -83,6 +88,16 @@ def ultn_loglike_Pandora(cube):
 
 	for pidx, parlab in enumerate(un_fixed_labels):
 		ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+	print('variable dictionary: ')
+	for key in ultn_var_dict.keys():
+		print(key, ultn_var_dict[key])
+	print(' ')
+	print('fixed dictionary: ')
+	for key in ultn_fixed_dict.keys():
+		print(key, ultn_fixed_dict[key])
+	print('')
+	print('')
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
@@ -419,10 +434,10 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_variable_prior_forms.append(parprior)
 			un_variable_limit_tuple.append(partup)
 		
-		if parlab == 'tau':
-			wrapped_params.append(True)
-		else:
-			wrapped_params.append(False)
+		#if parlab == 'tau':
+		#	wrapped_params.append(True)
+		#else:
+		#	wrapped_params.append(False)
 
 
 
@@ -443,9 +458,9 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	outputdir = outputdir+'/'+str(un_model)
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates model directory
-	outputdir = outputdir+'/chains'
-	if os.path.exists(outputdir) == False:
-		os.system('mkdir '+outputdir) ### creates chains directory
+	#outputdir = outputdir+'/chains'
+	#if os.path.exists(outputdir) == False:
+	#	os.system('mkdir '+outputdir) ### creates chains directory
 
 
 	if modelcode == 'Pandora':
@@ -456,23 +471,53 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
 		try:
 			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='resume')
-			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='resume')
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='resume')
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir, resume='resume')			
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')			
+
+
 
 		except:
 			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
 			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
-			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
-
+			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
+			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir, resume='overwrite')	
+			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
 
 
 		#sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
 		sampler.run(min_num_live_points=nlive)
-		sampler.print_results()
-		sampler.plot()
+		try:
+			sampler.print_results()
+		except:
+			traceback.print_exc()
+			print(' ')
+			print("WARNING: could not call sampler.print_results().")
+			time.sleep(3)
+		try:
+			sampler.plot()
+		except:
+			traceback.print_exc()
+			print(' ')
+			print('WARNING: could not call sampler.plot().')
+			time.sleep(3)
+
+			pew = np.genfromtxt(os.getcwd()+'/'+outputdir+'/chains/equal_weighted_post.txt')
+			pewtxt = open(os.getcwd()+'/'+outputdir+'/chains/equal_weighted_post.txt', mode='r')
+			firstline = pewtxt.readline()
+			cols = firstline.split()
+			pewtxt.close()
+			pewdict = {}
+			for ncol,col in enumerate(cols):
+				pewdict[col] = pew.T[ncol][1:]
+				n,bins,edges = plt.hist(pewdict[col], bins=20, facecolor='DodgerBlue', edgecolor='k')
+				plt.xlabel(col)
+				plt.show()
+
 		sampler.plot_trace()
 
 
-	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
+	json.dump(un_param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
 
 
 
