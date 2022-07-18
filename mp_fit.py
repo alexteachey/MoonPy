@@ -89,6 +89,7 @@ def ultn_loglike_Pandora(cube):
 	for pidx, parlab in enumerate(un_fixed_labels):
 		ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
 
+	"""
 	print('variable dictionary: ')
 	for key in ultn_var_dict.keys():
 		print(key, ultn_var_dict[key])
@@ -98,6 +99,7 @@ def ultn_loglike_Pandora(cube):
 		print(key, ultn_fixed_dict[key])
 	print('')
 	print('')
+	"""
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
