@@ -430,12 +430,7 @@ def initialize_priors(self, modelcode):
 		#param_uber_dict['w_moon'] = ['fixed', 0.]
 		#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
 		param_uber_dict['Tdur_days'] = ['normal', (self.duration_days, 0.1)]
-		param_uber_dict['nepochs'] = ['fixed', len(self.taus)]	
-
-
-
-
-
+		#param_uber_dict['nepochs'] = ['fixed', len(self.taus)]	
 
 
 

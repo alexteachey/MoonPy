@@ -103,9 +103,12 @@ def ultn_loglike_Pandora(cube):
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
-	Pandora_times, Pandora_total_fluxes, Pandora_planet_fluxes, Pandora_moon_fluxes = run_Pandora(np.array(data_times), **ultn_var_dict, **ultn_fixed_dict, model=un_model, input_ang_unit='degrees', add_noise='n', show_plots='n')
+	Pandora_total_fluxes, Pandora_planet_fluxes, Pandora_moon_fluxes = run_Pandora(all_times=np.array(data_times), nepochs=nepochs, **ultn_var_dict, **ultn_fixed_dict, model=un_model, input_ang_unit='degrees', add_noise='n', show_plots='n')
 
-	loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	#loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - np.array(data_fluxes)[model_idxs]) / np.array(data_errors)[model_idxs])**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+	loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - np.array(data_fluxes)) / np.array(data_errors))**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
+
+
 	return loglikelihood 
 
 
@@ -393,6 +396,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	global data_errors
 	global un_param_dict
 	global un_model
+	global nepochs 
 
 	### labels
 	un_param_labels = []
@@ -409,8 +413,6 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	un_limit_tuple = []
 	un_fixed_limit_tuple = []
 	un_variable_limit_tuple = []
-
-
 
 	data_times = []
 	data_fluxes = []
@@ -447,6 +449,42 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		data_times.append(t)
 		data_fluxes.append(f)
 		data_errors.append(e)
+	data_times, data_fluxes, data_errors = np.array(data_times), np.array(data_fluxes), np.array(data_errors)
+
+
+	#### reduce the times to just the ones in the vicinty of the transits.
+	all_taus = []
+	first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+	per_bary = float(param_dict['per_bary'][1][0])
+	Tdur_days = float(param_dict['Tdur_days'][1][0])
+	while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
+		first_tau = first_tau - per_bary 
+	all_taus.append(first_tau)
+
+	while all_taus[-1] < np.nanmax(data_times):
+		all_taus.append(all_taus[-1] + per_bary)
+
+	nepochs = 0
+	epoch_duration = 20 * Tdur_days 
+	for ntau, tau in enumerate(all_taus):
+		#### grab the indices within the desired distance.
+		tau_idxs = np.where((data_times > tau - 0.5*epoch_duration) & (data_times <= tau + 0.5*epoch_duration))[0]
+		tau_times = data_times[tau_idxs]
+
+		if len(tau_times) > 0:
+			#### this epoch is in the data
+			nepochs += 1
+
+		if ntau == 0:
+			model_idxs = tau_idxs 
+			model_times = tau_times
+		else:
+			model_idxs = np.concatenate((model_idxs, tau_idxs))
+			model_times = np.concatenate((model_times, tau_times))	
+
+	data_times, data_fluxes, data_errors = np.array(data_times)[model_idxs], np.array(data_fluxes)[model_idxs], np.array(data_errors)[model_idxs]
+
+	#data_times, data_fluxes, data_errors = np.array(data_times), np.array(data_fluxes), np.array(data_errors)
 
 	outputdir = 'UltraNest_fits'
 	if os.path.exists(outputdir) == False:

@@ -24,7 +24,7 @@ hostname = socket.gethostname()
 
 
 #def run_Pandora(all_times, Rstar_meters, Pplan, apRstar, RpRstar, bplan, tau0, Mplan_kg, eccplan, Tdur_days, RsRstar, Psat, sat_phase, sat_inc, sat_omega, Msat_kg, q1, q2, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
-def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, t0_bary, Tdur_days, nepochs, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
+def run_Pandora(all_times, nepochs, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, t0_bary, Tdur_days, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
 
 	#### removed t0_bary 
 	#def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_offset, M_planet, r_moon, per_moon, tau, Omega_moon, i_moon, M_moon, q1, q2, Tdur_days, nepochs, ecc_bary=0, w_moon=0, input_ang_unit='degrees', cadence_minutes=29.42, t0_offset=0.01, sat_Omega=0, print_params=True, **kwargs):
@@ -39,42 +39,51 @@ def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_o
 	elif input_ang_unit=='degrees':
 		pass
 
+
 	### misc conversions
 	cadence_days = cadence_minutes / (60 * 24)
 
-	"""
-	R_star = float(R_star)
-	per_bary = float(per_bary)
-	a_bary = float(a_bary)
-	r_planet = float(r_planet)
-	b_bary = float(b_bary)
-	t0_bary_offset = float(t0_bary_offset)
-	M_planet = float(M_planet)
-	#eccplan = float(eccplan)
-	#RsRstar = float(RsRstar)
-	r_moon = float(r_moon)
-	#Psat = float(Psat)
-	per_moon = float(per_moon)
-	tau = float(tau)
-	Omega_moon = float(Omega_moon)
-	i_moon = float(i_moon)
-	M_moon = float(M_moon)
-	q1 = float(q1)
-	q2 = float(q2)
-	"""
-	#sat_phase = float(sat_phase)
-	#sat_inc = float(sat_inc)
-	#sat_omega = float(sat_omega)
-	#Msat_kg = float(Msat_kg)
-	#q1 = float(q1)
-	#q2 = float(q2)
 
+
+	#### reduce the times to just the ones in the vicinty of the transits.
+	"""
+	all_taus = []
+	first_tau = t0_bary
+	while np.nanmin(all_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
+		first_tau = first_tau - per_bary 
+	all_taus.append(first_tau)
+
+	while all_taus[-1] < np.nanmax(all_times):
+		all_taus.append(all_taus[-1] + per_bary)
+
+	nepochs = 0
+	epoch_duration = 20 * Tdur_days 
+	for ntau, tau in enumerate(all_taus):
+		#### grab the indices within the desired distance.
+		tau_idxs = np.where((all_times > tau - 0.5*epoch_duration) & (all_times <= tau + 0.5*epoch_duration))[0]
+		tau_times = all_times[tau_idxs]
+
+		#print('ntau, tau: ', ntau, tau)
+		#print('tau_idxs: ', tau_idxs)
+		#print('tau_times: ', tau_times)
+
+		if len(tau_times) > 0:
+			#### this epoch is in the data
+			nepochs += 1
+		if ntau == 0:
+			model_idxs = tau_idxs 
+			model_times = tau_times
+		else:
+			model_idxs = np.concatenate((model_idxs, tau_idxs))
+			model_times = np.concatenate((model_times, tau_times))
+	"""
 
 
 	#### 15 parameters in all -- 
 	#### see here: http://localhost:8888/notebooks/injection_retrieval_simple_ultranest.ipynb#:~:text=Create%20planet%2Bmoon%20model 
 
 	params = pandora.model_params()
+
 	#### VARIABLE PARAMETERS (FOR FITTING)
 	u1, u2 = ld_convert(q1, q2) 
 	
@@ -99,8 +108,8 @@ def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_o
 
 	#### FIXED PARAMETERS -- BUT I"m NOT SURE WHY ... 
 	params.t0_bary = float(t0_bary) #### FIXED?
-	params.ecc_bary = float(ecc_bary) #### FIXED? -- need to define above!	
-	params.w_moon = float(w_moon) #### degrees
+	#params.ecc_bary = float(ecc_bary) #### FIXED? -- need to define above!	
+	#params.w_moon = float(w_moon) #### degrees
 
 	#### other inputs
 	params.epochs = nepochs #### needs to be defined above!
@@ -117,6 +126,7 @@ def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_o
 	pdmodel = pandora.moon_model(params)
 
 	#total_flux, planet_flux, moon_flux = pdmodel.light_curve(pdtime)
+	#total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
 	total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
 
 
@@ -142,6 +152,6 @@ def run_Pandora(all_times, R_star, per_bary, a_bary, r_planet, b_bary, t0_bary_o
 
 
 	#return output_times, output_fluxes 
-	return pdtime, total_flux, planet_flux, moon_flux
+	return total_flux, planet_flux, moon_flux
 
 
