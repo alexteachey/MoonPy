@@ -390,7 +390,7 @@ def show_function_inputs(func, return_vals=False):
 
 
 
-def get_databases(target_prefix):
+def get_databases(target_prefix, interactive=True):
 
 	current_time = time.time()
 
@@ -455,13 +455,29 @@ def get_databases(target_prefix):
 	if np.any((NEA_confirmed_ood, NEA_candidates_ood, exofop_ood)): ### one day old
 
 		#### check to see if the updated_databases_decision file exists.
-		if os.path.exists(opt_out_filepath):
+		if os.path.exists(opt_out_filepath): #### the file exists 
 
-			#### check to see if the file is more than one day old.
-			if opt_out_age_days > 1:
-				#### remove it.
-				os.system('rm '+opt_out_filepath)
+			if interactive == True:
+				#### check to see if the file is more than one day old.
+				if opt_out_age_days > 1:
+					#### remove it.
+					os.system('rm '+opt_out_filepath)
 
+					#### CHECK WITH USER ABOUT RE-DOWNLOADING.
+					print(' ')
+					print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
+					print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
+					print(' ')
+					download_new_csvs = input('Download updated databases? y/n: ')
+
+				else:
+					download_new_csvs = 'n'
+
+			else: #### just don't bother with it -- it already exists, just a bit out of date.
+				download_new_csvs = 'n'
+
+		else: #### doesn't exist.
+			if interactive == True:
 				#### CHECK WITH USER ABOUT RE-DOWNLOADING.
 				print(' ')
 				print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
@@ -470,18 +486,8 @@ def get_databases(target_prefix):
 				download_new_csvs = input('Download updated databases? y/n: ')
 
 			else:
-				download_new_csvs = 'n'
-
-		else:
-			#### CHECK WITH USER ABOUT RE-DOWNLOADING.
-			print(' ')
-			print('Planet databases are missing or more than one day out of date. Do you want to download the new version? ')
-			print('NOTE: this can take several minutes, and may be unnecessary if the databases are not being updated.')
-			print(' ')
-			download_new_csvs = input('Download updated databases? y/n: ')
-
-
-
+				download_new_csvs = 'y' #### hopefully this doesn't happen more than once per day. Once it's downloaded, it exists. 
+				
 	else:
 		download_new_csvs = 'n'
 		opt_out_age_days = get_file_age(opt_out_filepath)
