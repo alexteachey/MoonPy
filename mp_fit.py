@@ -454,9 +454,17 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 	#### reduce the times to just the ones in the vicinty of the transits.
 	all_taus = []
-	first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+	if param_dict['t0_bary'][0] == 'fixed':
+		first_tau = float(param_dict['t0_bary'][1])
+	else:
+		first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
 	per_bary = float(param_dict['per_bary'][1][0])
-	Tdur_days = float(param_dict['Tdur_days'][1][0])
+
+	if param_dict['Tdur_days'][0] == 'fixed':
+		Tdur_days = float(param_dict['Tdur_days'][1]) 
+	else:
+		Tdur_days = float(param_dict['Tdur_days'][1][0])
+
 	while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
 		first_tau = first_tau - per_bary 
 	all_taus.append(first_tau)
@@ -525,8 +533,10 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
 
 
+		sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
 		#sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
-		sampler.run(min_num_live_points=nlive)
+		result_planet_moon = sampler.run(min_num_live_points=nlive)
+		
 		try:
 			sampler.print_results()
 		except:

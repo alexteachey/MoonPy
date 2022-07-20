@@ -415,7 +415,7 @@ def initialize_priors(self, modelcode):
 		param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1		
 
 		#### FIXED PARAMETERS!
-		#param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+		param_uber_dict['t0_bary'] = ['fixed', self.tau0]
 		#param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
 		#param_uber_dict['w_moon'] = ['fixed', 0.]
 		#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
@@ -425,11 +425,11 @@ def initialize_priors(self, modelcode):
 		#param_uber_dict['epoch_distance'] = ['fixed', self.period] 
 
 		#### TRYING THESE AS VARIABLES
-		param_uber_dict['t0_bary'] = ['normal', (self.tau0, 0.1)]
+		#param_uber_dict['t0_bary'] = ['normal', (self.tau0, 0.1)]
 		#param_uber_dict['ecc_bary'] = ['fixed', self.pl_orbeccen] 
 		#param_uber_dict['w_moon'] = ['fixed', 0.]
-		#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
-		param_uber_dict['Tdur_days'] = ['normal', (self.duration_days, 0.1)]
+		param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+		#param_uber_dict['Tdur_days'] = ['normal', (self.duration_days, 0.1)]
 		#param_uber_dict['nepochs'] = ['fixed', len(self.taus)]	
 
 
