@@ -335,9 +335,12 @@ class MoonpyLC(object):
 					else:
 						#### need to put a space in
 						KIC_alias = targetID[:3]+' '+targetID[3:]
+
+					savepath =functimer(kepler_URL_generator(KIC_alias, short_cadence=short_cadence)[2])
+
 				else:
 					raise Exception('please supply a KIC. find_KIC_alias() is not working.')
-					
+
 		elif self.telescope.lower() == 'k2':
 			savepath = functimer(k2_URL_generator(find_EPIC_alias(targetID))[2])
 		elif self.telescope.lower() == 'tess':
