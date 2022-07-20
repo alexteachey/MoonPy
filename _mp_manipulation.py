@@ -392,25 +392,59 @@ def initialize_priors(self, modelcode):
 
 	if modelcode.lower() == 'pandora':
 		#param_uber_dict['R_star'] = ['loguniform', (1e6, 1e11)] #### meters 
-		param_uber_dict['R_star'] = ['uniform', (0.5 * self.st_rad * R_sun.value, 2 * self.st_rad * R_sun.value)] #### meters 
+		try:
+			star_radius_meters = self.st_rad * R_sun.value 
+			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
+			param_uber_dict['R_star'] = ['normal', (star_radius_meters, star_radius_err_meters)]
+		except:
+			traceback.print_exc()
+			param_uber_dict['R_star'] = ['uniform', (0.5 * self.st_rad * R_sun.value, 2 * self.st_rad * R_sun.value)] #### meters 
+
 		#param_uber_dict['per_bary'] = ['uniform', (self.period-1, self.period+1)] #[days]
-		param_uber_dict['per_bary'] = ['normal', (self.period, 0.1)] ### normal supplies mu, sigma
-		param_uber_dict['a_bary'] = ['uniform', (2., 7.897*(self.period**(2/3)))] ### [Rstar]
+		try:
+			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
+			param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
+		except:
+			traceback.print_exc()
+			param_uber_dict['per_bary'] = ['normal', (self.period, 0.1)] ### normal supplies mu, sigma
+
+		try:
+			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
+			estimated_sma_err_meters = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
+			param_uber_dict['a_bary'] = ['normal', (estimated_sma_meters, estimated_sma_err_meters)] ### [Rstar]
+		except:
+			traceback.print_exc()
+			param_uber_dict['a_bary'] = ['uniform', (2., 7.897*(self.period**(2/3)))] ### [Rstar]
 		#param_uber_dict['r_planet'] = ['loguniform', (1e-6, 0.99999)] ### Rstar
 
-		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
+		try:
+			NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
+			NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
+			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 
+		except:
+			traceback.print_exc()
+			param_uber_dict['r_planet'] = ['loguniform', (1e-4, 1)]
 
 		#param_uber_dict['r_planet'] = ['uniform', (0.5 * NEA_RpRsol, 2 * NEA_RpRsol)]
-		param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, 0.05 * NEA_RpRstar)] ### units of Rstar 
+		#param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, 0.05 * NEA_RpRstar)] ### units of Rstar 
 		param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
 		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 2.)] ## [days]
-		param_uber_dict['M_planet'] = ['loguniform', (1e24, 1e29)] # [kg]
+
+		try:
+			planet_mass_kg = self.pl_bmasse * M_earth.value 
+			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
+			param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+		except:	
+			traceback.print_exc()
+			param_uber_dict['M_planet'] = ['loguniform', (1e24, 1e29)] # [kg]
+
 		param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-3, NEA_RpRstar)] ### [Rstar] 
 		param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
 		param_uber_dict['tau'] = ['uniform', (0,1)] ### 0 - 1 time of perapsis passage normalized by the period. 
 		param_uber_dict['Omega_moon'] = ['uniform', (0, 180.)] ### 0 - 180 
 		param_uber_dict['i_moon'] = ['uniform', (0, 180.)] # 0 - 180 
-		param_uber_dict['M_moon'] = ['loguniform', (1e21, 1e26)] # [kg]
+		param_uber_dict['M_moon'] = ['loguniform', (1e-5 * self.pl_bmasse * M_earth.value, 1e-1 * self.pl_bmasse * M_earth.value)]
+		#param_uber_dict['M_moon'] = ['loguniform', (1e21, 1e26)] # [kg]
 		param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
 		param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1		
 
