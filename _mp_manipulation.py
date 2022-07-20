@@ -405,7 +405,7 @@ def initialize_priors(self, modelcode):
 		param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
 		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 2.)] ## [days]
 		param_uber_dict['M_planet'] = ['loguniform', (1e24, 1e29)] # [kg]
-		param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-6, NEA_RpRstar)] ### [Rstar] 
+		param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-3, NEA_RpRstar)] ### [Rstar] 
 		param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
 		param_uber_dict['tau'] = ['uniform', (0,1)] ### 0 - 1 time of perapsis passage normalized by the period. 
 		param_uber_dict['Omega_moon'] = ['uniform', (0, 180.)] ### 0 - 180 
