@@ -325,7 +325,19 @@ class MoonpyLC(object):
 
 		#### SPECIFY THE SAVEPATH FOR THE LIGHT CURVE -- NEW HANDLING (NOV 2020) SAVES THEM OUTSIDE THE MOONPY DIRECTORY, IN CENTRAL_DATA.
 		if self.telescope.lower() == 'kepler':
-			savepath =functimer(kepler_URL_generator(find_KIC_alias(targetID), short_cadence=short_cadence)[2])
+			try:
+				savepath =functimer(kepler_URL_generator(find_KIC_alias(targetID), short_cadence=short_cadence)[2])
+			except:
+				if targetID.lower().startswith('kic'):
+					### don't need to call find_KIC_alias()
+					if ' ' in targetID:
+						KIC_alias = targetID
+					else:
+						#### need to put a space in
+						KIC_alias = targetID[:3]+' '+targetID[3:]
+				else:
+					raise Exception('please supply a KIC. find_KIC_alias() is not working.')
+					
 		elif self.telescope.lower() == 'k2':
 			savepath = functimer(k2_URL_generator(find_EPIC_alias(targetID))[2])
 		elif self.telescope.lower() == 'tess':
