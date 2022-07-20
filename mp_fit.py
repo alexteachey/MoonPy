@@ -518,24 +518,38 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
 		try:
-			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='resume')
-			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='resume')
-			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir, resume='resume')			
 			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')			
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
+			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
 
 
-
-		except:
+		except AssertionError:
+			#try:
+			os.system('rm -rf '+outputdir)
+			os.system('mkdir '+outputdir) ### creates model directory
 			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
-			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
-			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir+'/'+str(targetID), resume='overwrite')			
-			#sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, wrapped_params=wrapped_params, log_dir=outputdir, resume='overwrite')	
 			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
+			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)				
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
+
+			"""
+			except AssertionError:
+				#### remove the outputdir, and make it again
+				os.system('rm -rf '+outputdir)
+				os.system('mkdir '+outputdir) ### creates model directory
+				print('REMOVED THE RECENT CHAIN. STARTING FROM SCRATCH.')
+				sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
+				sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
+				#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
+				#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)				
+				result_planet_moon = sampler.run(min_num_live_points=nlive)
+			"""
 
 
-		sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
-		#sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
-		result_planet_moon = sampler.run(min_num_live_points=nlive)
 		
 		try:
 			sampler.print_results()
