@@ -37,7 +37,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_manipulation.py')]
 
 
 
-def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
+def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
 	print('calling _mp_manipulation.py/fit().')
 	### optional values for code are "multinest" and "emcee"
 
@@ -52,7 +52,8 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 
 	if self.telescope.lower() != 'user':
 		self.get_properties(locate_neighbor='n')
-	self.initialize_priors(modelcode=modelcode, modeltype=model)
+	self.initialize_priors(modelcode=modelcode, model=model)
+
 	param_uber_dict = self.param_uber_dict
 
 	if self.telescope.lower() == 'user':
@@ -116,68 +117,65 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 
 
 
-
-
-
-
-	if model == 'M':
-		pass
-
-	elif (model == 'P') or (model=='T'):
-		### THESE ARE INPUTS TO THE MODEL BUT SHOULD NOT BE FREE PARAMETERS!
-		self.param_uber_dict['RsatRp'] = ['fixed', 1e-8]
-		self.param_uber_dict['MsatMp'] = ['fixed', 1e-8]
-		self.param_uber_dict['sat_sma'] = ['fixed', 1000]
-		self.param_uber_dict['sat_inc'] = ['fixed', 0]
-		self.param_uber_dict['sat_phase'] = ['fixed', 0]
-		self.param_uber_dict['sat_omega'] = ['fixed', 0]
-
-	if model == 'T':
-		transitnum = 0
-		for i in np.arange(0, len(self.taus),1):
-			#### verify that the tau is within your quarters!
-			for qidx,q in enumerate(self.quarters):
-				if self.taus[i] >= np.nanmin(self.times[qidx]) and self.taus[i] <= np.nanmax(self.times[qidx]):
-					### means the transit is in your data and can be fit.
-					taukeyname = 'tau'+str(transitnum)
-					transitnum += 1
-					param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
-
-	if model == 'Z':
-		param_uber_dict['RsatRp'] = ['fixed', 1e-8]
-
-
-	### prepare seriesP.jam and plotit.f90... only needs to be done once!
-	if model == "M" or model == "P" or model == "Z":
-		ntaus = 1
-	elif model == 'T':
-		ntaus = 0
-		for paramkey in param_uber_dict.keys():
-			if paramkey.startswith('tau'):
-				ntaus += 1
-
-	if model == "M":
-		nparamorig = 14
-		nparam = 14
-		nvars = 14 ### fitting all the parameters!
-	elif model == "P":
-		nparamorig = 14 ### all these inputs must still be present, even if some of them are fixed at zero!
-		nparam = 14
-		nvars = 8  ### RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan
-	elif model == 'T':
-		nparamorig = 14
-		nparam = nparamorig + (ntaus-1) ### tau0 is a STANDARD nparamorig input... every additional tau needs to be counted.
-		nvars = 8 + (ntaus-1) ### standard P model variables plus all additional taus.
-	elif model == 'Z':
-		nparam = 14
-		nparamorig = 14
-		nvars = 13 ### not fitting Rsat/Rp 
-
 	if modelcode.lower() == 'luna':
+		if model == 'M':
+			pass
+
+		elif (model == 'P') or (model=='T'):
+			### THESE ARE INPUTS TO THE MODEL BUT SHOULD NOT BE FREE PARAMETERS!
+			self.param_uber_dict['RsatRp'] = ['fixed', 1e-8]
+			self.param_uber_dict['MsatMp'] = ['fixed', 1e-8]
+			self.param_uber_dict['sat_sma'] = ['fixed', 1000]
+			self.param_uber_dict['sat_inc'] = ['fixed', 0]
+			self.param_uber_dict['sat_phase'] = ['fixed', 0]
+			self.param_uber_dict['sat_omega'] = ['fixed', 0]
+
+		if model == 'T':
+			transitnum = 0
+			for i in np.arange(0, len(self.taus),1):
+				#### verify that the tau is within your quarters!
+				for qidx,q in enumerate(self.quarters):
+					if self.taus[i] >= np.nanmin(self.times[qidx]) and self.taus[i] <= np.nanmax(self.times[qidx]):
+						### means the transit is in your data and can be fit.
+						taukeyname = 'tau'+str(transitnum)
+						transitnum += 1
+						param_uber_dict[taukeyname] = ['uniform', (self.taus[i] - 0.1, self.taus[i] + 0.1)]
+
+		if model == 'Z':
+			param_uber_dict['RsatRp'] = ['fixed', 1e-8]
+
+
+		### prepare seriesP.jam and plotit.f90... only needs to be done once!
+		if model == "M" or model == "P" or model == "Z":
+			ntaus = 1
+		elif model == 'T':
+			ntaus = 0
+			for paramkey in param_uber_dict.keys():
+				if paramkey.startswith('tau'):
+					ntaus += 1
+
+		if model == "M":
+			nparamorig = 14
+			nparam = 14
+			nvars = 14 ### fitting all the parameters!
+		elif model == "P":
+			nparamorig = 14 ### all these inputs must still be present, even if some of them are fixed at zero!
+			nparam = 14
+			nvars = 8  ### RpRstar, rhostar, bplan, Pplan, tau0, q1, q2, rhoplan
+		elif model == 'T':
+			nparamorig = 14
+			nparam = nparamorig + (ntaus-1) ### tau0 is a STANDARD nparamorig input... every additional tau needs to be counted.
+			nvars = 8 + (ntaus-1) ### standard P model variables plus all additional taus.
+		elif model == 'Z':
+			nparam = 14
+			nparamorig = 14
+			nvars = 13 ### not fitting Rsat/Rp 
+
 		try:
 			prepare_files(np.hstack(fit_times), ntaus, nparam, nparamorig)
 		except:
 			prepare_files(fit_times, ntaus, nparam, nparamorig)
+
 
 
 	if custom_param_dict != None:
@@ -222,7 +220,7 @@ def fit(self, custom_param_dict=None, fitter='multinest', modelcode='LUNA', segm
 
 
 	### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
-	self.initialize_priors(modelcode=modelcode)		
+	self.initialize_priors(modelcode=modelcode, model=model)		
 
 
 
@@ -351,7 +349,7 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 
 
 
-def initialize_priors(self, modelcode, modeltype='M'):
+def initialize_priors(self, modelcode, model='M'):
 	print('calling _mp_manipulation.py/intialize_priors().')
 	param_uber_dict = {}
 
@@ -390,16 +388,207 @@ def initialize_priors(self, modelcode, modeltype='M'):
 		param_uber_dict['ecc'] = ['uniform', (0,1)]
 
 
+
+
 	if modelcode.lower() == 'pandora':
- 
+
+		if model == 'M':
+
+			##### STAR PARAMETERS 
+			### R_star
+			star_radius_meters = self.st_rad * R_sun.value 
+			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
+			param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
+
+			#### q1
+			param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
+			
+			#### q2
+			param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1	
+
+
+			##### PLANET PARAMETERS 
+			### per_bary
+			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
+			param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
+
+			### a_bary
+			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
+			estimated_sma_err_meters = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
+			param_uber_dict['a_bary'] = ['normal', (estimated_sma_meters, estimated_sma_err_meters)] ### [Rstar]
+
+			### r_planet
+			NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
+			NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
+			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 					
+
+			#### b_bary
+			param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
+
+			#### w_bary
+			param_uber_dict['w_bary'] = ['uniform', (0,360)]
+
+			#### ecc_bary 
+			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+
+			#### t0_bary 
+			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+
+			#### t0_bary_offset
+			param_uber_dict['t0_bary_offset'] = ['uniform', (-0.05, 0.05)] ## [days]
+
+			#### M_planet
+			planet_mass_kg = self.pl_bmasse * M_earth.value 
+			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
+			#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+			param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
+
+			
+			#### Tdur_days
+			#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+
+			##### MOON PARAMETERS 
+			#### r_moon
+			param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-3, NEA_RpRstar)] ### [Rstar] 
+			
+			#### per_moon
+			param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
+			
+			#### tau
+			param_uber_dict['tau_moon'] = ['uniform', (0,1)] ### 0 - 1 time of perapsis passage normalized by the period. 
+			
+			#### Omega_moon 
+			param_uber_dict['Omega_moon'] = ['uniform', (0, 180.)] ### 0 - 180 
+			
+			#### i_moon
+			param_uber_dict['i_moon'] = ['uniform', (0, 180.)] # 0 - 180 
+
+			#### ecc_moon 
+			param_uber_dict['ecc_moon'] = ['fixed', 0]
+
+			#### w_moon
+			param_uber_dict['w_moon'] = ['fixed', 0]
+
+			
+			#### M_moon 
+			param_uber_dict['M_moon'] = ['loguniform', (1e-5 * self.pl_bmasse * M_earth.value, 1e-1 * self.pl_bmasse * M_earth.value)]
+			
+
+			"""
+			epoch_distance = params.epoch_distance,
+			supersampling_factor = 1,
+			occult_small_threshold = 0.01,
+			hill_sphere_threshold=1.0,
+			numerical_grid=25,
+			time=time,
+			"""
+			
+
+		
+
+		elif model == 'P':
+
+			###### STAR PARAMETERS 
+			#### R_star
+			star_radius_meters = self.st_rad * R_sun.value 
+			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
+			param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
+
+			#### q1 
+			param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
+			
+			#### q2
+			param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1	
+
+
+			####### PLANET PARAMETERS 
+			#### per_bary
+			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
+			param_uber_dict['per_bary'] = ['normal', (self.period, 100*planet_period_err_days)] ### normal supplies mu, sigma
+
+			#### a_bary
+			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
+			estimated_sma_err_meters = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
+			param_uber_dict['a_bary'] = ['normal', (estimated_sma_meters, estimated_sma_err_meters)] ### [Rstar]
+
+			#### r_planet
+			NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
+			NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
+			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 					
+
+			#### b_bary
+			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
+			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
+			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, 0.2*NEA_impact_err)]
+
+			#### w_bary
+			param_uber_dict['w_bary'] = ['uniform', (0,360)]
+
+			#### ecc_bary
+			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+
+			#### t0_bary
+			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+
+			##### t0_bary_offset
+			param_uber_dict['t0_bary_offset'] = ['uniform', (-2, 2)] ## [days]
+
+			#### M_planet 
+			planet_mass_kg = self.pl_bmasse * M_earth.value 
+			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
+			#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+			param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
+
+
+
+			##### Tdur_days
+			#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+
+
+
+
+			######## MOON PARAMETERS 
+			#### r_moon
+			param_uber_dict['r_moon'] = ['fixed', 1e-8] ### [Rstar] 
+			
+			##### per_moon 
+			param_uber_dict['per_moon'] = ['fixed', 30] # [days]
+			
+			#### tau 
+			param_uber_dict['tau_moon'] = ['fixed', 0] ### 0 - 1 time of perapsis passage normalized by the period. 
+			
+			#### Omega_moon
+			param_uber_dict['Omega_moon'] = ['fixed', 0] ### 0 - 180 
+			
+			#### i_moon 
+			param_uber_dict['i_moon'] = ['fixed', 0] # 0 - 180 
+
+			#### ecc_moon 
+			param_uber_dict['ecc_moon'] = ['fixed', 0]
+
+			#### w_moon
+			param_uber_dict['w_moon'] = ['fixed', 0]
+			
+			#### M_moon 
+			param_uber_dict['M_moon'] = ['fixed', 1e-8]			
+			
+
+			
+
+			
+
+		"""
  		#### STELLAR RADIUS
 		try:
 			star_radius_meters = self.st_rad * R_sun.value 
 			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
-			param_uber_dict['R_star'] = ['normal', (star_radius_meters, star_radius_err_meters)]
+			#param_uber_dict['R_star'] = ['normal', (star_radius_meters, star_radius_err_meters)]
+			param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
 		except:
 			traceback.print_exc()
 			param_uber_dict['R_star'] = ['uniform', (0.5 * self.st_rad * R_sun.value, 2 * self.st_rad * R_sun.value)] #### meters 
+
+
 
 		#### PLANET PERIOD 
 		try:
@@ -431,19 +620,20 @@ def initialize_priors(self, modelcode, modeltype='M'):
 		param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
 
 		#### PLANET OFFSET FROM t0 
-		param_uber_dict['t0_bary_offset'] = ['uniform', (0, 2.)] ## [days]
+		param_uber_dict['t0_bary_offset'] = ['uniform', (-0.05, 0.05)] ## [days]
 
 		#### PLANET MASS
 		try:
 			planet_mass_kg = self.pl_bmasse * M_earth.value 
 			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
-			param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+			#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+			param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
 		except:	
 			traceback.print_exc()
 			param_uber_dict['M_planet'] = ['loguniform', (1e24, 1e29)] # [kg]
 
 		#### MOON PARAMETERS
-		if modeltype == 'M':
+		if model == 'M':
 			#### FOR WHEN YOU'RE FITTING THE MOON!
 			param_uber_dict['r_moon'] = ['loguniform', (NEA_RpRstar * 1e-3, NEA_RpRstar)] ### [Rstar] 
 			param_uber_dict['per_moon'] = ['loguniform', (1e-1, 1e2)] # [days]
@@ -451,8 +641,9 @@ def initialize_priors(self, modelcode, modeltype='M'):
 			param_uber_dict['Omega_moon'] = ['uniform', (0, 180.)] ### 0 - 180 
 			param_uber_dict['i_moon'] = ['uniform', (0, 180.)] # 0 - 180 
 			param_uber_dict['M_moon'] = ['loguniform', (1e-5 * self.pl_bmasse * M_earth.value, 1e-1 * self.pl_bmasse * M_earth.value)]
+			param_uber_dict['w_bary'] = ['fixed', 0]
 
-		elif modeltype == 'P':
+		elif model == 'P':
 			#### FOR PLANET FITTING ONLY!
 			param_uber_dict['r_moon'] = ['fixed', 1e-8] ### [Rstar] 
 			param_uber_dict['per_moon'] = ['fixed', 30] # [days]
@@ -460,6 +651,7 @@ def initialize_priors(self, modelcode, modeltype='M'):
 			param_uber_dict['Omega_moon'] = ['fixed', 0] ### 0 - 180 
 			param_uber_dict['i_moon'] = ['fixed', 0] # 0 - 180 
 			param_uber_dict['M_moon'] = ['fixed', 1e-8]			
+			param_uber_dict['w_bary'] = ['fixed', 0]
 		
 		#### STELLAR LIMB DARKENING PARAMETERS
 		param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
@@ -482,7 +674,7 @@ def initialize_priors(self, modelcode, modeltype='M'):
 		param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
 		#param_uber_dict['Tdur_days'] = ['normal', (self.duration_days, 0.1)]
 		#param_uber_dict['nepochs'] = ['fixed', len(self.taus)]	
-
+		"""
 
 
 	self.param_uber_dict = param_uber_dict
