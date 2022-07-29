@@ -108,16 +108,28 @@ print(' ')
 if sys.platform == 'darwin':
 	#### use moonpy_env_macOS.yml
 	your_OS = 'macOS'
-	standard_moonpy_environment_name = 'moonpy_env_macOS'
+
+	install_pandora_and_ultranest = input("Do you want to install Pandora and Ultranest? y/n: ")
+
+	if install_pandora_and_ultranest == 'y': 
+		standard_moonpy_environment_name = 'moonpy_with_pandora_macOS'
+		backup_moonpy_environment_name = 'moonpy_env_macOS'
+	else:
+		standard_moonpy_environment_name = 'moonpy_env_macOS'
+		backup_moonpy_environment_name = 'moonpy_env_macOS' ### same -- there is no backup
+
 	standard_vespa_env_name = 'vespa_for_mac'
 	#install_command = 'conda env create --file moonpy_env_macOS.yml'
 
 elif (sys.platform == 'linux') or (sys.platform == 'linux2'):
 	your_OS = 'linux'
 	standard_moonpy_environment_name = 'moonpy_env_linux'
+	backup_moonpy_environment_name = 'moonpy_env_linux' 
 	standard_vespa_env_name = 'vespa_for_linux'
 	#install_command = 'conda env create --file moonpy_env_linux.yml'
+
 standard_moonpy_environment_yml = 'env_setup_files/'+standard_moonpy_environment_name+'.yml'
+backup_moonpy_environment_yml = 'env_setup_files/'+backup_moonpy_environment_name+'.yml'
 standard_vespa_env_yml = 'env_setup_files/'+standard_vespa_env_name+'.yml'
 
 	
@@ -129,8 +141,10 @@ print('established you are running '+your_OS+'.')
 
 
 ### INSTALL MOONPY
-moonpy_envname = build_env_and_install(packagename='MoonPy', standard_environment_name=standard_moonpy_environment_name)
-
+try:
+	moonpy_envname = build_env_and_install(packagename='MoonPy', standard_environment_name=standard_moonpy_environment_name)
+except:
+	moonpy_envname = build_env_and_install(packagename='MoonPy', standard_environment_name=backup_moonpy_environment_name)
 
 
 
