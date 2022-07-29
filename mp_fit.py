@@ -558,7 +558,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		
 
 		cornerplot(result_planet_moon)
-		plt.savefig(outputdir+'/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
+		plt.savefig(outputdir+'/plots/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
 		plt.show()
 
 		try:
