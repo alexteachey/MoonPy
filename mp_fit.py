@@ -519,6 +519,18 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			return loglike
 
 
+		print(' ')
+		print('X X X X X')
+		print('Now running PANDORA (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
+		print(' fitting with ULTRANEST (Johannes Buchner)	https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+		print(' ')
+		try:
+			print('Please be sure to cite these works. 謝謝你。')
+		except:
+			print('Please be sure to cite these works.')
+		print('X X X X X')
+		print(' ')
+
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
 		try:
 			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume', vectorized=True)	
@@ -546,7 +558,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		
 
 		cornerplot(result_planet_moon)
-		plt.savefig(outputdir+'/model'+str(model)+'_cornerplot.png', dpi=300)
+		plt.savefig(outputdir+'/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
 		plt.show()
 
 		try:
@@ -574,7 +586,17 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 	json.dump(un_param_labels, open(outputdir+'/'+str(targetID)+"_model"+str(model)+"_params.json", 'w')) ### save parameter names
 
-
+	print(' ')
+	print('X X X X X')
+	print('This PANDORA model (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
+	print('was fit using ULTRANEST (Johannes Buchner)https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+	print(' ')
+	try:
+		print('Please be sure to cite these works. 謝謝你。')
+	except:
+		print('Please be sure to cite these works.')
+	print('X X X X X')
+	print(' ')
 
 
 

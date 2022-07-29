@@ -393,66 +393,84 @@ def initialize_priors(self, modelcode, model='M'):
 
 	if modelcode.lower() == 'pandora':
 
-		if model.lower().startswith('m'):
+		##### STAR PARAMETERS 
+		### R_star
+		star_radius_meters = self.st_rad * R_sun.value 
+		star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
+		param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
 
-			##### STAR PARAMETERS 
-			### R_star
-			star_radius_meters = self.st_rad * R_sun.value 
-			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
-			param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
-
-			#### q1
-			param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
-			
-			#### q2
-			param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1	
+		#### q1
+		param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
+		
+		#### q2
+		param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1	
 
 
-			##### PLANET PARAMETERS 
-			### per_bary
-			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
-			param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
+		##### PLANET PARAMETERS 
+		### per_bary
+		planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
+		param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
 
-			### a_bary
-			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
-			estimated_sma_err_meters = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
-			param_uber_dict['a_bary'] = ['normal', (estimated_sma_meters, estimated_sma_err_meters)] ### [Rstar]
+		### a_bary
+		estimated_sma_Rstar = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
+		estimated_sma_err_Rstar = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
+		
+		if np.isfinite(estimated_sma_Rstar) and np.isfinite(estimated_sma_err_Rstar) and (np.ma.is_masked(estimated_sma_Rstar) == False) and (np.ma.is_masked(estimated_sma_err_Rstar) == False):
+			param_uber_dict['a_bary'] = ['normal', (estimated_sma_Rstar, estimated_sma_err_Rstar)] 
+		else:
+			#### 
+			estimated_sma_Rstar = Kep3_afromp(period=self.period, m1=self.st_mass*M_sun.value, m2=self.pl_bmasse*M_earth.value) / (self.st_rad * R_sun.value)
+			estimated_sma_err_Rstar = 0.1 * estimated_sma_Rstar
+			param_uber_dict['a_bary'] = ['normal', (estimated_sma_Rstar, estimated_sma_err_Rstar)] 
 
-			### r_planet
-			NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
-			NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
-			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 					
 
-			#### b_bary
-			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
-			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
+		### r_planet
+		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
+		NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
+		if np.isfinite(NEA_RpRstar) and np.isfinite(NEA_RpRstar_err) and (np.ma.is_masked(NEA_RpRstar) == False) and (np.ma.is_masked(NEA_RpRstar_err) == False):
+			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 
+		else:
+			param_uber_dict['r_planet'] = ['uniform', (0.01, 0.1)]
+
+		#### b_bary
+		#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
+		NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
+		if np.isfinite(self.pl_imppar) and np.isfinite(NEA_impact_err) and (np.ma.is_masked(self.pl_imppar) == False) and (np.ma.is_masked(NEA_impact_err) == False):
 			param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)]
+		else:
+			param_uber_dict['b_bary'] = ['uniform', (0, 2)]
 
-			#### w_bary
-			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
-			#param_uber_dict['w_bary'] = ['uniform', (0,360)]
+		#### w_bary
+		NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
+		if np.isfinite(self.pl_orblper) and np.isfinite(NEA_w_err) and (np.ma.is_masked(self.pl_orblper) == False) and (np.ma.is_masked(NEA_w_err) == False):
 			param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
+		else:
+			param_uber_dict['w_bary'] = ['uniform', (0,360)]
 
-			#### ecc_bary 
-			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
-			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
+		#### ecc_bary 
+		#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+		NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
+		if np.isfinite(self.pl_orbeccen) and np.isfinite(NEA_ecc_err) and (np.ma.is_masked(self.pl_orbeccen) == False) and (np.ma.is_masked(NEA_ecc_err) == False):
 			param_uber_dict['ecc_bary']= ['truncnormal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
+		else:
+			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]	
 
-			#### t0_bary 
-			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
+		#### t0_bary 
+		param_uber_dict['t0_bary'] = ['fixed', self.tau0]
 
-			#### t0_bary_offset
-			param_uber_dict['t0_bary_offset'] = ['uniform', (-1, 1)] ## [days]
+		#### t0_bary_offset
+		param_uber_dict['t0_bary_offset'] = ['uniform', (-1, 1)] ## [days]
 
-			#### M_planet
-			planet_mass_kg = self.pl_bmasse * M_earth.value 
-			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
-			#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
-			param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
+		#### M_planet
+		planet_mass_kg = self.pl_bmasse * M_earth.value 
+		planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
+		#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
+		param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
 
 			
-			#### Tdur_days
-			#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
+		##### BELOW ARE DIFFERENCES BASED ON WHICH MODEL YOU USE. 
+
+		if model.lower().startswith('m'):
 
 			##### MOON PARAMETERS 
 			#### r_moon
@@ -482,76 +500,12 @@ def initialize_priors(self, modelcode, model='M'):
 			#### w_moon
 			param_uber_dict['w_moon'] = ['fixed', 0]
 
-			
 			#### M_moon 
 			param_uber_dict['M_moon'] = ['loguniform', (1e-5 * self.pl_bmasse * M_earth.value, 1e-1 * self.pl_bmasse * M_earth.value)]
 			
 
-			
+
 		elif model.lower() == 'p':
-
-			###### STAR PARAMETERS 
-			#### R_star
-			star_radius_meters = self.st_rad * R_sun.value 
-			star_radius_err_meters = np.nanmax((np.abs(self.st_raderr1), np.abs(self.st_raderr2))) * R_sun.value
-			param_uber_dict['R_star'] = ['fixed', star_radius_meters] ### EXPERIMENT JULY 27 2022
-
-			#### q1 
-			param_uber_dict['q1'] = ['uniform', (0.,1.)] # 0 -1 
-			
-			#### q2
-			param_uber_dict['q2'] = ['uniform', (0.,1.)] # 0 - 1	
-
-
-			####### PLANET PARAMETERS 
-			#### per_bary
-			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
-			param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
-
-			#### a_bary
-			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
-			estimated_sma_err_meters = (np.nanmax((np.abs(self.pl_orbsmaxerr1), np.abs(self.pl_orbsmaxerr2))) * au.value) / (self.st_rad * R_sun.value)
-			param_uber_dict['a_bary'] = ['normal', (estimated_sma_meters, estimated_sma_err_meters)] ### [Rstar]
-
-			#### r_planet
-			NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
-			NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
-			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 					
-
-			#### b_bary
-			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
-			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
-			param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)] #### cannot go below 0 or above 1.
-
-			#### w_bary
-			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
-			#param_uber_dict['w_bary'] = ['uniform', (0,360)]
-			param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
-
-			#### ecc_bary 
-			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
-			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
-			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
-
-			#### t0_bary
-			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
-
-			##### t0_bary_offset
-			param_uber_dict['t0_bary_offset'] = ['uniform', (-1, 1)] ## [days]
-
-			#### M_planet 
-			planet_mass_kg = self.pl_bmasse * M_earth.value 
-			planet_mass_err_kg = np.nanmax((np.abs(self.pl_bmasseerr1), np.abs(self.pl_bmasseerr2))) * M_earth.value 
-			#param_uber_dict['M_planet'] = ['normal', (planet_mass_kg, planet_mass_err_kg)]
-			param_uber_dict['M_planet'] = ['fixed', planet_mass_kg]
-
-
-
-			##### Tdur_days
-			#param_uber_dict['Tdur_days'] = ['fixed', self.duration_days]
-
-
-
 
 			######## MOON PARAMETERS 
 			#### r_moon
@@ -579,7 +533,7 @@ def initialize_priors(self, modelcode, model='M'):
 			param_uber_dict['M_moon'] = ['fixed', 1e-8]			
 			
 
-	
+
 	self.param_uber_dict = param_uber_dict
 
 	#### finished building the param_uber_dict!
