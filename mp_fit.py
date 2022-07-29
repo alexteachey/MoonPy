@@ -659,27 +659,49 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	if modelcode == 'Pandora':
 
 		#### DEFINE HERE FOR THE SAKE OF AVOIDING DICTIONARY CALLS -- ALTHOUGH THIS DOESN'T SEEM TO BE SAVING MUCH TIME.
-		prior_ranges, prior_mins = [], []
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = [], [], [], [], []
+
+		#prior_ranges, prior_mins = [], []
 		for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
 			if (parprior == 'uniform') or (parprior == 'loguniform'):
-				prior_range = partuple[1] - partuple[0]
-				prior_min = partuple[0] 
+				#prior_range = partuple[1] - partuple[0]
+				#prior_min = partuple[0] 
+				prior_mins.append(partuple[0])
+				prior_maxes.append(partuple[1])
+				prior_mus.append(None)
+				prior_sigmas.append(None)
+				prior_types.append(parprior)
 
 			elif (parprior == 'normal') or (parprior == 'gaussian'):
-				prior_range = (partuple[0] + (5*partuple[1])) - (partuple[0] - (5*partuple[1])) 
-				prior_min = partuple[0] - (5*partuple[1])	
+				#prior_range = (partuple[0] + (5*partuple[1])) - (partuple[0] - (5*partuple[1])) 
+				#prior_min = partuple[0] - (5*partuple[1])	
+				prior_mins.append(None)
+				prior_maxes.append(None)
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
 
-			prior_ranges.append(prior_range)
-			prior_mins.append(prior_min)
-		prior_ranges, prior_mins = np.array(prior_ranges), np.array(prior_mins)
+
+			#prior_ranges.append(prior_range)
+			#prior_mins.append(prior_min)
+		#prior_ranges, prior_mins = np.array(prior_ranges), np.array(prior_mins)
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = np.array(prior_mins), np.array(prior_maxes), np.array(prior_mus), np.array(prior_sigmas), np.array(prior_types)
 
 
 		#### THIS SUCKS -- YOU WANT GAUSSIAN BOUNDARIES ALSO.
 		def ultn_transform(cube):
 			p = cube.copy()
 
-			for pidx in np.arange(0,len(prior_ranges),1):
-				p[pidx] = cube[pidx] * prior_ranges[pidx] + prior_mins[pidx] 
+			for pidx in np.arange(0,len(prior_types),1):
+				if prior_types[pidx] == 'uniform':
+					p[pidx] = transform_uniform(cube[pidx], prior_mins[pidx], prior_maxes[pidx])
+				elif prior_types[pidx] == 'loguniform':
+					p[pidx] = transform_loguniform(cube[pidx], prior_mins[pidx], prior_maxes[pidx])
+				elif (prior_types[pidx] == 'normal') or (prior_types[pidx] == 'gaussian'):
+					p[pidx] = transform_normal(cube[pidx], prior_mus[pidx], prior_sigmas[pidx]) 
+
+				#### OLD WAY -- FAST BUT ALL PRIORS ARE UNIFORM
+				#p[pidx] = cube[pidx] * prior_ranges[pidx] + prior_mins[pidx] 
 
 			return p
 

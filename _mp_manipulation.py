@@ -423,19 +423,25 @@ def initialize_priors(self, modelcode, model='M'):
 			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 					
 
 			#### b_bary
-			param_uber_dict['b_bary'] = ['uniform', (0,2)] ### Pandora recommends a value between 0 and 2.
+			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
+			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
+			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, NEA_impact_err)]
 
 			#### w_bary
-			param_uber_dict['w_bary'] = ['uniform', (0,360)]
+			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
+			#param_uber_dict['w_bary'] = ['uniform', (0,360)]
+			param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
 
 			#### ecc_bary 
-			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
+			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err)]
 
 			#### t0_bary 
 			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
 
 			#### t0_bary_offset
-			param_uber_dict['t0_bary_offset'] = ['uniform', (-0.05, 0.05)] ## [days]
+			param_uber_dict['t0_bary_offset'] = ['uniform', (-1, 1)] ## [days]
 
 			#### M_planet
 			planet_mass_kg = self.pl_bmasse * M_earth.value 
@@ -504,7 +510,7 @@ def initialize_priors(self, modelcode, model='M'):
 			####### PLANET PARAMETERS 
 			#### per_bary
 			planet_period_err_days = np.nanmax((np.abs(self.pl_orbpererr1), np.abs(self.pl_orbpererr2)))
-			param_uber_dict['per_bary'] = ['normal', (self.period, 100*planet_period_err_days)] ### normal supplies mu, sigma
+			param_uber_dict['per_bary'] = ['normal', (self.period, planet_period_err_days)] ### normal supplies mu, sigma
 
 			#### a_bary
 			estimated_sma_meters = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value)
@@ -519,19 +525,23 @@ def initialize_priors(self, modelcode, model='M'):
 			#### b_bary
 			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
 			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
-			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, 0.2*NEA_impact_err)]
+			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, NEA_impact_err)]
 
 			#### w_bary
-			param_uber_dict['w_bary'] = ['uniform', (0,360)]
+			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
+			#param_uber_dict['w_bary'] = ['uniform', (0,360)]
+			param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
 
-			#### ecc_bary
-			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+			#### ecc_bary 
+			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
+			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
+			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err)]
 
 			#### t0_bary
 			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
 
 			##### t0_bary_offset
-			param_uber_dict['t0_bary_offset'] = ['uniform', (-2, 2)] ## [days]
+			param_uber_dict['t0_bary_offset'] = ['uniform', (-1, 1)] ## [days]
 
 			#### M_planet 
 			planet_mass_kg = self.pl_bmasse * M_earth.value 
