@@ -205,10 +205,10 @@ def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', s
 
 	#### CHOOSE YOUR FIGHTER -- I MEAN FITTER 
 
-	if fitter == 'multinest':
+	if fitter.lower() == 'multinest':
 		mp_multinest(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, modelcode=modelcode, model=model, nparams=nvars)
 
-	elif fitter == 'ultranest':
+	elif fitter.lower() == 'ultranest':
 		if resume == True:
 			ultranest_resume = 'resume'
 		else:
@@ -216,7 +216,7 @@ def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', s
 		mp_ultranest(times=fit_times, fluxes=fit_fluxes, errors=fit_errors, param_dict=self.param_uber_dict, nlive=nlive, targetID=self.target, model=model, modelcode='Pandora', resume=ultranest_resume, show_plot='y')
 
 
-	elif fitter == 'emcee':
+	elif fitter.lower() == 'emcee':
 		mp_emcee(fit_times, fit_fluxes, fit_errors, param_dict=self.param_uber_dict, nwalkers=nwalkers, nsteps=nsteps, targetID=self.target, modelcode=modelcode, model=model, resume=resume, nparams=nvars) ### outputs to a file
 
 

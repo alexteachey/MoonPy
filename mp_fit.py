@@ -258,7 +258,7 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	outputdir = moonpydir+'/MultiNest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create MultiNest_fits directory
-	outputdir = outputdir+'/'+str(modelcode)
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 	outputdir = outputdir+'/'+str(targetID)
@@ -272,9 +272,9 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		os.system('mkdir '+outputdir) ### creates chains directory
 
 
-	if modelcode == 'LUNA':
+	if modelcode.lower() == 'luna':
 		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-	elif modelcode == "batman":
+	elif modelcode.lower() == "batman":
 		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 	
 	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
@@ -418,7 +418,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
 
-	outputdir = outputdir+'/'+str(modelcode)
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 
@@ -434,7 +434,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	print('outputdir: ', outputdir)
 
 
-	if modelcode == 'Pandora':
+	if modelcode.lower() == 'pandora':
 
 		#### DEFINE HERE FOR THE SAKE OF AVOIDING DICTIONARY CALLS -- ALTHOUGH THIS DOESN'T SEEM TO BE SAVING MUCH TIME.
 		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = [], [], [], [], []
@@ -662,7 +662,7 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 	outputdir = 'emcee_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
-	outputdir = outputdir+'/'+str(modelcode)
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
 	outputdir = outputdir+'/'+str(targetID)
@@ -739,13 +739,13 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 	#if continue_query != 'y':
 	#	raise Exception('you opted not to continue.')
 
-	if modelcode == 'LUNA':
+	if modelcode.lower() == 'luna':
 		print('running the sampler with LUNA.')
 		print('nwalkers = ', nwalkers)
 		print("ndim = ", ndim)
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_LUNA, args=(data_times, data_fluxes, data_errors))
 
-	elif modelcode == "batman":
+	elif modelcode.lower() == "batman":
 		print('running the sampler with batman.')
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_batman, args=(data_times, data_fluxes, data_errors))
 
