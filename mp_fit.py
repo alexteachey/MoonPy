@@ -100,6 +100,7 @@ def ultn_transform(cube):
 
 
 #### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
+"""
 def ultn_transform_OLD(cube):
 	#### this is the equivalent of pymn_prior, I believe.
 	transformed_parameters = np.empty_like(cube)
@@ -113,12 +114,12 @@ def ultn_transform_OLD(cube):
 		elif (parprior == 'normal') or (parprior == 'gaussian'):
 			transformed_parameters[pidx] = transform_normal(cube[pidx], partuple[0], partuple[1])
 		elif parprior == 'beta':
-			transformed_parameters[pidx] = transform_beta(cube[pidx], partuple[0], partuple[1])
+			transformed_parameters[pidx] = transform_beta(x=cube[pidx], lower=partuple[0], upper=partuple[1])
 		elif parprior == 'truncnorm':
-			transformed_parameters[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
+			transformed_parameters[pidx] = transform_truncated_normal(x=cube[pidx], mu=partuple[0], sigma=partuple[1], lower=partuple[2], upper=partuple[3])
 
 	return transformed_parameters 
-
+"""
 
 
 
@@ -202,7 +203,7 @@ def ultn_loglike_Pandora(p):
 
 
 
-
+"""
 def ultn_loglike_Pandora_OLD(cube):
 
 	ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
@@ -214,7 +215,7 @@ def ultn_loglike_Pandora_OLD(cube):
 	for pidx, parlab in enumerate(un_fixed_labels):
 		ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
 
-	"""
+	
 	print('variable dictionary: ')
 	for key in ultn_var_dict.keys():
 		print(key, ultn_var_dict[key])
@@ -224,7 +225,7 @@ def ultn_loglike_Pandora_OLD(cube):
 		print(key, ultn_fixed_dict[key])
 	print('')
 	print('')
-	"""
+	
 
 	### now you should be able to run_LUNA(param_dict)
 	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
@@ -240,15 +241,7 @@ def ultn_loglike_Pandora_OLD(cube):
 
 
 	return loglikelihood 
-
-
-
-
-
-
-
-
-
+"""
 
 
 
@@ -681,6 +674,13 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 				prior_sigmas.append(partuple[1])
 				prior_types.append(parprior)
 
+			elif parprior == 'truncnormal':
+				prior_mins.append(partuple[2])
+				prior_maxes.append(partuple[3])
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
 
 			#prior_ranges.append(prior_range)
 			#prior_mins.append(prior_min)
@@ -688,17 +688,18 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = np.array(prior_mins), np.array(prior_maxes), np.array(prior_mus), np.array(prior_sigmas), np.array(prior_types)
 
 
-		#### THIS SUCKS -- YOU WANT GAUSSIAN BOUNDARIES ALSO.
 		def ultn_transform(cube):
 			p = cube.copy()
 
 			for pidx in np.arange(0,len(prior_types),1):
 				if prior_types[pidx] == 'uniform':
-					p[pidx] = transform_uniform(cube[pidx], prior_mins[pidx], prior_maxes[pidx])
+					p[pidx] = transform_uniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
 				elif prior_types[pidx] == 'loguniform':
-					p[pidx] = transform_loguniform(cube[pidx], prior_mins[pidx], prior_maxes[pidx])
+					p[pidx] = transform_loguniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
 				elif (prior_types[pidx] == 'normal') or (prior_types[pidx] == 'gaussian'):
-					p[pidx] = transform_normal(cube[pidx], prior_mus[pidx], prior_sigmas[pidx]) 
+					p[pidx] = transform_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx]) 
+				elif (prior_types[pidx] == 'truncnorm'):
+					p[pidx] = transform_truncated_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
 
 				#### OLD WAY -- FAST BUT ALL PRIORS ARE UNIFORM
 				#p[pidx] = cube[pidx] * prior_ranges[pidx] + prior_mins[pidx] 
@@ -708,6 +709,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 		#### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
+		"""
 		def ultn_transform_OLD(cube):
 			#### THIS IS SUPER SLOW!!!! 
 			#### YOU CANNOT BE ACCESSING THESE DICTIONAR
@@ -719,16 +721,16 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 				if parprior == 'uniform':
 					transformed_parameters[pidx] = transform_uniform(cube[pidx], partuple[0], partuple[1])
 				elif parprior == 'loguniform':
-					transformed_parameters[pidx] = transform_loguniform(cube[pidx], partuple[0], partuple[1])
+					transformed_parameters[pidx] = transform_loguniform(x=cube[pidx], partuple[0], partuple[1])
 				elif (parprior == 'normal') or (parprior == 'gaussian'):
-					transformed_parameters[pidx] = transform_normal(cube[pidx], partuple[0], partuple[1])
+					transformed_parameters[pidx] = transform_normal(x=cube[pidx], mu=partuple[0], sigma=partuple[1])
 				elif parprior == 'beta':
-					transformed_parameters[pidx] = transform_beta(cube[pidx], partuple[0], partuple[1])
+					transformed_parameters[pidx] = transform_beta(x=cube[pidx], lower=partuple[0], upper=partuple[1])
 				elif parprior == 'truncnorm':
 					transformed_parameters[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
 
 			return transformed_parameters 
-
+		"""
 
 
 

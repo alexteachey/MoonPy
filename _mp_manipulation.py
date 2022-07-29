@@ -425,7 +425,7 @@ def initialize_priors(self, modelcode, model='M'):
 			#### b_bary
 			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
 			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
-			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, NEA_impact_err)]
+			param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)]
 
 			#### w_bary
 			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
@@ -435,7 +435,7 @@ def initialize_priors(self, modelcode, model='M'):
 			#### ecc_bary 
 			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
 			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
-			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err)]
+			param_uber_dict['ecc_bary']= ['truncnormal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
 
 			#### t0_bary 
 			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
@@ -525,7 +525,7 @@ def initialize_priors(self, modelcode, model='M'):
 			#### b_bary
 			#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
 			NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
-			param_uber_dict['b_bary'] = ['normal', (self.pl_imppar, NEA_impact_err)]
+			param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)] #### cannot go below 0 or above 1.
 
 			#### w_bary
 			NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
@@ -535,7 +535,7 @@ def initialize_priors(self, modelcode, model='M'):
 			#### ecc_bary 
 			#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
 			NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
-			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err)]
+			param_uber_dict['ecc_bary']= ['normal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
 
 			#### t0_bary
 			param_uber_dict['t0_bary'] = ['fixed', self.tau0]
