@@ -1,4 +1,4 @@
-name: moonpy_with_pandora
+name: moonpy_with_pandora_macOS
 channels:
   - astropy
   - anaconda
@@ -278,4 +278,4 @@ dependencies:
     - werkzeug==2.1.2
     - xgboost==1.6.0
     - yarl==1.7.2
-prefix: /opt/miniconda3/envs/moonpy_with_pandora
+prefix: /opt/miniconda3/envs/moonpy_with_pandora_macOS

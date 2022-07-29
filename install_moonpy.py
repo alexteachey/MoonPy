@@ -31,19 +31,29 @@ def build_env_and_install(packagename, standard_environment_name):
 	user_environment_yml = 'env_setup_files/'+user_environment_name+'.yml'
 
 	if user_environment_name != standard_environment_name:
+		print("Using USER environment name: ", user_environment_name)
 		#### now we're going to alter that file
 		env_file = open(standard_environment_yml, mode='r')
 		new_env_file = open(user_environment_yml, mode='w')
 
 		for nline,line in enumerate(env_file):
-			newline = line.replace(standard_environment_name, user_environment_name)
+			#if nline == 0:
+			if line.startswith('name') or line.startswith('prefix'):
+				#newline = 'name: '+user_environment_name+'\n'
+				newline = line.replace(standard_environment_name, user_environment_name)
+			else:
+				newline = line
+			#newline = line.replace(standard_environment_name, user_environment_name)
 			new_env_file.write(newline)
 
 		env_file.close()
 		new_env_file.close()
 
 		environment_name = user_environment_name
-		environment_yml = user_environment_yml
+		environment_yml = 'env_setup_files/'+user_environment_name+'.yml'
+
+		print('environment_name: ', environment_name)
+		print('environment_yml: ', environment_yml)
 
 	else:
 		environment_name = standard_environment_name
