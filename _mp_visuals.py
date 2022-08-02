@@ -319,6 +319,68 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				nsamples = len(model_PEWdict['q1'])
 				random_idxs = np.random.choice(np.arange(0,nsamples,1), size=ndraws)
 
+
+				#### compute median values
+				for key in model_PEWdict.keys():
+					print('median '+str(key)+': '+str(np.nanmedian(model_PEWdict[key])))
+
+
+
+				##### generate a model from the NASA Exoplanet Archive
+				#### other fixed parameters
+
+				#### conversion 
+
+				"""
+				medq1, medq2 = np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2'])
+				medu1, medu2 = ld_convert(medq1, medq2) 
+
+				#### NOW GENERATE THE MODEL! 	
+				NEAparams = pandora.model_params()
+				
+				NEAparams.R_star = self.st_rad * R_sun.value 
+				NEAparams.per_bary = self.pl_orbper 
+				NEAparams.a_bary = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value) # a/Rstar
+				NEAparams.r_planet = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #Rp/Rstar
+				NEAparams.b_bary = self.pl_imppar
+				NEAparams.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset']) ### this is not in NEA 
+				NEAparams.M_planet = self.pl_bmasse * M_earth.value # kg
+				NEAparams.ecc_bary = self.pl_orbeccen
+				NEAparams.w_bary = 83
+				#### moon parameters
+				NEAparams.r_moon = 1e-8 #### PARAM #7 -- satellite radius divided by stellar radius
+				NEAparams.per_moon = 30 #### PARAM #8 -- need to define above
+				NEAparams.tau_moon = 0 #### PARAM #9-- must be between zero and one -- I think this is the phase...
+				NEAparams.Omega_moon = 0 #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+				NEAparams.i_moon = 0 #### PARAM #11 -- between 0 and 180 degrees
+				NEAparams.M_moon = 1e-8 
+				NEAparams.u1 = float(medu1) #### PARAM #13 need to define above!
+				NEAparams.u2 = float(medu2) #### PARAM #14 need to define above!
+				NEAparams.t0_bary = self.tau0 
+				NEAparams.epochs = len(self.taus) #### needs to be defined above!
+				NEAparams.epoch_duration = 3 #### need to be defined above
+				NEAparams.cadences_per_day = 48 
+				#params.epoch_distance = Pplan 
+				NEAparams.epoch_distance = self.pl_orbper
+				NEAparams.supersampling_factor = 1
+				NEAparams.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
+				NEAparams.hill_sphere_threshold = 1.2 #### what does this mean?
+
+				NEApdtime = pandora.time(NEAparams).grid()
+				NEApdmodel = pandora.moon_model(NEAparams)
+
+				total_flux, planet_flux, moon_flux = NEApdmodel.light_curve(NEApdtime)
+
+
+				if nplots == 2:
+					ax[1].plot(NEApdtime, total_flux, c='green', linewidth=2, zorder=100, alpha=0.7, label='NEA')	
+				elif nplots == 1:
+					ax.plot(NEApdtime, total_flux, c='green', linewidth=2, zorder=100, alpha=0.7, label='NEA')						
+
+				"""
+
+
+				#### NOW STEP THROUGH THE POSTERIORS
 				for nidx, random_idx in enumerate(random_idxs):
 					q1 = model_PEWdict['q1'][random_idx]
 					q2 = model_PEWdict['q2'][random_idx]
@@ -363,7 +425,6 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					#### NOW GENERATE THE MODEL! 
 					params = pandora.model_params()
-		
 					
 					params.R_star = float(R_star) #### FIT PARAM #0 
 					params.per_bary = float(per_bary) #### PARAM #1 Pplan [days]
@@ -372,6 +433,8 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 					params.b_bary = float(b_bary) #### PARAM # 4
 					params.t0_bary_offset = float(t0_bary_offset) #### PARAM #5 what is this? 
 					params.M_planet = float(M_planet) #### PARAM #6 [kg]
+					params.ecc_bary = float(ecc_bary)
+					params.w_bary = float(w_bary)
 					#### moon parameters
 					params.r_moon = float(r_moon) #### PARAM #7 -- satellite radius divided by stellar radius
 					params.per_moon = float(per_moon) #### PARAM #8 -- need to define above
@@ -405,11 +468,11 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					#### plot them!
 					if model.lower() == 'p':
-						model_label = 'planet'
+						model_label = 'Pandora (planet only)'
 						model_color = 'DarkOrange'
 
 					elif model.lower() == 'm':
-						model_label = 'planet+moon'
+						model_label = 'Pandora (planet+moon)'
 						model_color = 'BlueViolet'
 
 					if ndraws > 1:

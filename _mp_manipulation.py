@@ -37,7 +37,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_manipulation.py')]
 
 
 
-def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False):
+def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False, uninformative_priors=[]):
 	print('calling _mp_manipulation.py/fit().')
 	### optional values for code are "multinest" and "emcee"
 
@@ -52,7 +52,7 @@ def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', s
 
 	if self.telescope.lower() != 'user':
 		self.get_properties(locate_neighbor='n')
-	self.initialize_priors(modelcode=modelcode, model=model)
+	self.initialize_priors(modelcode=modelcode, model=model, uninformative_priors=uninformative_priors)
 
 	param_uber_dict = self.param_uber_dict
 
@@ -221,7 +221,7 @@ def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', s
 
 
 	### ONE FINAL STEP -- RESTORE DEFAULT VALUES (REMOVE tau0 = folded_tau) by initializing priors again.
-	self.initialize_priors(modelcode=modelcode, model=model)		
+	self.initialize_priors(modelcode=modelcode, model=model, uninformative_priors=uninformative_priors)		
 
 
 
@@ -350,7 +350,7 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 
 
 
-def initialize_priors(self, modelcode, model='M'):
+def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	print('calling _mp_manipulation.py/intialize_priors().')
 	param_uber_dict = {}
 
@@ -435,25 +435,34 @@ def initialize_priors(self, modelcode, model='M'):
 		#### b_bary
 		#param_uber_dict['b_bary'] = ['uniform', (0,1)] ### Pandora recommends a value between 0 and 2.
 		NEA_impact_err = np.nanmax((np.abs(self.pl_impparerr1), np.abs(self.pl_impparerr2)))
-		if np.isfinite(self.pl_imppar) and np.isfinite(NEA_impact_err) and (np.ma.is_masked(self.pl_imppar) == False) and (np.ma.is_masked(NEA_impact_err) == False):
-			param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)]
-		else:
-			param_uber_dict['b_bary'] = ['uniform', (0, 2)]
+		if 'b_bary' not in uninformative_priors:
+			if np.isfinite(self.pl_imppar) and np.isfinite(NEA_impact_err) and (np.ma.is_masked(self.pl_imppar) == False) and (np.ma.is_masked(NEA_impact_err) == False):
+				param_uber_dict['b_bary'] = ['truncnormal', (self.pl_imppar, NEA_impact_err, 0, 2)]
+			else:
+				param_uber_dict['b_bary'] = ['uniform', (0., 2.)]
+		elif 'b_bary' in uninformative_priors:
+			param_uber_dict['b_bary'] = ['uniform', (0., 2.)]
 
 		#### w_bary
 		NEA_w_err = np.nanmax((np.abs(self.pl_orblpererr1), np.abs(self.pl_orblpererr2)))
-		if np.isfinite(self.pl_orblper) and np.isfinite(NEA_w_err) and (np.ma.is_masked(self.pl_orblper) == False) and (np.ma.is_masked(NEA_w_err) == False):
-			param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
-		else:
+		if 'w_bary' not in uninformative_priors:
+			if np.isfinite(self.pl_orblper) and np.isfinite(NEA_w_err) and (np.ma.is_masked(self.pl_orblper) == False) and (np.ma.is_masked(NEA_w_err) == False):
+				param_uber_dict['w_bary'] = ['normal', (self.pl_orblper, NEA_w_err)]
+			else:
+				param_uber_dict['w_bary'] = ['uniform', (0,360)]
+		elif 'w_bary' in uninformative_priors:
 			param_uber_dict['w_bary'] = ['uniform', (0,360)]
 
 		#### ecc_bary 
 		#param_uber_dict['ecc_bary'] = ['uniform', (0,1)]
 		NEA_ecc_err = np.nanmax((np.abs(self.pl_orbeccenerr1), np.abs(self.pl_orbeccenerr2)))
-		if np.isfinite(self.pl_orbeccen) and np.isfinite(NEA_ecc_err) and (np.ma.is_masked(self.pl_orbeccen) == False) and (np.ma.is_masked(NEA_ecc_err) == False):
-			param_uber_dict['ecc_bary']= ['truncnormal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
-		else:
-			param_uber_dict['ecc_bary'] = ['uniform', (0,1)]	
+		if 'ecc_bary' not in uninformative_priors:
+			if np.isfinite(self.pl_orbeccen) and np.isfinite(NEA_ecc_err) and (np.ma.is_masked(self.pl_orbeccen) == False) and (np.ma.is_masked(NEA_ecc_err) == False):
+				param_uber_dict['ecc_bary']= ['truncnormal', (self.pl_orbeccen, NEA_ecc_err, 0, 1)]
+			else:
+				param_uber_dict['ecc_bary'] = ['uniform', (0., 1.)]	
+		elif 'ecc_bary' in uninformative_priors:
+			param_uber_dict['ecc_bary'] = ['uniform', (0., 1.)]	
 
 		#### t0_bary 
 		param_uber_dict['t0_bary'] = ['fixed', self.tau0]
