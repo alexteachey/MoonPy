@@ -427,9 +427,12 @@ def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 		### r_planet
 		NEA_RpRstar = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #### units of Rstar https://github.com/hippke/Pandora/blob/main/examples/example.py#:~:text=params.a_bary,0.1%20%23%20%5BR_star%5D 
 		NEA_RpRstar_err = ( np.nanmax((np.abs(self.pl_radeerr1), np.abs(self.pl_radeerr2))) * R_earth.value ) / (self.st_rad * R_sun.value)
-		if np.isfinite(NEA_RpRstar) and np.isfinite(NEA_RpRstar_err) and (np.ma.is_masked(NEA_RpRstar) == False) and (np.ma.is_masked(NEA_RpRstar_err) == False):
-			param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 
-		else:
+		if 'r_planet' not in uninformative_priors:
+			if np.isfinite(NEA_RpRstar) and np.isfinite(NEA_RpRstar_err) and (np.ma.is_masked(NEA_RpRstar) == False) and (np.ma.is_masked(NEA_RpRstar_err) == False):
+				param_uber_dict['r_planet'] = ['normal', (NEA_RpRstar, NEA_RpRstar_err)] ### units of Rstar 
+			else:
+				param_uber_dict['r_planet'] = ['uniform', (0.01, 0.1)]
+		elif 'r_planet' in uninformative_priors:
 			param_uber_dict['r_planet'] = ['uniform', (0.01, 0.1)]
 
 		#### b_bary
