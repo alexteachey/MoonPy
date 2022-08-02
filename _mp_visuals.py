@@ -29,6 +29,11 @@ from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from mp_animate import * 
+try:
+	import pandoramoon as pandora 
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print('Pandora functions did not load. Maybe not installed.')
 
 
 plt.rcParams["font.family"] = 'serif'
@@ -37,7 +42,7 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_pandora='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	print('calling _mp_visuals.py/plot_lc().')
 	#if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
 	#	detrended = 'n'
@@ -265,6 +270,198 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 					
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
+
+
+		#### NEW AUGUST 2022 -- show a pandora model! 
+		if (show_pandora == 'y') and (detrended == 'y'):
+
+			try:
+				self.get_Pandora_posteriors(model='M')
+			except:
+				print('unable to get Pandora posteriors for model M.')
+
+			try:
+				self.get_Pandora_posteriors(model='P')
+			except:
+				print('unable to get Pandora posteriors for model P.')
+
+			models_available = []
+
+			try:
+				print('Planet posteriors available: ')
+				print(self.Pandora_planet_PEWdict.keys())
+				planet_only_avail = True 
+				models_available.append('P')
+			except:
+				print('Planet posteriors not available.')
+				planet_only_avail = False 
+
+			try:
+				print('Moon posteriors available: ')
+				print(self.Pandora_moon_PEWdict.keys())
+				planet_plus_moon_avail = True
+				models_available.append('M')
+			except:
+				print('Moon posteriors not available.')
+				planet_plus_moon_avail = False 
+
+			if len(models_available) > 0:
+
+
+				for model in models_available:
+					
+					if model.lower() == 'p':
+						model_PEWdict = self.Pandora_planet_PEWdict 
+					elif model.lower() == 'm':
+						model_PEWdict = self.Pandora_moon_PEWdict 
+
+				ndraws = 100
+				nsamples = len(model_PEWdict['q1'])
+				random_idxs = np.random.choice(np.arange(0,nsamples,1), size=ndraws)
+
+				for nidx, random_idx in enumerate(random_idxs):
+					q1 = model_PEWdict['q1'][random_idx]
+					q2 = model_PEWdict['q2'][random_idx]
+					per_bary = model_PEWdict['per_bary'][random_idx]
+					a_bary = model_PEWdict['a_bary'][random_idx]
+					r_planet = model_PEWdict['r_planet'][random_idx]
+					b_bary = model_PEWdict['b_bary'][random_idx]
+					w_bary = model_PEWdict['w_bary'][random_idx]
+					ecc_bary = model_PEWdict['ecc_bary'][random_idx]
+					t0_bary_offset = model_PEWdict['t0_bary_offset'][random_idx]
+
+					if model.lower() == 'p':
+						#### set the moon values to standard values for no moon present
+						r_moon = 1e-8
+						per_moon = 30 
+						tau_moon = 0
+						Omega_moon = 0
+						i_moon = 0
+						ecc_moon = 0
+						w_moon = 0
+						M_moon = 1e-8 
+
+					elif model.lower() == 'm':
+						#### uses the posteriors! 
+						r_moon = model_PEWdict['r_moon'][random_idx]
+						per_moon = model_PEWdict['per_moon'][random_idx]
+						tau_moon = model_PEWdict['tau_moon'][random_idx]
+						Omega_moon = model_PEWdict['Omega_moon'][random_idx]
+						i_moon = model_PEWdict['i_moon'][random_idx]
+						ecc_moon = model_PEWdict['ecc_moon'][random_idx]
+						w_moon = model_PEWdict['w_moon'][random_idx]
+						M_moon = model_PEWdict['M_moon'][random_idx]
+
+
+					#### other fixed parameters
+					R_star = self.st_rad * R_sun.value 
+					t0_bary = self.tau0 
+					M_planet = self.pl_bmasse * M_earth.value
+
+					#### conversion 
+					u1, u2 = ld_convert(q1, q2) 
+
+					#### NOW GENERATE THE MODEL! 
+					params = pandora.model_params()
+		
+					
+					params.R_star = float(R_star) #### FIT PARAM #0 
+					params.per_bary = float(per_bary) #### PARAM #1 Pplan [days]
+					params.a_bary = float(a_bary)  #### PARAM #2 
+					params.r_planet = float(r_planet) #### PARAM #3 
+					params.b_bary = float(b_bary) #### PARAM # 4
+					params.t0_bary_offset = float(t0_bary_offset) #### PARAM #5 what is this? 
+					params.M_planet = float(M_planet) #### PARAM #6 [kg]
+					#### moon parameters
+					params.r_moon = float(r_moon) #### PARAM #7 -- satellite radius divided by stellar radius
+					params.per_moon = float(per_moon) #### PARAM #8 -- need to define above
+					params.tau_moon = float(tau_moon) #### PARAM #9-- must be between zero and one -- I think this is the phase...
+					params.Omega_moon = float(Omega_moon) #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+					params.i_moon = float(i_moon) #### PARAM #11 -- between 0 and 180 degrees
+					params.M_moon = float(M_moon) 
+					params.u1 = float(u1) #### PARAM #13 need to define above!
+					params.u2 = float(u2) #### PARAM #14 need to define above!
+
+
+					#### FIXED PARAMETERS -- BUT I"m NOT SURE WHY ... 
+					params.t0_bary = float(t0_bary) #### FIXED?
+
+					#### other inputs
+					params.epochs = len(self.taus) #### needs to be defined above!
+					params.epoch_duration = 3 #### need to be defined above
+					params.cadences_per_day = 48 
+					#params.epoch_distance = Pplan 
+					params.epoch_distance = per_bary 
+					params.supersampling_factor = 1
+					params.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
+					params.hill_sphere_threshold = 1.2 #### what does this mean?
+
+					pdtime = pandora.time(params).grid()
+					pdmodel = pandora.moon_model(params)
+
+					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(pdtime)
+					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
+					total_flux, planet_flux, moon_flux = pdmodel.light_curve(np.concatenate(self.times))
+
+					#### plot them!
+					if model.lower() == 'p':
+						model_label = 'planet'
+						model_color = 'DarkOrange'
+
+					elif model.lower() == 'm':
+						model_label = 'planet+moon'
+						model_color = 'BlueViolet'
+
+					if ndraws > 1:
+						linewidth=1
+						alpha=0.3
+					elif ndraws == 1:
+						linewidth=2
+						alpha=0.7
+
+					if nidx == 0:
+						if nplots == 2:
+							ax[1].plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha, label=model_label)	
+						elif nplots == 1:
+							ax.plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha, label=model_label)	
+
+					else:
+						#### don't label
+						if nplots == 2:
+							ax[1].plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha)	
+						elif nplots == 1:
+							ax.plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha)	
+
+
+					"""
+					if print_params == 'y':
+
+						print(" ")
+						print("Rp/Rstar = ", RpRstar)
+						print("transit depth [ppm] = ", RpRstar**2 * 1e6)
+						print("stellar density [kg / m^3] = ", rhostar)
+						print("impact = ", bplan)
+						print("Period [days] = ", Pplan)
+						print("tau_0 [day] = ", tau0)
+						print("q1,q2 = ", q1, q2)
+						if (model == 'M') or (model == "Z"):
+							print("planet density [kg / m^3] = ", rhoplan)
+							print("sat_sma = [Rp] ", sat_sma)
+							print("sat_phase = ", sat_phase)
+							print("sat_inc = ", sat_inc)
+							print("sat_omega = ", sat_omega)
+							print("Msat / Mp = ", MsatMp)
+							print("Rsat / Rp = ", RsatRp)
+						print(" ")
+					"""
+
+
+					#return output_times, output_fluxes 
+					#return total_flux, planet_flux, moon_flux
+
+
+
+
 
 	elif folded == 'y':
 		nplots = 1 #### should only show the detrend -- folding on undetrended is nonsense.

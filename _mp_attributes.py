@@ -666,6 +666,30 @@ def get_databases(target_prefix, interactive=True):
 
 
 
+def get_Pandora_posteriors(self, model='M'):
+	chainsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target+'/'+model+'/chains'
+	pewfilename = chainsdir+'/equal_weighted_post.txt'
+	pewfile = open(pewfilename, mode='r')
+	colnames = pewfile.readline().split()
+	pewfile.close()
+	pew = np.genfromtxt(pewfilename, names=True)
+
+	pewdict = {}
+	for colname in colnames:
+		pewdict[colname] = pew[colname]
+
+	if model.lower() == 'm':
+		self.Pandora_moon_PEWdict = pewdict 
+	elif model.lower() == 'p':
+		self.Pandora_planet_PEWdict = pewdict 
+	elif model.lower() == 'm_eo':
+		self.Pandora_edgeon_moon_PEWdict = pewdict 
+
+
+
+
+
+
 
 
 
