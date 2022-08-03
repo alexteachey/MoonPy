@@ -163,14 +163,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	if folded == 'n':
 
 		if nplots == 2:
-			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
+			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 			ax[0].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))
 			ax[1].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))			
 
 			if show_errors == 'y':
-				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
-				ax[1].errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, zorder=9, ecolor='k', alpha=0.5, fmt='none')
+				ax[1].errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 
 			if show_model == 'y':
 				try:
@@ -190,15 +190,15 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		elif nplots == 1: ### detrended or undetrended, but not both
 			if detrended == 'y':
-				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 				ax.set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))							
 				if show_errors == 'y':
-					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 
 			else:
-				ax.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 				if show_errors == 'y':
-					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 				if show_model == 'y':
 					try:
 						#ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
@@ -235,27 +235,27 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 				
 				if (nplots == 2) and (show_neighbors == 'y'):
-					ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
-					ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+					ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
+					ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 
 				elif (nplots == 1) and (show_neighbors == 'y'):
 					if detrended == 'y':
-						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 					else:
-						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 			except:
 				traceback.print_exc()
 
 		### PLOT THE TARGET TRANSITS TOO!
 		if (nplots == 2) and (show_neighbors == 'y'):
-			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
-			ax[1].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')			
+			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, zorder=12, marker='x', color='Indigo', label='target')
+			ax[1].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], zorder=12, s=10, marker='x', color='Indigo', label='target')			
 
 		elif (nplots == 1) and (show_neighbors == 'y'):
 			if detrended == 'y':
-				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')	
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], zorder=12, s=10, marker='x', color='Indigo', label='target')	
 			else:
-				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, zorder=12, marker='x', color='Indigo', label='target')
 
 
 
@@ -263,9 +263,9 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			try:
 				self.gen_batman(folded='n')
 				if nplots == 2:
-					ax[1].plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax[1].plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=0, alpha=0.7, label='planet model')	
 				elif nplots == 1:
-					ax.plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax.plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=0, alpha=0.7, label='planet model')	
 
 					
 			except:
@@ -464,7 +464,8 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(pdtime)
 					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
-					total_flux, planet_flux, moon_flux = pdmodel.light_curve(np.concatenate(self.times))
+					cctimes = np.concatenate(self.times)
+					total_flux, planet_flux, moon_flux = pdmodel.light_curve(cctimes)
 
 					#### plot them!
 					if model.lower() == 'p':
@@ -484,16 +485,16 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					if nidx == 0:
 						if nplots == 2:
-							ax[1].plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha, label=model_label)	
+							ax[1].plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha, label=model_label)	
 						elif nplots == 1:
-							ax.plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha, label=model_label)	
+							ax.plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha, label=model_label)	
 
 					else:
 						#### don't label
 						if nplots == 2:
-							ax[1].plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha)	
+							ax[1].plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha)	
 						elif nplots == 1:
-							ax.plot(np.concatenate(self.times), total_flux, c=model_color, linewidth=linewidth, zorder=5, alpha=alpha)	
+							ax.plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha)	
 
 
 					"""
