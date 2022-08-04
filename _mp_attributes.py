@@ -1268,6 +1268,58 @@ def get_isochrone_files():
 
 
 
+def pandora_evidence(self):
+	import json 
+
+	modelsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target
+	
+	moon_modeldir = modelsdir+'/M'
+	moon_chainsdir = moon_modeldir+'/chains'
+	moon_infodir = moon_modeldir+'/info'
+	moon_results_filename = moon_infodir+'/results.json'
+	with open(moon_results_filename, 'r') as moon_resultsfile:
+		moon_results = json.load(moon_resultsfile)
+	moon_logz = moon_results['logz']
+
+	planet_modeldir = modelsdir+'/P'
+	planet_chainsdir = planet_modeldir+'/chains'
+	planet_infodir = planet_modeldir+'/info'
+	planet_results_filename = planet_infodir+'/results.json'
+	with open(planet_results_filename, 'r') as planet_resultsfile:
+		planet_results = json.load(planet_resultsfile)
+	planet_logz = planet_results['logz']
+
+	bayes_difference = moon_logz - planet_logz 
+	print('moon model log(Z): ', moon_logz)
+	print('planet only model log(Z): ', planet_logz)
+	print('Bayesian evidence difference (moon - planet): ', bayes_difference)
+
+	### recall from log rules that log(m) - log(n) = log(m/n)
+	### using the Kass & Rafferty framework:
+	##### a value of 1 - 3.2: "not worth more than a bare mention"
+	##### a value of 3.2 - 10: "substantial evidence"
+	###### a value between 10 - 100: "strong"
+	###### a value > 100: "decisive"
+
+	if bayes_difference < 1:
+		print('Evidence supports the planet-only model.')
+	else:
+		if (bayes_difference >= 1) and (bayes_difference < 3.2):
+			print('Kass & Raftery (1995) says moon model evidence "not worth more than a bare mention."')
+		elif (bayes_difference >= 3.2) and (bayes_difference < 10):
+			print('Kass & Raftery (1995) says "substantial evidence." for the moon model.')
+		elif (bayes_difference >= 10) and (bayes_difference < 100):
+			print('Kass & Raftery (1995) says "strong evidence." for the moon model.')
+		elif bayes_difference >= 100:
+			print('Kass & Raftery (1995) says "decisive evidence" for the moon model.')
+	print(' ')
+
+
+	return bayes_difference
+
+
+
+
 
 
 def run_vespa(self, clobber_inputs=False, clobber_outputs=False, nsims=1000, dmeth='cofiam', clobber_fpp=None, clobber_star=None, clobber_photfile=None):
