@@ -1316,6 +1316,7 @@ def pandora_evidence(self):
 			print('Kass & Raftery (1995) says "decisive evidence" for the moon model.')
 	print(' ')
 
+	self.bayes_factor = bayes_difference
 
 	return bayes_difference
 
