@@ -524,7 +524,10 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		print(' ')
 		print('X X X X X')
 		print('Now running PANDORA (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
+		print('see: https://github.com/hippke/Pandora')
+		print(' ')
 		print(' fitting with ULTRANEST (Johannes Buchner)	https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+		print('see: https://johannesbuchner.github.io/UltraNest/index.html')
 		print(' ')
 		try:
 			print('Please be sure to cite these works. 謝謝你。')
