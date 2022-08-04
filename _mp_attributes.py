@@ -1292,7 +1292,7 @@ def pandora_evidence(self):
 	bayes_difference = moon_logz - planet_logz 
 	print('moon model log(Z): ', moon_logz)
 	print('planet only model log(Z): ', planet_logz)
-	print('Bayesian evidence difference (moon - planet): ', bayes_difference)
+	print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
 
 	### recall from log rules that log(m) - log(n) = log(m/n)
 	### using the Kass & Rafferty framework:
