@@ -45,40 +45,6 @@ def run_Pandora(all_times, nepochs, R_star, per_bary, a_bary, r_planet, b_bary, 
 
 
 
-	#### reduce the times to just the ones in the vicinty of the transits.
-	"""
-	all_taus = []
-	first_tau = t0_bary
-	while np.nanmin(all_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
-		first_tau = first_tau - per_bary 
-	all_taus.append(first_tau)
-
-	while all_taus[-1] < np.nanmax(all_times):
-		all_taus.append(all_taus[-1] + per_bary)
-
-	nepochs = 0
-	epoch_duration = 20 * Tdur_days 
-	for ntau, tau in enumerate(all_taus):
-		#### grab the indices within the desired distance.
-		tau_idxs = np.where((all_times > tau - 0.5*epoch_duration) & (all_times <= tau + 0.5*epoch_duration))[0]
-		tau_times = all_times[tau_idxs]
-
-		#print('ntau, tau: ', ntau, tau)
-		#print('tau_idxs: ', tau_idxs)
-		#print('tau_times: ', tau_times)
-
-		if len(tau_times) > 0:
-			#### this epoch is in the data
-			nepochs += 1
-		if ntau == 0:
-			model_idxs = tau_idxs 
-			model_times = tau_times
-		else:
-			model_idxs = np.concatenate((model_idxs, tau_idxs))
-			model_times = np.concatenate((model_times, tau_times))
-	"""
-
-
 	#### 15 parameters in all -- 
 	#### see here: http://localhost:8888/notebooks/injection_retrieval_simple_ultranest.ipynb#:~:text=Create%20planet%2Bmoon%20model 
 
@@ -153,5 +119,10 @@ def run_Pandora(all_times, nepochs, R_star, per_bary, a_bary, r_planet, b_bary, 
 
 	#return output_times, output_fluxes 
 	return total_flux, planet_flux, moon_flux
+
+
+
+
+
 
 

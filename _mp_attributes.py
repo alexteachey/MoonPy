@@ -19,6 +19,8 @@ from datetime import datetime
 import inspect
 from pathlib import Path 
 from scipy import signal
+import pandoramoon as pandora
+from pandoramoon.helpers import ld_convert, ld_invert 
 
 
 #### BELOW ARE MOONPY PACKAGES
@@ -1316,6 +1318,76 @@ def pandora_evidence(self):
 
 
 	return bayes_difference
+
+
+
+
+def pandora_model_from_NEA(self):
+	##### generate a model from the NASA Exoplanet Archive
+	#### other fixed parameters
+
+	#### conversion 
+	#u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff, Logg=self.st_logg, MH=self.st_met)
+	#u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff, Logg=self.st_logg)
+	u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff)
+	q1, q2 = ld_invert(u1, u2)
+
+	print('u1, u2 (from Claret) = ', u1, u2)
+	print('converted to q1, q2 = ', q1, q2)
+	#medq1, medq2 = np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2'])
+	#medu1, medu2 = ld_convert(medq1, medq2) 
+
+	#### NOW GENERATE THE MODEL! 	
+	NEAparams = pandora.model_params()
+	
+	NEAparams.R_star = self.st_rad * R_sun.value 
+	NEAparams.per_bary = self.pl_orbper 
+	NEAparams.a_bary = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value) # a/Rstar
+	NEAparams.r_planet = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #Rp/Rstar
+	NEAparams.b_bary = self.pl_imppar
+	#NEAparams.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset']) ### this is not in NEA 
+	NEAparams.t0_bary_offset = 0 #### have to assume that the t0 value is accurate!
+	NEAparams.M_planet = self.pl_bmasse * M_earth.value # kg
+	if np.isfinite(self.pl_orbeccen) and (np.ma.is_masked(self.pl_orbeccen) == False):
+		NEAparams.ecc_bary = self.pl_orbeccen
+	else:
+		NEAparams.ecc_bary = 0.
+		print('WARNING: eccentricity may not be provided by the NASA Exoplanet Archive. Setting to zero.')
+	if np.isfinite(self.pl_orbtper) and (np.ma.is_masked(self.pl_orbtper) == False):
+		NEAparams.w_bary = self.pl_orbtper
+	else:
+		NEAparams.w_bary = 0.
+		print('WARNING: argument of periastron may not be provided by the NASA Exoplanet Archive. Setting to zero.')
+
+	#### moon parameters
+	NEAparams.r_moon = 1e-8 #### PARAM #7 -- satellite radius divided by stellar radius
+	NEAparams.per_moon = 30 #### PARAM #8 -- need to define above
+	NEAparams.tau_moon = 0 #### PARAM #9-- must be between zero and one -- I think this is the phase...
+	NEAparams.Omega_moon = 0 #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+	NEAparams.i_moon = 0 #### PARAM #11 -- between 0 and 180 degrees
+	NEAparams.M_moon = 1e-8 
+	NEAparams.u1 = float(u1) #### PARAM #13 need to define above!
+	NEAparams.u2 = float(u2) #### PARAM #14 need to define above!
+	NEAparams.t0_bary = self.tau0 
+	NEAparams.epochs = len(self.taus) #### needs to be defined above!
+	NEAparams.epoch_duration = 3 #### need to be defined above
+	NEAparams.cadences_per_day = 48 
+	#params.epoch_distance = Pplan 
+	NEAparams.epoch_distance = self.pl_orbper
+	NEAparams.supersampling_factor = 1
+	NEAparams.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
+	NEAparams.hill_sphere_threshold = 1.2 #### what does this mean?
+
+	NEApdtime = pandora.time(NEAparams).grid()
+	NEApdmodel = pandora.moon_model(NEAparams)
+
+	total_flux, planet_flux, moon_flux = NEApdmodel.light_curve(NEApdtime)
+
+	self.pandora_NEA_times = NEApdtime 
+	self.pandora_NEA_fluxes = total_flux 
+
+	return NEApdtime, total_flux
+
 
 
 
