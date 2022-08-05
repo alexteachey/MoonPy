@@ -442,11 +442,11 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					#### plot them!
 					if model.lower() == 'p':
-						model_label = 'Pandora (planet only)'
+						model_label = 'Planet'
 						model_color = 'DarkOrange'
 
 					elif model.lower() == 'm':
-						model_label = 'Pandora (planet+moon)'
+						model_label = 'Planet+Moon'
 						model_color = 'BlueViolet'
 
 					if ndraws > 1:
