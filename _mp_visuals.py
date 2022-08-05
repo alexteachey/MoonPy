@@ -292,6 +292,11 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				print(self.Pandora_planet_PEWdict.keys())
 				planet_only_avail = True 
 				models_available.append('P')
+
+				#### compute median values
+				for key in self.Pandora_planet_PEWdict.keys():
+					print('median '+str(key)+': '+str(np.nanmedian(self.Pandora_planet_PEWdict[key])))
+
 			except:
 				print('Planet posteriors not available.')
 				planet_only_avail = False 
@@ -301,87 +306,49 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				print(self.Pandora_moon_PEWdict.keys())
 				planet_plus_moon_avail = True
 				models_available.append('M')
+
+				#### compute median values
+				for key in self.Pandora_moon_PEWdict.keys():
+					print('median '+str(key)+': '+str(np.nanmedian(self.Pandora_moon_PEWdict[key])))
+
+
 			except:
 				print('Moon posteriors not available.')
 				planet_plus_moon_avail = False 
 
-			if len(models_available) > 0:
+			print(' ')
+			print('models available: ', models_available)
+			print(' ')
+
+			#if len(models_available) > 0:
 
 
-				for model in models_available:
-					
+			ndraws = 100
+			try:
+				moon_model_PEWdict = self.Pandora_moon_PEWdict 
+				nmoon_trials = len(moon_model_PEWdict['q1'])
+			except:
+				pass 
+
+			try:
+				planet_model_PEWdict = self.Pandora_planet_PEWdict 
+				nplanet_trials = len(planet_model_PEWdict['q1'])
+			except:
+				pass 
+
+			#for nidx, random_idx in enumerate(random_idxs):
+			for nidx in np.arange(0,ndraws,1):
+
+				for model in models_available:					
 					if model.lower() == 'p':
-						model_PEWdict = self.Pandora_planet_PEWdict 
+						model_PEWdict = planet_model_PEWdict
+						random_idx = np.random.randint(low=0, high=nplanet_trials)
 					elif model.lower() == 'm':
-						model_PEWdict = self.Pandora_moon_PEWdict 
+						model_PEWdict = moon_model_PEWdict 
+						random_idx = np.random.randint(low=0, high=nmoon_trials)
 
-				ndraws = 100
-				nsamples = len(model_PEWdict['q1'])
-				random_idxs = np.random.choice(np.arange(0,nsamples,1), size=ndraws)
-
-
-				#### compute median values
-				for key in model_PEWdict.keys():
-					print('median '+str(key)+': '+str(np.nanmedian(model_PEWdict[key])))
-
-
-
-				##### generate a model from the NASA Exoplanet Archive
-				#### other fixed parameters
-
-				#### conversion 
-
-				"""
-				medq1, medq2 = np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2'])
-				medu1, medu2 = ld_convert(medq1, medq2) 
-
-				#### NOW GENERATE THE MODEL! 	
-				NEAparams = pandora.model_params()
-				
-				NEAparams.R_star = self.st_rad * R_sun.value 
-				NEAparams.per_bary = self.pl_orbper 
-				NEAparams.a_bary = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value) # a/Rstar
-				NEAparams.r_planet = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #Rp/Rstar
-				NEAparams.b_bary = self.pl_imppar
-				NEAparams.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset']) ### this is not in NEA 
-				NEAparams.M_planet = self.pl_bmasse * M_earth.value # kg
-				NEAparams.ecc_bary = self.pl_orbeccen
-				NEAparams.w_bary = 83
-				#### moon parameters
-				NEAparams.r_moon = 1e-8 #### PARAM #7 -- satellite radius divided by stellar radius
-				NEAparams.per_moon = 30 #### PARAM #8 -- need to define above
-				NEAparams.tau_moon = 0 #### PARAM #9-- must be between zero and one -- I think this is the phase...
-				NEAparams.Omega_moon = 0 #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
-				NEAparams.i_moon = 0 #### PARAM #11 -- between 0 and 180 degrees
-				NEAparams.M_moon = 1e-8 
-				NEAparams.u1 = float(medu1) #### PARAM #13 need to define above!
-				NEAparams.u2 = float(medu2) #### PARAM #14 need to define above!
-				NEAparams.t0_bary = self.tau0 
-				NEAparams.epochs = len(self.taus) #### needs to be defined above!
-				NEAparams.epoch_duration = 3 #### need to be defined above
-				NEAparams.cadences_per_day = 48 
-				#params.epoch_distance = Pplan 
-				NEAparams.epoch_distance = self.pl_orbper
-				NEAparams.supersampling_factor = 1
-				NEAparams.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
-				NEAparams.hill_sphere_threshold = 1.2 #### what does this mean?
-
-				NEApdtime = pandora.time(NEAparams).grid()
-				NEApdmodel = pandora.moon_model(NEAparams)
-
-				total_flux, planet_flux, moon_flux = NEApdmodel.light_curve(NEApdtime)
-
-
-				if nplots == 2:
-					ax[1].plot(NEApdtime, total_flux, c='green', linewidth=2, zorder=100, alpha=0.7, label='NEA')	
-				elif nplots == 1:
-					ax.plot(NEApdtime, total_flux, c='green', linewidth=2, zorder=100, alpha=0.7, label='NEA')						
-
-				"""
-
-
-				#### NOW STEP THROUGH THE POSTERIORS
-				for nidx, random_idx in enumerate(random_idxs):
+					#### NOW STEP THROUGH THE POSTERIORS
+					#for nidx, random_idx in enumerate(random_idxs):
 					q1 = model_PEWdict['q1'][random_idx]
 					q2 = model_PEWdict['q2'][random_idx]
 					per_bary = model_PEWdict['per_bary'][random_idx]
@@ -410,8 +377,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 						tau_moon = model_PEWdict['tau_moon'][random_idx]
 						Omega_moon = model_PEWdict['Omega_moon'][random_idx]
 						i_moon = model_PEWdict['i_moon'][random_idx]
-						ecc_moon = model_PEWdict['ecc_moon'][random_idx]
-						w_moon = model_PEWdict['w_moon'][random_idx]
+						try:
+							ecc_moon = model_PEWdict['ecc_moon'][random_idx]
+						except:
+							ecc_moon = 0
+						try:
+							w_moon = model_PEWdict['w_moon'][random_idx]
+						except:
+							w_moon = 0 
 						M_moon = model_PEWdict['M_moon'][random_idx]
 
 
@@ -478,7 +451,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 					if ndraws > 1:
 						linewidth=1
-						alpha=0.3
+						alpha=0.2
 					elif ndraws == 1:
 						linewidth=2
 						alpha=0.7
@@ -497,31 +470,31 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 							ax.plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha)	
 
 
-					"""
-					if print_params == 'y':
+				"""
+				if print_params == 'y':
 
-						print(" ")
-						print("Rp/Rstar = ", RpRstar)
-						print("transit depth [ppm] = ", RpRstar**2 * 1e6)
-						print("stellar density [kg / m^3] = ", rhostar)
-						print("impact = ", bplan)
-						print("Period [days] = ", Pplan)
-						print("tau_0 [day] = ", tau0)
-						print("q1,q2 = ", q1, q2)
-						if (model == 'M') or (model == "Z"):
-							print("planet density [kg / m^3] = ", rhoplan)
-							print("sat_sma = [Rp] ", sat_sma)
-							print("sat_phase = ", sat_phase)
-							print("sat_inc = ", sat_inc)
-							print("sat_omega = ", sat_omega)
-							print("Msat / Mp = ", MsatMp)
-							print("Rsat / Rp = ", RsatRp)
-						print(" ")
-					"""
+					print(" ")
+					print("Rp/Rstar = ", RpRstar)
+					print("transit depth [ppm] = ", RpRstar**2 * 1e6)
+					print("stellar density [kg / m^3] = ", rhostar)
+					print("impact = ", bplan)
+					print("Period [days] = ", Pplan)
+					print("tau_0 [day] = ", tau0)
+					print("q1,q2 = ", q1, q2)
+					if (model == 'M') or (model == "Z"):
+						print("planet density [kg / m^3] = ", rhoplan)
+						print("sat_sma = [Rp] ", sat_sma)
+						print("sat_phase = ", sat_phase)
+						print("sat_inc = ", sat_inc)
+						print("sat_omega = ", sat_omega)
+						print("Msat / Mp = ", MsatMp)
+						print("Rsat / Rp = ", RsatRp)
+					print(" ")
+				"""
 
 
-					#return output_times, output_fluxes 
-					#return total_flux, planet_flux, moon_flux
+				#return output_times, output_fluxes 
+				#return total_flux, planet_flux, moon_flux
 
 
 

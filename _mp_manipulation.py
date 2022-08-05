@@ -350,6 +350,62 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 
 
 
+def make_UltraNest_outputdir(self, model, modelcode='Pandora'):
+		### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
+	outputdir = moonpydir+'/UltraNest_fits'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
+
+	outputdir = outputdir+'/'+str(modelcode.lower())
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates modelcode directory
+
+	outputdir = outputdir+'/'+str(self.target)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates target directory
+
+	outputdir = outputdir+'/'+str(model)
+	print('model: ', model)
+
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates model directory
+
+	print('outputdir: ', outputdir)
+
+	return outputdir
+
+
+
+def prep_for_ultranest_fit(self, dmeth='cofiam'):
+	#### make priors and light curve file
+
+	#### NOTE: THIS IS ONLY FOR USE WITH A STANDALONE CODE (a la standalone_pandora_ultranest.py'.) IT IS NOT NEEDED TO RUN A FIT WITHIN MOONPY.
+
+	self.initialize_priors(modelcode='Pandora', model='M')
+	self.initialize_priors(modelcode='Pandora', model='P')
+
+	#### make the light curve file
+	try:
+		cctimes, ccfluxes, ccerrors = np.concatenate(self.times), np.concatenate(self.fluxes_detrend), np.concatenate(self.errors_detrend)
+	except:
+		#### probably need to detrend first!
+		self.detrend(dmeth=dmeth)
+		cctimes, ccfluxes, ccerrors = np.concatenate(self.times), np.concatenate(self.fluxes_detrend), np.concatenate(self.errors_detrend)
+
+	outputdir = self.make_UltraNest_outputdir(model='M')[:-2] #### will be in the planet directory, not in the M or P folders.
+
+	lcfile = open(outputdir+'/'+self.target+'_lcfile.txt', mode='w')
+	for cctime, ccflux, ccerror in zip(cctimes, ccfluxes, ccerrors):
+		newline = str(cctime)+' '+str(ccflux)+' '+str(ccerror)+'\n'
+		lcfile.write(newline)
+	lcfile.close()
+
+	print('new light curve file written to: '+outputdir+'/'+self.target+'_lcfile.txt .')
+
+
+
+
+
 def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	print('calling _mp_manipulation.py/intialize_priors().')
 	param_uber_dict = {}
@@ -360,7 +416,6 @@ def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	self.get_properties(locate_neighbor='n')
 
 	#### used for LUNA, batman, and pandora.
-
 
 	if (modelcode.lower() == 'luna') or (modelcode.lower() == 'batman'):
 		param_uber_dict['RpRstar'] = ['uniform', (1e-6, 0.9999)]
@@ -564,6 +619,51 @@ def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	self.param_labels = param_labels
 	self.param_prior_forms = param_prior_forms 
 	self.param_limit_tuple = param_limit_tuple
+	
+
+	### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
+	outputdir = moonpydir+'/UltraNest_fits'
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
+
+	outputdir = outputdir+'/'+str(modelcode.lower())
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates modelcode directory
+
+	outputdir = outputdir+'/'+str(self.target)
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates target directory
+
+	outputdir = outputdir+'/'+str(model)
+	print('model: ', model)
+
+	if os.path.exists(outputdir) == False:
+		os.system('mkdir '+outputdir) ### creates model directory
+
+	print('outputdir: ', outputdir)
+
+	#### write out to a file
+	priorfile = open(outputdir+'/model'+str(model)+'_priors.txt', mode='w')
+	for key in param_uber_dict.keys():
+		priortype = param_uber_dict[key][0]
+		bounds = param_uber_dict[key][1]
+		print('priortype: ', priortype)
+		print('bounds: ', bounds)
+
+		newline = str(key)+' '+str(priortype)
+		if type(bounds) != tuple:
+			newline = newline+' '+str(bounds)+'\n'
+		else:
+			for entry in bounds:
+				newline = newline+' '+str(entry)
+			newline = newline+'\n'
+
+		priorfile.write(newline)
+	priorfile.close()
+
+
+
+
 
 
 
