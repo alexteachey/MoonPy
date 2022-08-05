@@ -10,6 +10,7 @@ import os
 import sys
 from mp_batman import run_batman
 import pandoramoon as pandora 
+import gefera as gf 
 from pandoramoon.helpers import ld_convert, ld_invert 
 from scipy.stats import norm 
 try:
@@ -351,12 +352,6 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_variable_prior_forms.append(parprior)
 			un_variable_limit_tuple.append(partup)
 		
-		#if parlab == 'tau':
-		#	wrapped_params.append(True)
-		#else:
-		#	wrapped_params.append(False)
-
-
 
 	for t,f,e in zip(times, fluxes, errors):
 		data_times.append(t)
@@ -369,19 +364,38 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 	#### reduce the times to just the ones in the vicinty of the transits.
 	all_taus = []
-	if param_dict['t0_bary'][0] == 'fixed':
-		first_tau = float(param_dict['t0_bary'][1])
-	else:
-		first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
-	per_bary = float(param_dict['per_bary'][1][0])
+
+	if modelcode.lower() == 'pandora':
+		if param_dict['t0_bary'][0] == 'fixed':
+			first_tau = float(param_dict['t0_bary'][1])
+		else:
+			first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+		per_bary = float(param_dict['per_bary'][1][0])
+
+		while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
+			first_tau = first_tau - per_bary 
+		all_taus.append(first_tau)
+
+		while all_taus[-1] < np.nanmax(data_times):
+			all_taus.append(all_taus[-1] + per_bary)	
+			
 
 
-	while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
-		first_tau = first_tau - per_bary 
-	all_taus.append(first_tau)
+	elif modelcode.lower() == 'gefera':
+		if param_dict['tp'][0] == 'fixed':
+			first_tau = float(param_dict['tp'][1])
+		else:
+			first_tau = float(param_dict['tp'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+		pp = float(param_dict['pp'][1][0])
 
-	while all_taus[-1] < np.nanmax(data_times):
-		all_taus.append(all_taus[-1] + per_bary)
+		while np.nanmin(data_times) + pp < first_tau: ### implies first_tau is more than one period from the start of the baseline
+			first_tau = first_tau - pp 
+		all_taus.append(first_tau)
+
+		while all_taus[-1] < np.nanmax(data_times):
+			all_taus.append(all_taus[-1] + pp)
+
+
 
 	nepochs = 0
 	epoch_duration = 5 #### days
@@ -432,6 +446,9 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		os.system('mkdir '+outputdir) ### creates model directory
 
 	print('outputdir: ', outputdir)
+
+
+
 
 
 	if modelcode.lower() == 'pandora':
@@ -485,6 +502,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			#### THIS FUNCTION GETS CALLED REPEATEDLY! SO
 			##### YOU WALK AROUND IN q1,q2 but model in u1,u2 at every step.
 
+			#ultn_dict = {} #### trying this -- August 5th 2022
 			ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
 			ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
 
@@ -493,6 +511,17 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 			for pidx, parlab in enumerate(un_fixed_labels):
 				ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+			#### trying this -- August 5th 2022
+			"""
+			for pidx, parlab in enumerate(un_param_labels):
+				if parlab in un_variable_labels:
+					ultn_dict[parlab] = cube[pidx]
+
+				elif parlab in un_fixed_labels:
+					ultn_dict[parlab] = un_param_dict[parlab][1]
+			"""
+
 
 			q1, q2 = ultn_var_dict['q1'], ultn_var_dict['q2']
 			u1, u2 = ld_convert(q1, q2)
@@ -504,7 +533,8 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			ultn_var_dict.pop('q1', None)
 			ultn_var_dict.pop('q2', None) 
 			
-
+			
+			##### ORIGINAL !!!! 
 			flux_trial_planet, flux_trial_moon, flux_trial_total, xp_trial, yp_trial, xm_trial, ym_trial = pandora.pandora(**ultn_var_dict, **ultn_fixed_dict, 
 		   		epoch_distance = ultn_var_dict['per_bary'],
 		   		supersampling_factor = 1, 
@@ -513,6 +543,18 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		   		numerical_grid=25,
 		   		time=data_times, 
 		   		)
+
+			#### trying this instead
+			"""
+			flux_trial_planet, flux_trial_moon, flux_trial_total, xp_trial, yp_trial, xm_trial, ym_trial = pandora.pandora(**ultn_dict, 
+		   		epoch_distance = ultn_var_dict['per_bary'],
+		   		supersampling_factor = 1, 
+		   		occult_small_threshold = 0.01, 
+		   		hill_sphere_threshold=1.0,
+		   		numerical_grid=25,
+		   		time=data_times, 
+		   		)
+		   	"""
 
 			loglike = -0.5 * np.nansum(((flux_trial_total - data_fluxes) / data_errors)**2)
 
@@ -560,32 +602,164 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			time.sleep(3)
 		
 
-		cornerplot(result_planet_moon)
-		plt.savefig(outputdir+'/plots/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
-		plt.show()
 
+
+
+
+	elif modelcode.lower() == 'gefera':
+
+		#### DEFINE HERE FOR THE SAKE OF AVOIDING DICTIONARY CALLS -- ALTHOUGH THIS DOESN'T SEEM TO BE SAVING MUCH TIME.
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = [], [], [], [], []
+
+		#prior_ranges, prior_mins = [], []
+		for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
+			if (parprior == 'uniform') or (parprior == 'loguniform'):
+				prior_mins.append(partuple[0])
+				prior_maxes.append(partuple[1])
+				prior_mus.append(None)
+				prior_sigmas.append(None)
+				prior_types.append(parprior)
+
+			elif (parprior == 'normal') or (parprior == 'gaussian'):
+				prior_mins.append(None)
+				prior_maxes.append(None)
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+			elif parprior == 'truncnormal':
+				prior_mins.append(partuple[2])
+				prior_maxes.append(partuple[3])
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = np.array(prior_mins), np.array(prior_maxes), np.array(prior_mus), np.array(prior_sigmas), np.array(prior_types)
+
+
+		def ultn_transform(cube):
+			p = cube.copy()
+
+			for pidx in np.arange(0,len(prior_types),1):
+				if prior_types[pidx] == 'uniform':
+					p[pidx] = transform_uniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif prior_types[pidx] == 'loguniform':
+					p[pidx] = transform_loguniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif (prior_types[pidx] == 'normal') or (prior_types[pidx] == 'gaussian'):
+					p[pidx] = transform_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx]) 
+				elif (prior_types[pidx] == 'truncnorm'):
+					p[pidx] = transform_truncated_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+
+			return p
+
+		def ultn_loglike_gefera(cube):
+
+			#### THIS FUNCTION GETS CALLED REPEATEDLY! SO
+			##### YOU WALK AROUND IN q1,q2 but model in u1,u2 at every step.
+
+			ultn_dict = {} #### trying this -- August 5th, 2022 
+			ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
+			ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
+
+			for pidx, parlab in enumerate(un_variable_labels):
+				ultn_var_dict[parlab] = cube[pidx]
+
+			for pidx, parlab in enumerate(un_fixed_labels):
+				ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+			#### trying this -- August 5th 2022
+			for pidx, parlab in enumerate(un_param_labels):
+				if parlab in un_variable_labels:
+					ultn_dict[parlab] = ultn_var_dict[parlab]
+
+				elif parlab in un_fixed_labels:
+					ultn_dict[parlab] = ultn_fixed_dict[parlab]
+
+
+
+			#planet_orbit = gf.orbits.PrimaryOrbit(ap, tp, ep, pp, wp, ip)
+			planet_orbit = gf.orbits.PrimaryOrbit(a=ultn_dict['ap'], t=ultn_dict['tp'], e=ultn_dict['ep'], p=ultn_dict['pp'], w=ultn_dict['wp'], i=ultn_dict['ip'])
+			moon_orbit = gf.orbits.SatelliteOrbit(a=ultn_dict['am'], t=ultn_dict['tm'], e=ultn_dict['em'], p=ultn_dict['pm'], o=ultn_dict['om'], w=ultn_dict['wm'], i=ultn_dict['im'], m=ultn_dict['mm'])
+			sys = gf.systems.HierarchicalSystem(planet_orbit, moon_orbit)
+			
+			#gefera_flux = sys.lightcurve(t=data_times, u1=ultn_dict['u1'], u2=ultn_dict['u2'], r1=ultn_dict['rp'], r2=ultn_dict['rm']) + 1
+			
+			#loglike = -0.5 * np.nansum(((gefera_flux - data_fluxes) / data_errors)**2) ### original
+			loglike = sys.loglike(y=data_fluxes-1, t=data_times, u1=ultn_dict['u1'], u2=ultn_dict['u2'], r1=ultn_dict['rp'], r2=ultn_dict['rm'], sigma=data_errors)
+			return loglike
+
+
+
+
+		print(' ')
+		print('X X X X X')
+		print('Now running GEFERA (Gordon & Agol 2022) https://ui.adsabs.harvard.edu/abs/2022arXiv220706024G/abstract')
+		print('see: https://github.com/tagordon/gefera')
+		print(' ')
+		print(' fitting with ULTRANEST (Johannes Buchner)	https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+		print('see: https://johannesbuchner.github.io/UltraNest/index.html')
+		print(' ')
 		try:
-			sampler.plot()
+			print('Please be sure to cite these works. 謝謝你。')
+		except:
+			print('Please be sure to cite these works.')
+		print('X X X X X')
+		print(' ')
+
+		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
+		try:
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume', vectorized=True)	
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_gefera, transform=ultn_transform, log_dir=outputdir, resume='resume')										
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
+
+
+		except AssertionError:
+			#try:
+			os.system('rm -rf '+outputdir)
+			os.system('mkdir '+outputdir) ### creates model directory
+			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_gefera, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')		
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
+		
+		try:
+			sampler.print_results()
 		except:
 			traceback.print_exc()
 			print(' ')
-			print('WARNING: could not call sampler.plot().')
+			print("WARNING: could not call sampler.print_results().")
 			time.sleep(3)
+		
 
-		pew = np.genfromtxt(outputdir+'/chains/equal_weighted_post.txt')
-		pewtxt = open(outputdir+'/chains/equal_weighted_post.txt', mode='r')
 
-		firstline = pewtxt.readline()
-		cols = firstline.split()
-		pewtxt.close()
-		pewdict = {}
-		for ncol,col in enumerate(cols):
-			pewdict[col] = pew.T[ncol][1:]
-			n,bins,edges = plt.hist(pewdict[col], bins=20, facecolor='DodgerBlue', edgecolor='k')
-			plt.xlabel(col)
-			plt.show()
 
-		sampler.plot_trace()
+	cornerplot(result_planet_moon)
+	plt.savefig(outputdir+'/plots/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
+	plt.show()
+
+	try:
+		sampler.plot()
+	except:
+		traceback.print_exc()
+		print(' ')
+		print('WARNING: could not call sampler.plot().')
+		time.sleep(3)
+
+	pew = np.genfromtxt(outputdir+'/chains/equal_weighted_post.txt')
+	pewtxt = open(outputdir+'/chains/equal_weighted_post.txt', mode='r')
+
+	firstline = pewtxt.readline()
+	cols = firstline.split()
+	pewtxt.close()
+	pewdict = {}
+	for ncol,col in enumerate(cols):
+		pewdict[col] = pew.T[ncol][1:]
+		n,bins,edges = plt.hist(pewdict[col], bins=20, facecolor='DodgerBlue', edgecolor='k')
+		plt.xlabel(col)
+		plt.show()
+
+	sampler.plot_trace()
 
 	json.dump(un_param_labels, open(outputdir+'/'+str(targetID)+"_model"+str(model)+"_params.json", 'w')) ### save parameter names
 
@@ -600,6 +774,11 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		print('Please be sure to cite these works.')
 	print('X X X X X')
 	print(' ')
+
+
+
+
+
 
 
 

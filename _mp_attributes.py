@@ -1270,10 +1270,13 @@ def get_isochrone_files():
 
 
 
-def pandora_evidence(self):
+def moon_evidence(self, modelcode='Pandora'):
 	import json 
 
-	modelsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target
+	if modelcode.lower() == 'pandora':
+		modelsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target
+	elif modelcode.lower() == 'gefera':
+		modelsdir = moonpydir+'/UltraNest_fits/gefera/'+self.target
 	
 	moon_modeldir = modelsdir+'/M'
 	moon_chainsdir = moon_modeldir+'/chains'
@@ -1319,6 +1322,15 @@ def pandora_evidence(self):
 	self.bayes_factor = bayes_difference
 
 	return bayes_difference
+
+
+def pandora_evidence(self):
+	return self.moon_evidence(modelcode='Pandora')
+
+def gefera_evidence(self):
+	return self.moon_evidence(modelcode='gefera')
+
+
 
 
 
