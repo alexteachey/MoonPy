@@ -42,6 +42,8 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
+
+
 def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_pandora='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	print('calling _mp_visuals.py/plot_lc().')
 	#if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
@@ -727,6 +729,123 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		except:
 			print('BATMAN model not available.')
+
+
+
+
+
+
+def animate_moon(self):
+
+	#try:
+	self.get_Pandora_posteriors(model='M')
+	model_PEWdict = self.Pandora_moon_PEWdict
+	#except:
+	#	print('unable to get Pandora posteriors for model M.')
+
+	# Call Pandora and get model with these parameters
+	params = pandora.model_params()
+	params.R_star = (self.st_rad * R_sun.value) 
+	medu1, medu2 = ld_invert(np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2']))
+	params.u1 = medu1
+	params.u2 = medu2
+
+	# Planet parameters
+	params.per_bary = np.nanmedian(model_PEWdict['per_bary'])
+	params.a_bary = np.nanmedian(model_PEWdict['a_bary'])
+	params.r_planet = np.nanmedian(model_PEWdict['r_planet'])
+	params.b_bary = np.nanmedian(model_PEWdict['b_bary'])
+	params.t0_bary = self.tau0
+	params.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset'])
+	params.M_planet = (self.pl_bmasse * M_earth.value) 
+	params.w_bary = np.nanmedian(model_PEWdict['w_bary'])
+	params.ecc_bary = np.nanmedian(model_PEWdict['ecc_bary'])
+
+	# Moon parameters
+	params.r_moon = np.nanmedian(model_PEWdict['r_moon'])
+	params.per_moon = np.nanmedian(model_PEWdict['per_moon'])
+	params.tau_moon = np.nanmedian(model_PEWdict['tau_moon'])
+	params.Omega_moon = np.nanmedian(model_PEWdict['Omega_moon'])
+	params.i_moon = np.nanmedian(model_PEWdict['i_moon'])
+	try:
+		params.ecc_moon = np.nanmedian(model_PEWdict['ecc_moon'])
+	except:
+		params.ecc_moon = 0
+	try:
+		params.w_moon = np.nanmedian(model_PEWdict['w_moon'])
+	except:
+		params.w_moon = 0
+	params.M_moon = np.nanmedian(model_PEWdict['M_moon'])
+
+	# Other model parameters
+	params.epochs = len(self.taus)  # [int]
+	params.epoch_duration = 3  # 5  # [days]
+	params.cadences_per_day = 250  # [int]
+	params.epoch_distance = np.nanmedian(model_PEWdict['per_bary'])
+	params.supersampling_factor = 1  # [int]
+	params.occult_small_threshold = 0.01  # [0..1]
+	params.hill_sphere_threshold = 1.2
+
+	# Obtain time grid
+	#pdtime = pandora.time(params).grid()
+	mintime, maxtime = np.nanmin(np.concatenate(self.times)), np.nanmax(np.concatenate(self.times))
+	for ntau, tau in enumerate(self.taus):
+		#### grab times 2 days before and after each tau
+		tau_times = np.linspace(tau-1,tau+1,500)
+		if ntau == 0:
+			pdtime = tau_times
+		else:
+			pdtime = np.concatenate((pdtime, tau_times))
+
+
+
+	# Define model
+	model = pandora.moon_model(params)
+
+	# Evaluate model for each point in time grid
+	flux_total, flux_planet, flux_moon = model.light_curve(pdtime)
+
+	# Get coordinates
+	xp, yp, xm, ym = model.coordinates(pdtime)
+
+	# Create noise and merge with flux
+	"""
+	noise_level = 100e-6  # Gaussian noise to be added to the generated data
+	noise = np.random.normal(0, noise_level, len(pdtime))
+	testdata = noise + flux_total
+	yerr = np.full(len(testdata), noise_level)
+	"""
+
+	# Save model data to disk in 2-column format (time, data) for each time stamp
+	#np.savetxt("output.csv", np.transpose(np.array((time, testdata))), fmt='%8f')
+
+	# Plot synthetic data with and without noise
+	"""
+	plt.plot(pdtime, flux_planet, color="blue")
+	plt.plot(pdtime, flux_moon, color="red")
+	plt.plot(pdtime, flux_total, color="black")
+	plt.scatter(pdtime, testdata, color="black", s=0.5)
+	plt.xlabel("Time (days)")
+	plt.ylabel("Relative flux")
+	plt.show()
+	"""
+
+	# Create video
+	video = model.video(
+	    time=pdtime,
+	    limb_darkening=True, 
+	    teff=self.st_teff,
+	    planet_color="black",
+	    moon_color="black",
+	    ld_circles=100
+	)
+	# Save video to disk
+	video_savepath = self.savepath+"/"+self.target+"_transit_video.mp4"
+	video.save(filename=video_savepath, fps=25, dpi=200)
+	print('video was saved at: '+video_savepath)
+
+
+
 
 
 
