@@ -348,6 +348,9 @@ class MoonpyLC(object):
 		elif self.telescope.lower() == 'tess':
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
 
+		else:
+			savepath = central_data_dir+'/USER_lightcurvers/'+targetID
+
 		savepath = nospaces(savepath)
 
 		if os.path.exists(savepath):
