@@ -349,6 +349,8 @@ class MoonpyLC(object):
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
 
 		else:
+			if os.path.exists(central_data_dir+'/USER_lightcurves') == False:
+				os.system('mkdir '+central_data_dir+'/USER_lightcurves')
 			savepath = central_data_dir+'/USER_lightcurves/'+targetID
 
 		savepath = nospaces(savepath)
