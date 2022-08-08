@@ -232,7 +232,7 @@ class MoonpyLC(object):
 				try:
 					self.rprstar = usr_dict['rprstar']
 				except:
-					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
 
 				try:
 					self.sma_AU = usr_dict['sma_AU']
@@ -290,7 +290,7 @@ class MoonpyLC(object):
 				try:
 					self.rprstar = usr_dict['rprstar']
 				except:
-					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
 
 				try:
 					self.sma_AU = usr_dict['sma_AU']
