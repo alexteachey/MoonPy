@@ -349,7 +349,7 @@ class MoonpyLC(object):
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
 
 		else:
-			savepath = central_data_dir+'/USER_lightcurvers/'+targetID
+			savepath = central_data_dir+'/USER_lightcurves/'+targetID
 
 		savepath = nospaces(savepath)
 
