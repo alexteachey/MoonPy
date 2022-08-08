@@ -10,7 +10,11 @@ import os
 import sys
 from mp_batman import run_batman
 import pandoramoon as pandora 
-import gefera as gf 
+try:
+	import gefera as gf 
+except:
+	print("could not import gefera. You can 'pip install gefera' to rectify this.")
+	print("see: https://github.com/tagordon/gefera")
 from pandoramoon.helpers import ld_convert, ld_invert 
 from scipy.stats import norm 
 try:
