@@ -91,16 +91,16 @@ Package imports that are not standard and are not included in the moonpy package
 ## OVERVIEW
 Below you will find the details of some of these tools. At present the user will want to utilize the following functionality:
 
-* **Initialize a light curve object** using *MoonpyLC()*
+* **Initialize a light curve object** using ```MoonpyLC()```
 * **Access adopted NASA Exoplanet Archive attributes** using [the same column names from the archive](https://exoplanetarchive.ipac.caltech.edu/docs/API_PS_columns.html).
-* **plot the light curve** using *plot_lc()*.
-* **generate a Lomb-Scargle** periodogram using *genLS()*.
-* **Detrend the light curve** using *detrend()*
-* **fit a planet transit model** using ```exoplanet```to the light curve using *run_planet_fit()*.
-* **fit planet and moon models** using ```Pandora``` or ```gefera``` using *fit(modelcode='Pandora', model='M')*.
-* **compute the Bayes factor** to find evidence for/against the moon using *moon_evidence()*.
-* **run a false positive calculation with VESPA** using *run_vespa()*. **Must activate separate vespa environment.**
-* **access a variety of handy tools** in the mp_tools.py module.
+* **plot the light curve** using ```plot_lc()```.
+* **generate a Lomb-Scargle** periodogram using ```genLS()```.
+* **Detrend the light curve** using ```detrend()```
+* **fit a planet transit model** (using the ```exoplanet```package) to the light curve using ```run_planet_fit()```.
+* **fit planet and moon models** (using ```Pandora``` or ```gefera```, and ```UltraNest``` using ```fit(modelcode='Pandora', model='M')```.
+* **compute the Bayes factor** to find evidence for/against the moon using ```moon_evidence()```.
+* **run a false positive calculation with VESPA** using ```run_vespa()```. **Must activate separate vespa environment.**
+* **access a variety of handy tools** in the ```mp_tools.py``` module.
 
 *And more!*
 
