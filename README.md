@@ -24,12 +24,8 @@ A special shoutout is due to Hippke & Heller for introducing [the ```Pandora``` 
 Let's walk through the basics.
 
 
-## NB: FREQUENT UPDATES!
-Be advised that MoonPy is being updated all the time, and if I'm being honest, I'm not always adhering to best practices in terms of maintaing stable and beta versions. By using MoonPy you acknowledge that you are on this ride with me... things may break from time to time, and if they do, I would appreciate hearing about them. This also means, it's important to keep MoonPy up-to date by cloning the latest version of the repository.
 
-
-
-## Installation
+# Installation
 Installation is now easier than ever. Begin by cloning the GitHub repository wherever you see fit. For example, within the desired directory, call:
 
 ```>>> git clone https://github.com/alexteachey/MoonPy```
@@ -55,9 +51,12 @@ And you're off to the races. **Please note:** The first time you boot up MoonPy 
 **A list of package dependencies is listed at the bottom of this page**.
 
 
+## NB: Frequent Updates!
+Be advised that MoonPy is being updated all the time, and if I'm being honest, I'm not always adhering to best practices in terms of maintaing stable and beta versions. By using MoonPy you acknowledge that you are on this ride with me... things may break from time to time, and if they do, I would appreciate hearing about them. This also means, it's important to keep MoonPy up-to date by cloning the latest version of the repository.
 
 
-## OVERVIEW
+
+# OVERVIEW
 Below you will find the details of some of these tools. At present the user will want to utilize the following functionality:
 
 * **Initialize a light curve object** using ```MoonpyLC()```
