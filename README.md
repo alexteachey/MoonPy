@@ -238,19 +238,19 @@ New TESS data continues to arrive, so **MoonPy automatically identifies when new
 ## Handy Tools
 MoonPy utilizes a variety of functions behind the scenes that exoplanet astronomers frequently need. So they might come in handy. Here are some of them (please sanity check the results before using them!):
 
-```effective_radius(density, mass)```
-```RHill(sma_plan, m_star, m_plan)```
-```Kep3_pfroma(sma, m1, m2, sma_unit = 'meters', output_format='days', val_only='y')```
-```Kep3_afromp(period, m1, m2, val_only='y', unit='days')```
-```mass_from_density(density, radius)```
-```inc_from_impact(impact, rstar, sma, unit='radians')```
-```impact_from_inc(inclination, rstar, sma, unit='degrees')```
-```Tdur(period, Rstar, Rplan, impact, sma)``` # assumes circular orbit
-```deg2rad(degrees)```
-```rad2deg(radians)```
-```Roche(Rsat, Mplan, Msat)```
-```density_from_orbit(a_over_R, Porbit, in_unit='days', out_unit='mks')```
-```lc_fold(times, fluxes, errors, tau0, period, phase_offset=0.0)```
-```DWstat(data, model)```
-```flux_from_mags(target_mag, ref_mag, ref_flux)```
+* ```effective_radius(density, mass)```
+* ```RHill(sma_plan, m_star, m_plan)```
+* ```Kep3_pfroma(sma, m1, m2, sma_unit = 'meters', output_format='days', val_only='y')```
+* ```Kep3_afromp(period, m1, m2, val_only='y', unit='days')```
+* ```mass_from_density(density, radius)```
+* ```inc_from_impact(impact, rstar, sma, unit='radians')```
+* ```impact_from_inc(inclination, rstar, sma, unit='degrees')```
+* ```Tdur(period, Rstar, Rplan, impact, sma)``` # assumes circular orbit
+* ```deg2rad(degrees)```
+* ```rad2deg(radians)```
+* ```Roche(Rsat, Mplan, Msat)```
+* ```density_from_orbit(a_over_R, Porbit, in_unit='days', out_unit='mks')```
+* ```lc_fold(times, fluxes, errors, tau0, period, phase_offset=0.0)```
+* ```DWstat(data, model)```
+* ```flux_from_mags(target_mag, ref_mag, ref_flux)```
 
