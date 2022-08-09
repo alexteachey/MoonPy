@@ -99,7 +99,7 @@ Below you will find the details of some of these tools. At present the user will
 * **fit a planet transit model** (using the ```exoplanet```package) to the light curve using ```run_planet_fit()```.
 * **fit planet and moon models** (using ```Pandora``` or ```gefera```, and ```UltraNest``` using ```fit(modelcode='Pandora', model='M')```.
 * **compute the Bayes factor** to find evidence for/against the moon using ```moon_evidence()```.
-* **run a false positive calculation with VESPA** using ```run_vespa()```. **Must activate separate vespa environment.**
+* **run a false positive calculation with VESPA** using ```run_vespa()```. ***Must activate separate vespa environment.***
 * **access a variety of handy tools** in the ```mp_tools.py``` module.
 
 *And more!*
