@@ -30,10 +30,10 @@ from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from mp_animate import * 
 try:
-	import pandoramoon as pandora 
+	import pandoramoon as pandora
 	from pandoramoon.helpers import ld_convert, ld_invert 
 except:
-	print('Pandora functions did not load. Maybe not installed.')
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
 
 
 plt.rcParams["font.family"] = 'serif'

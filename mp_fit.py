@@ -9,13 +9,18 @@ import time
 import os
 import sys
 from mp_batman import run_batman
-import pandoramoon as pandora 
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
+
 try:
 	import gefera as gf 
 except:
 	print("could not import gefera. You can 'pip install gefera' to rectify this.")
 	print("see: https://github.com/tagordon/gefera")
-from pandoramoon.helpers import ld_convert, ld_invert 
+
 from scipy.stats import norm 
 try:
 	import pyluna

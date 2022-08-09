@@ -19,9 +19,11 @@ from datetime import datetime
 import inspect
 from pathlib import Path 
 from scipy import signal
-import pandoramoon as pandora
-from pandoramoon.helpers import ld_convert, ld_invert 
-
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
 
 #### BELOW ARE MOONPY PACKAGES
 #from moonpy import *

@@ -7,8 +7,11 @@ import mp_tools
 import socket
 from astropy.constants import G
 import time
-import pandoramoon as pandora 
-from pandoramoon.helpers import ld_convert, ld_invert 
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
 
 
 moonpydir = os.path.realpath(__file__)
