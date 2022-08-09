@@ -135,7 +135,9 @@ You can also generate a Lomb-Scargle periodogram simply by calling
 
 This produces quarter-by-quarter plots that may indicate the presence of periodic signals (likely rotational information about the star).
 
-After you have run a planet or moon model (see below), you can generate an animation of that model (using median values from the posteriors) 
+After you have run a planet or moon model (see below), you can generate an animation of that model (using median values from the posteriors) using
+
+```>>> lc_object.animate_moon()```.
 
 
 ## Data Manipulation
