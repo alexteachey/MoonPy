@@ -169,7 +169,7 @@ For a more in-depth analysis, you can **fit planet and moon models using ```Pand
 
 ```>>> lc_object.fit(modelcode='Pandora', model='M')``` 
 
-to start your run. You can also set ```modelcode='gefera'``` and set ```model='P'``` to run a 'P'lanet model instead of a 'M'oon model.
+to start your run. You can also set ```modelcode='gefera'``` to run a fit with that code instead (***Not as well tested!***). For either code, you can set ```model='P'``` to run a planet model instead of a moon model.
 
 After both models have run, you may call 
 
