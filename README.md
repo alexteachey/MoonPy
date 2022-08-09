@@ -161,7 +161,21 @@ Many of these [attributes are taken directly from the NASA Exoplanet Archive](ht
 
 ```287.378949```
 
-MoonPy also automatically queries the [SIMBAD astronomical database](https://simbad.unistra.fr/simbad/) to identify aliases for the planet/star in question.
+MoonPy also automatically queries the [SIMBAD astronomical database](https://simbad.unistra.fr/simbad/) to identify aliases for the planet/star in question. You can see these with 
+
+```>>> lc_object.find_aliases()```.
+
+MoonPy also automatically identifies all other confirmed planets in the system, and *should* flag them when plotted. To see any neighbors, you can call
+
+```>>> k1625.find_neighbors()```
+
+You may call ```lc_object.get_neighbors()```, which will generate a dictionary of neighbor light curve objects, each with their own attributes. For example
+
+```>>> k167e.neighbor_dict```
+
+returns
+
+```{'K167b': <moonpy.MoonpyLC object at 0x7f80a5ff17f0>, 'K167c': <moonpy.MoonpyLC object at 0x7f80a3ab87c0>, 'K167d': <moonpy.MoonpyLC object at 0x7f80a3ab89a0>}```
 
 
 ### Model Fitting 
