@@ -1073,7 +1073,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 						self.mask_taus = mazeh_taus
 						if len(self.mask_taus.shape) > 1:
 							self.mask_taus = self.mask_taus.reshape(self.mask_taus.shape[0])
-
+						for ni,i in enumerate(self.mask_taus):
+							self.mask_taus[ni] = float(i) #### correcting a weird formatting issue.
 
 
 				##### WE CAN ONLY USE HOLCZER FOR KEPLER PLANETS! SO IF IT AIN'T KEPLER...
@@ -1096,7 +1097,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 					if (use_holczer == 'y') and (self.telescope.lower() == 'kepler'):
 						#### for Kepler targets that have TTVs catalogued in Holczer 2016
-						in_transit_idxs = np.where( (dtimes >= float(qtt) - (5*self.duration_days)) & (dtimes <= float(qtt) + (5*self.duration_days)))[0]
+						in_transit_idxs = np.where( (dtimes >= float(qtt) - (self.duration_days)) & (dtimes <= float(qtt) + (self.duration_days)))[0]
 					
 
 					elif (use_holczer != 'y') or (self.telescope.lower() != 'kepler'):
@@ -1115,7 +1116,9 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 							print('was: '+str(qtt)+'; now: '+str(new_in_transit_center_time))
 
 							#### now update it
-							in_transit_idxs = np.where((dtimes >= float(new_in_transit_center_time) - (self.mask_multiple / 4)*self.duration_days) & (dtimes <= float(new_in_transit_center_time) + (self.mask_multiple / 4)*self.duration_days))[0]
+							#in_transit_idxs = np.where((dtimes >= float(new_in_transit_center_time) - (self.mask_multiple / 4)*self.duration_days) & (dtimes <= float(new_in_transit_center_time) + (self.mask_multiple / 4)*self.duration_days))[0]
+						
+							in_transit_idxs = np.where((dtimes > float(new_in_transit_center_time) - self.duration_days) & (dtimes < float(new_in_transit_center_time) + self.duration_days))[0]
 						except:
 							print('there was a problem finding the minimum flux in the in_transit_idxs window (maybe empty).')
 
@@ -1217,7 +1220,7 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 			all_quarter_mask_transit_idxs.append(mask_transit_idxs)
 
 			##### update!
-			self.mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
+			self.all_quarter_mask_transit_idxs = np.array(all_quarter_mask_transit_idxs, dtype=object)
 
 
 
@@ -1496,14 +1499,16 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 	#### spit out masked_times, masked_fluxes, masked_errors, masked_fluxes_detrend, masked_errors_detrend, masked_flags
 	masked_times, masked_fluxes, masked_errors, masked_fluxes_detrend, masked_errors_detrend, masked_flags = [], [], [], [], [], []
 	for i in np.arange(0,len(self.quarters),1):
-		if len(self.mask_transit_idxs[i]) > 0:
-			masked_times.append(np.delete(self.times[i], self.mask_transit_idxs[i]))
-			masked_fluxes.append(np.delete(self.fluxes[i], self.mask_transit_idxs[i]))
-			masked_errors.append(np.delete(self.errors[i], self.mask_transit_idxs[i]))
-			masked_fluxes_detrend.append(np.delete(self.fluxes_detrend[i], self.mask_transit_idxs[i]))
-			masked_errors_detrend.append(np.delete(self.errors_detrend[i], self.mask_transit_idxs[i]))
-			masked_flags.append(np.delete(self.flags[i], self.mask_transit_idxs[i]))
-		elif len(self.mask_transit_idxs[i]) == 0:
+
+		if len(self.all_quarter_mask_transit_idxs[i]) > 0:
+			masked_times.append(np.delete(self.times[i], self.all_quarter_mask_transit_idxs[i]))
+			masked_fluxes.append(np.delete(self.fluxes[i], self.all_quarter_mask_transit_idxs[i]))
+			masked_errors.append(np.delete(self.errors[i], self.all_quarter_mask_transit_idxs[i]))
+			masked_fluxes_detrend.append(np.delete(self.fluxes_detrend[i], self.all_quarter_mask_transit_idxs[i]))
+			masked_errors_detrend.append(np.delete(self.errors_detrend[i], self.all_quarter_mask_transit_idxs[i]))
+			masked_flags.append(np.delete(self.flags[i], self.all_quarter_mask_transit_idxs[i]))
+		
+		elif len(self.all_quarter_mask_transit_idxs[i]) == 0:
 			#### nothing to delete!
 			masked_times.append(self.times[i])
 			masked_fluxes.append(self.fluxes[i])

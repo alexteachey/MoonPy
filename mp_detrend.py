@@ -4,7 +4,7 @@ import numpy as np
 from scipy.ndimage import median_filter
 from scipy.signal import medfilt
 from scipy.interpolate import interp1d
-from cofiam import cofiam_iterative
+from cofiam import cofiam_function, cofiam_iterative
 from poly_detrender import polyAM_iterative, polyLOC_iterative
 import traceback
 import matplotlib.pyplot as plt 
@@ -113,6 +113,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 
 	if type(mask_idxs) != type(None):
+		print('len(mask_idxs) = ', len(mask_idxs))
 		if len(mask_idxs) > 0:
 			unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(times, mask_idxs), np.delete(fluxes, mask_idxs), np.delete(errors, mask_idxs)
 		elif len(mask_idxs) == 0:
@@ -127,6 +128,9 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 				outlier_idxs.append(flidx)
 		outlier_idxs = np.array(outlier_idxs)
 		unmasked_times, unmasked_fluxes, unmasked_errors = np.delete(unmasked_times, outlier_idxs), np.delete(unmasked_fluxes, outlier_idxs), np.delete(unmasked_errors, outlier_idxs)
+
+	
+	print('len(times), len(unmasked_times) = ', len(times), len(unmasked_times))
 
 
 
@@ -178,20 +182,30 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 	else: ### self.telescope != 'tess'
 		try:
-			best_model, best_degree, best_DW, max_degree = functimer(cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
+			best_model, best_degree, best_coefficients, best_DW, max_degree = functimer(cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
 			print(' ')
 			print(' ')
 		except:
-			best_model, best_degree, best_DW, max_degree = np.array(unmasked_fluxes, dtype=np.float64), np.nan, np.nan, np.nan
+			best_model, best_degree, best_coefficients, best_DW, max_degree = np.array(unmasked_fluxes, dtype=np.float64), np.nan, np.nan, np.nan
 			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
 
 	### at this point you have eliminated quite a few points, including the transit! So you need to interpolate to get the function values
 	### at those locations in the time series, and to keep flux_detrend and errors_detrend the same length as the original time series.
+	
+	#### OLD WAY 
+	print('best_degree: ', best_degree)
+	print('best_coefficients.shape: ', best_coefficients.shape)
+
+	"""
 	cofiam_interp = interp1d(unmasked_times, best_model, bounds_error=False, fill_value='extrapolate')
 	try:
 		best_model = cofiam_interp(times)
 	except:
 		best_model = cofiam_interp(np.array(times, dtype=np.float64))
+	"""
+	
+	
+	best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
 
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model

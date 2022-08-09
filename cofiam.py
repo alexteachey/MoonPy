@@ -72,21 +72,31 @@ def cofiam_matrix_gen(times, degree):
 	return X_matrix 
 
 
-def cofiam_matrix_coeffs(times, fluxes, degree):
+def cofiam_matrix_coeffs(times, fluxes, degree, solve=True):
 	assert len(times) > 0
 	Xmat = cofiam_matrix_gen(times, degree)
+	#if solve == True:
 	beta_coefs = np.linalg.lstsq(Xmat, fluxes, rcond=None)[0]
+	#else:
+	#	beta_coefs = np.matmul(Xmat, fluxes).T
 	return Xmat, beta_coefs
 
 
 
 ### this function spits out the best fit line!
-def cofiam_function(times, fluxes, degree):
+def cofiam_function(times, fluxes, degree, solve=True, cofiam_coefficients=None):
 	input_times = times.astype('f8')
 	input_fluxes = fluxes.astype('f8')
-	cofiam_matrix, cofiam_coefficients = cofiam_matrix_coeffs(input_times, input_fluxes, degree)
-	output = np.matmul(cofiam_matrix, cofiam_coefficients)
-	return output 
+	
+	if solve == True:
+		cofiam_matrix, cofiam_coefficients = cofiam_matrix_coeffs(input_times, input_fluxes, degree, solve=True)
+	
+	elif solve == False:
+		assert type(cofiam_coefficients) != type(None)
+		cofiam_matrix = cofiam_matrix_gen(input_times, degree)
+
+	model = np.matmul(cofiam_matrix, cofiam_coefficients)
+	return model, cofiam_coefficients
 
 
 def cofiam_iterative(times, fluxes, max_degree=30, min_degree=1):
@@ -99,9 +109,9 @@ def cofiam_iterative(times, fluxes, max_degree=30, min_degree=1):
 
 	for deg in degs_to_try:
 		#print("k = ", deg)
-		output_function = cofiam_function(times, fluxes, deg)
+		output_model, cofiam_coefficients = cofiam_function(times=times, fluxes=fluxes, degree=deg, solve=True)
 
-		residuals = fluxes - output_function
+		residuals = fluxes - output_model
 
 		DWstat = DurbinWatson(residuals)
 		DWstats.append(DWstat)
@@ -114,9 +124,9 @@ def cofiam_iterative(times, fluxes, max_degree=30, min_degree=1):
 
 	### re-generate the function with the best degree
 
-	best_model = cofiam_function(times, fluxes, best_degree)
+	best_model, best_coefficients = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=True)
 
-	return best_model, best_degree, best_DW, max_degree 
+	return best_model, best_degree, best_coefficients, best_DW, max_degree 
 
 
 

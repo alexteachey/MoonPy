@@ -154,7 +154,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, lc_sectors=None, usr_dict=None, mask_multiple=10, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', ffi_source='QLP', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', interactive=True, clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, lc_sectors=None, usr_dict=None, mask_multiple=3, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', ffi_source='QLP', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', interactive=True, clobber=None):
 		
 		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
