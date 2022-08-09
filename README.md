@@ -52,40 +52,9 @@ And you're off to the races. **Please note:** The first time you boot up MoonPy 
 
 * **LINUX USERS:** To ensure MoonPy loads correctly, users may need to call* ```python pathmaker.py``` *within the MoonPy directory, and with the desired conda environment activated. If you opt to install VESPA (recommended), you may also need to call* ```python vespa_script_updater.py``` *to fix a deprecated keyword in some vespa scripts. This should be done within the separate VESPA conda environment. (breakdowns include a deprecated 'representation' keyword, and/or a missing 'TESS' keyword. These errors are fixed by vespa_script_updater.py .*
 
-## Dependencies
-
-This code **requires** the following standard packages, which *should* be installed following the instructions above! Dependencies get *very* tricky very fast, so by far the best option is to use the MoonPy installer, or if you have issues there, create a conda environment from one of the included .yml files.
-
-If users have installation issues, they may try to install individually using the instructions below:
-
-* [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
-* [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
-* [matplotlib](https://matplotlib.org/) -- conda install -c conda-forge matplotlib
-* [pandas](https://pandas.pydata.org/) -- conda install -c anaconda pandas
-* [scipy](https://scipy.org/) -- conda install -c anaconda scipy
-* [numba](https://numba.pydata.org/) -- conda install -c conda-forge numba
-
-For full functionality, the following packages will also be needed (but MoonPy should be able to be run without them):
-* [exoplanet](https://docs.exoplanet.codes/en/latest/) -- conda install -c conda-forge exoplanet
-* [pandora](https://github.com/hippke/Pandora) -- pip install pandoramoon
-* [gefera](https://github.com/tagordon/gefera) -- pip install gefera 
-* [pymc3](https://docs.pymc.io/en/v3/) -- conda install -c conda-forge pymc3
-* ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
-* [arviz](https://arviz-devs.github.io/arviz/) -- conda install -c conda-forge arviz=0.11.0 **NOTE:** this version is important to avoid a breakdown with ```pymc3```.
-* [corner](https://github.com/dfm/corner.py) -- conda install -c astropy corner
-* [celerite2](https://celerite2.readthedocs.io/en/latest/) -- conda install -c conda-forge celerite2
-* ```aesara_theano_fallback``` -- conda install -c conda-forge aesara-theano-fallback
-* [george](https://george.readthedocs.io/en/latest/) -- conda install -c conda-forge george 
-* [untrendy](https://github.com/dfm/untrendy) -- pip install untrendy
-* [emcee](http://dfm.io/emcee/current/) -- conda install -c conda-forge emcee
-* [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - pip install batman-package
-* [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - pip install pymultinest 
-* [UltraNest](https://johannesbuchner.github.io/UltraNest/index.html) -- pip install ultranest
-* [vespa](https://github.com/timothydmorton/VESPA) -- recommended to install via MoonPy installer
-* [isochrones](https://isochrones.readthedocs.io/en/latest/) -- recommended to install via MoonPy installer
+**A list of package dependencies is listed at the bottom of this page**.
 
 
-Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
 
 
 ## OVERVIEW
@@ -124,6 +93,8 @@ MoonPy will try to infer which telescope's data should be accessed based on the 
 It is also possible to use MoonPy tools on a light curve that the user supplies. In this case, the user will want to supply arrays for ```lc_times```, ```lc_fluxes```, and ```lc_errors``` when initializing a MoonpyLC object. In addition, the ```usr_dict``` containing important parameters for the planet can be included (keys are "period", "tau0", "impact", "duration_hours", "rprstar", "sma_AU", and "rp_rearth"). If these are not supplied, the user will be prompted to enter them.
 
 
+
+
 ## Visualizing your data
 You can then plot the light curve with
 
@@ -142,6 +113,8 @@ After you have run a planet or moon model (see below), you can generate an anima
 ```>>> lc_object.animate_moon()```.
 
 
+
+
 ## Data Manipulation
 
 To detrend a light curve, simply call
@@ -151,6 +124,8 @@ To detrend a light curve, simply call
 A variety of detrending methods are available ('cofiam', 'median_value', 'phasma', 'polyAM', 'polyLOC', moving_median', and 'methmarg'). **Users are strongly advised to examine the results of the detrending before using for science!** 
 
 Then you can ```plot_lc()``` again to see both the original data, the trend model, and the detrended light curve.
+
+
 
 
 ## Accessing Planet Attributes 
@@ -180,6 +155,8 @@ You may call ```lc_object.get_neighbors()```, which will generate a dictionary o
 returns
 
 ```{'K167b': <moonpy.MoonpyLC object at 0x7f80a5ff17f0>, 'K167c': <moonpy.MoonpyLC object at 0x7f80a3ab87c0>, 'K167d': <moonpy.MoonpyLC object at 0x7f80a3ab89a0>}```
+
+
 
 
 ## Model Fitting 
@@ -216,6 +193,8 @@ or
 to retrieve dictionaries for the two models. (NB: PEW standards for "Posterior Equal Weights").
 
 
+
+
 ## False Positive Vetting
 
 There are a variety of astrophysical scenarios that can mimic a transiting planet. In particular, eclipsing binaries are a major source of false positives. Tim Morton's ```VESPA``` code was designed to compute a number of false positive probabilities.
@@ -228,13 +207,19 @@ Unfortunately, ```VESPA``` is now somewhat tricky to get installed and running, 
 ```MoonPy``` automatically generates the you will generate the necessary input files for this target. 
 
 
+
+
 ## Data storage
 
 Each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. You can see the location of these files by calling ```lc_object.savepath```. VESPA runs will also be carried out and saved within this same directory, and it *should* be possible to run multiple VESPA fits at once as a result.
 
 
+
+
 ## Up-To-Date Data
 New TESS data continues to arrive, so **MoonPy automatically identifies when new sectors come online and will download them if available**. The planet archives (NASA Exoplanet Archive, and ExoFOP) are also regularly updated, so MoonPy checks to see how old your databases are and gives the option (once per day) of downloading a new version. Be advised, this can sometimes take several minutes, so if you are looking at a well-known target, chances are the parameters are more-or-less fixed.
+
+
 
 
 ## Handy Tools
@@ -256,3 +241,40 @@ MoonPy utilizes a variety of functions behind the scenes that exoplanet astronom
 * ```DWstat(data, model)```
 * ```flux_from_mags(target_mag, ref_mag, ref_flux)```
 
+
+
+
+## Dependencies
+
+This code **requires** the following standard packages, which *should* be installed following the instructions above! Dependencies get *very* tricky very fast, so by far the best option is to use the MoonPy installer, or if you have issues there, create a conda environment from one of the included .yml files.
+
+If users have installation issues, they may try to install individually using the instructions below:
+
+* [astropy](https://www.astropy.org/) -- conda install -c anaconda astropy
+* [astroquery](https://astroquery.readthedocs.io/en/latest/) -- conda install c astropy astroquery
+* [matplotlib](https://matplotlib.org/) -- conda install -c conda-forge matplotlib
+* [pandas](https://pandas.pydata.org/) -- conda install -c anaconda pandas
+* [scipy](https://scipy.org/) -- conda install -c anaconda scipy
+* [numba](https://numba.pydata.org/) -- conda install -c conda-forge numba
+
+For full functionality, the following packages will also be needed (but MoonPy should be able to be run without them):
+* [exoplanet](https://docs.exoplanet.codes/en/latest/) -- conda install -c conda-forge exoplanet
+* [pandora](https://github.com/hippke/Pandora) -- pip install pandoramoon
+* [gefera](https://github.com/tagordon/gefera) -- pip install gefera 
+* [pymc3](https://docs.pymc.io/en/v3/) -- conda install -c conda-forge pymc3
+* ```pymc3_ext``` -- conda install -c conda-forge pymc3_ext
+* [arviz](https://arviz-devs.github.io/arviz/) -- conda install -c conda-forge arviz=0.11.0 **NOTE:** this version is important to avoid a breakdown with ```pymc3```.
+* [corner](https://github.com/dfm/corner.py) -- conda install -c astropy corner
+* [celerite2](https://celerite2.readthedocs.io/en/latest/) -- conda install -c conda-forge celerite2
+* ```aesara_theano_fallback``` -- conda install -c conda-forge aesara-theano-fallback
+* [george](https://george.readthedocs.io/en/latest/) -- conda install -c conda-forge george 
+* [untrendy](https://github.com/dfm/untrendy) -- pip install untrendy
+* [emcee](http://dfm.io/emcee/current/) -- conda install -c conda-forge emcee
+* [batman](https://www.cfa.harvard.edu/~lkreidberg/batman/) - pip install batman-package
+* [PyMultiNest](https://johannesbuchner.github.io/PyMultiNest/) - pip install pymultinest 
+* [UltraNest](https://johannesbuchner.github.io/UltraNest/index.html) -- pip install ultranest
+* [vespa](https://github.com/timothydmorton/VESPA) -- recommended to install via MoonPy installer
+* [isochrones](https://isochrones.readthedocs.io/en/latest/) -- recommended to install via MoonPy installer
+
+
+Package imports that are not standard and are not included in the moonpy package (i.e. the packages above) should all be imported within the relevant function that utilizes them. Therefore, you can hopefully boot up moonpy and use it even if you lack some of the above distributions.
