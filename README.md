@@ -104,9 +104,9 @@ Below you will find the details of some of these tools. At present the user will
 
 
 
-## QUICKSTART
+# QUICKSTART
 
-### Initialize a light curve object.
+## Initialize a light curve object.
 MoonPy is built around manipulating light curves as objects. To start, simply import moonpy:
 
 ```>>> from moonpy import *```
@@ -122,7 +122,7 @@ MoonPy will try to infer which telescope's data should be accessed based on the 
 It is also possible to use MoonPy tools on a light curve that the user supplies. In this case, the user will want to supply arrays for ```lc_times```, ```lc_fluxes```, and ```lc_errors``` when initializing a MoonpyLC object. In addition, the ```usr_dict``` containing important parameters for the planet can be included (keys are "period", "tau0", "impact", "duration_hours", "rprstar", "sma_AU", and "rp_rearth"). If these are not supplied, the user will be prompted to enter them.
 
 
-### Visualizing your data
+## Visualizing your data
 You can then plot the light curve with
 
 ```>>> lc_object.plot_lc()```
@@ -138,7 +138,7 @@ This produces quarter-by-quarter plots that may indicate the presence of periodi
 After you have run a planet or moon model (see below), you can generate an animation of that model (using median values from the posteriors) 
 
 
-### Data Manipulation
+## Data Manipulation
 
 To detrend a light curve, simply call
 
@@ -149,7 +149,7 @@ A variety of detrending methods are available ('cofiam', 'median_value', 'phasma
 Then you can ```plot_lc()``` again to see both the original data, the trend model, and the detrended light curve.
 
 
-### Accessing Planet Attributes 
+## Accessing Planet Attributes 
 
 You can see the full list of attributes associated with this object (values, arrays, and functions) by calling
 
@@ -178,7 +178,7 @@ returns
 ```{'K167b': <moonpy.MoonpyLC object at 0x7f80a5ff17f0>, 'K167c': <moonpy.MoonpyLC object at 0x7f80a3ab87c0>, 'K167d': <moonpy.MoonpyLC object at 0x7f80a3ab89a0>}```
 
 
-### Model Fitting 
+## Model Fitting 
 From here, you might opt to run a planet transit fit with ```Exoplanet```. Simply call
 
 ```>>> lc_object.run_planet_fit()```
@@ -212,7 +212,7 @@ or
 to retrieve dictionaries for the two models. (NB: PEW standards for "Posterior Equal Weights").
 
 
-### False Positive Vetting
+## False Positive Vetting
 
 There are a variety of astrophysical scenarios that can mimic a transiting planet. In particular, eclipsing binaries are a major source of false positives. Tim Morton's ```VESPA``` code was designed to compute a number of false positive probabilities.
 
@@ -224,16 +224,16 @@ Unfortunately, ```VESPA``` is now somewhat tricky to get installed and running, 
 ```MoonPy``` automatically generates the you will generate the necessary input files for this target. 
 
 
-### Data storage
+## Data storage
 
 Each target gets its own directory within the ```Central_Data``` directory, which by default is saved within the MoonPy directory. These directories are separated as Kepler, K2, and TESS. You can see the location of these files by calling ```lc_object.savepath```. VESPA runs will also be carried out and saved within this same directory, and it *should* be possible to run multiple VESPA fits at once as a result.
 
 
-### Up-To-Date Data
+## Up-To-Date Data
 New TESS data continues to arrive, so **MoonPy automatically identifies when new sectors come online and will download them if available**. The planet archives (NASA Exoplanet Archive, and ExoFOP) are also regularly updated, so MoonPy checks to see how old your databases are and gives the option (once per day) of downloading a new version. Be advised, this can sometimes take several minutes, so if you are looking at a well-known target, chances are the parameters are more-or-less fixed.
 
 
-### Handy Tools
+## Handy Tools
 MoonPy utilizes a variety of functions behind the scenes that exoplanet astronomers frequently need. So they might come in handy. Here are some of them (please sanity check the results before using them!):
 
 ```effective_radius(density, mass)```
