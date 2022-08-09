@@ -7,7 +7,7 @@ last update: 9 August 2022. Developed by [Alex Teachey](http://www.alexteachey.c
 
 This document will walk you through the basics of using the MoonPy code. 
 
-**MoonPy is designed to make downloading, plotting, detrending, and *fitting PLANET and MOON models to light curves a breeze.*** These are routine tasks, but often require a lot of coding to get going with. Sometimes you just want to take a quick look and have all the numbers at your fingertips -- enter MoonPy!
+**MoonPy is designed to make downloading, plotting, detrending, and *fitting EXOPLANET and EXOMOON models to light curves a breeze.*** These are routine tasks, but often require a lot of coding to get going with. Sometimes you just want to take a quick look and have all the numbers at your fingertips -- enter MoonPy!
 
 Of course, the easier a tool is to use right out of the gate, the more control you are handing over to the code / programmer. As such, *MoonPy is first and foremost an initial vetting tool.* Please keep this in mind! There is plenty of customization available to the user but bear in mind that the the defaults may not be appropriate for your particular problem. Moreover, results should always be sanity checked.
 
