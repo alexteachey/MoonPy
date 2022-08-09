@@ -735,10 +735,10 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 
 
-def animate_moon(self):
+def animate_moon(self, model='M'):
 
 	#try:
-	self.get_Pandora_posteriors(model='M')
+	self.get_Pandora_posteriors(model=model)
 	model_PEWdict = self.Pandora_moon_PEWdict
 	#except:
 	#	print('unable to get Pandora posteriors for model M.')
@@ -843,6 +843,7 @@ def animate_moon(self):
 	video_savepath = self.savepath+"/"+self.target+"_transit_video.mp4"
 	video.save(filename=video_savepath, fps=25, dpi=200)
 	print('video was saved at: '+video_savepath)
+	plt.close()
 
 
 
