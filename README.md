@@ -17,6 +17,8 @@ MoonPy simply would not exist if not for a number of incredibly powerful package
 
  [![DOI](https://zenodo.org/badge/186446465.svg)](https://zenodo.org/badge/latestdoi/186446465)
 
+A special shoutout is due to Hippke & Heller for introducing [the ```Pandora``` code](https://github.com/hippke/Pandora), as well as Gordon & Agol for introducing [the ```gefera``` code.](https://github.com/tagordon) These are the first publicly-available codes for modeling exomoon light curves, which is a big deal. The original aim of the ```MoonPy``` package was to make exomoon modeling widely accessible, and it is now possible to realize that objective thanks to their codes. MoonPy is providing a wrapper that makes it even easier to implement their already user-friendly codes. 
+
  
 
 Let's walk through the basics.
