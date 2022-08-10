@@ -93,6 +93,10 @@ def build_env_and_install(packagename, standard_environment_name):
 		print(' ')
 		print(' ')
 		print("LINUX USERS: first 'conda activate "+environment_name+"', then type 'python pathmaker.py to complete installation.'")
+		if packagename.lower() == 'vespa':
+			print("IMPORTANT: before using VESPA, you need to update some scripts with deprecated keywords.")
+			print("In the terminal, within the MoonPy directory and in the conda environment you've created for VESPA,")
+			print("type 'python vespa_script_updater.py'. Do this now please.")
 		print(' ')
 		print(' ')
 
