@@ -135,10 +135,12 @@ if sys.platform == 'darwin':
 	standard_vespa_env_name = 'vespa_for_mac'
 	#install_command = 'conda env create --file moonpy_env_macOS.yml'
 
+
 elif (sys.platform == 'linux') or (sys.platform == 'linux2'):
 	your_OS = 'linux'
+	#standard_moonpy_environment_name = 'moonpy_env_linux'
 	standard_moonpy_environment_name = 'moonpy_env_linux'
-	backup_moonpy_environment_name = 'moonpy_env_linux' 
+	backup_moonpy_environment_name = 'OLD_moonpy_env_linux' 
 	standard_vespa_env_name = 'vespa_for_linux'
 	#install_command = 'conda env create --file moonpy_env_linux.yml'
 
