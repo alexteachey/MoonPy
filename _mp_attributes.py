@@ -671,7 +671,7 @@ def get_databases(target_prefix, interactive=True):
 
 
 def get_Pandora_posteriors(self, model='M'):
-	chainsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target+'/'+model+'/chains'
+	chainsdir = moonpydir+'/ultranest_fits/pandora/'+self.target.lower()+'/'+model.lower()+'/chains'
 	pewfilename = chainsdir+'/equal_weighted_post.txt'
 	pewfile = open(pewfilename, mode='r')
 	colnames = pewfile.readline().split()
@@ -1276,9 +1276,9 @@ def moon_evidence(self, modelcode='Pandora'):
 	import json 
 
 	if modelcode.lower() == 'pandora':
-		modelsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target
+		modelsdir = moonpydir+'/ultranest_fits/pandora/'+self.target.lower()
 	elif modelcode.lower() == 'gefera':
-		modelsdir = moonpydir+'/UltraNest_fits/gefera/'+self.target
+		modelsdir = moonpydir+'/ultranest_fits/gefera/'+self.target.lower()
 	
 	moon_modeldir = modelsdir+'/M'
 	moon_chainsdir = moon_modeldir+'/chains'

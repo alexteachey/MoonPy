@@ -352,7 +352,7 @@ def prep_for_CNN(self, save_lc='y', window=6, cnn_len=493, exclude_neighbors='y'
 
 def make_UltraNest_outputdir(self, model, modelcode='Pandora'):
 		### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
-	outputdir = moonpydir+'/UltraNest_fits'
+	outputdir = moonpydir+'/ultranest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
 
@@ -360,11 +360,11 @@ def make_UltraNest_outputdir(self, model, modelcode='Pandora'):
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 
-	outputdir = outputdir+'/'+str(self.target)
+	outputdir = outputdir+'/'+str(self.target.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates target directory
 
-	outputdir = outputdir+'/'+str(model)
+	outputdir = outputdir+'/'+str(model.lower())
 	print('model: ', model)
 
 	if os.path.exists(outputdir) == False:
@@ -812,7 +812,7 @@ def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	
 
 	### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
-	outputdir = moonpydir+'/UltraNest_fits'
+	outputdir = moonpydir+'/ultranest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
 
@@ -820,11 +820,11 @@ def initialize_priors(self, modelcode, model='M', uninformative_priors=[]):
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 
-	outputdir = outputdir+'/'+str(self.target)
+	outputdir = outputdir+'/'+str(self.target.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates target directory
 
-	outputdir = outputdir+'/'+str(model)
+	outputdir = outputdir+'/'+str(model.lower())
 	print('model: ', model)
 
 	if os.path.exists(outputdir) == False:

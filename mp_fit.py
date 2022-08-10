@@ -437,7 +437,7 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	print('NUMBER OF DATA POINTS TO FIT: ', len(data_times))
 
 	### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
-	outputdir = moonpydir+'/UltraNest_fits'
+	outputdir = moonpydir+'/ultranest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
 
@@ -445,11 +445,11 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 
-	outputdir = outputdir+'/'+str(targetID)
+	outputdir = outputdir+'/'+str(targetID.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates target directory
 
-	outputdir = outputdir+'/'+str(model)
+	outputdir = outputdir+'/'+str(model.lower())
 	print('model: ', model)
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates model directory
