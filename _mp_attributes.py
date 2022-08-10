@@ -1297,6 +1297,8 @@ def moon_evidence(self, modelcode='Pandora'):
 	planet_logz = planet_results['logz']
 
 	bayes_difference = moon_logz - planet_logz 
+	print(' ')
+	print(' ')
 	print('moon model log(Z): ', moon_logz)
 	print('planet only model log(Z): ', planet_logz)
 	print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
