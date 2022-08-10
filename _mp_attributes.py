@@ -1314,11 +1314,14 @@ def moon_evidence(self, modelcode='Pandora'):
 		if (bayes_difference >= 1) and (bayes_difference < 3.2):
 			print('Kass & Raftery (1995) says moon model evidence "not worth more than a bare mention."')
 		elif (bayes_difference >= 3.2) and (bayes_difference < 10):
-			print('Kass & Raftery (1995) says "substantial evidence." for the moon model.')
+			print('Kass & Raftery (1995) says "substantial evidence" for the moon model.')
 		elif (bayes_difference >= 10) and (bayes_difference < 100):
-			print('Kass & Raftery (1995) says "strong evidence." for the moon model.')
+			print('Kass & Raftery (1995) says "strong evidence" for the moon model.')
 		elif bayes_difference >= 100:
 			print('Kass & Raftery (1995) says "decisive evidence" for the moon model.')
+
+	print(' ')
+	print('for an explanation, see: https://en.wikipedia.org/wiki/Bayes_factor ')
 	print(' ')
 
 	self.bayes_factor = bayes_difference
