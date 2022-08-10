@@ -1280,7 +1280,7 @@ def moon_evidence(self, modelcode='Pandora'):
 	elif modelcode.lower() == 'gefera':
 		modelsdir = moonpydir+'/ultranest_fits/gefera/'+self.target.lower()
 	
-	moon_modeldir = modelsdir+'/M'
+	moon_modeldir = modelsdir+'/m'
 	moon_chainsdir = moon_modeldir+'/chains'
 	moon_infodir = moon_modeldir+'/info'
 	moon_results_filename = moon_infodir+'/results.json'
@@ -1288,7 +1288,7 @@ def moon_evidence(self, modelcode='Pandora'):
 		moon_results = json.load(moon_resultsfile)
 	moon_logz = moon_results['logz']
 
-	planet_modeldir = modelsdir+'/P'
+	planet_modeldir = modelsdir+'/p'
 	planet_chainsdir = planet_modeldir+'/chains'
 	planet_infodir = planet_modeldir+'/info'
 	planet_results_filename = planet_infodir+'/results.json'
