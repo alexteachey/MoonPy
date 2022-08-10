@@ -19,7 +19,11 @@ from datetime import datetime
 import inspect
 from pathlib import Path 
 from scipy import signal
-
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
 
 #### BELOW ARE MOONPY PACKAGES
 #from moonpy import *
@@ -666,6 +670,30 @@ def get_databases(target_prefix, interactive=True):
 
 
 
+def get_Pandora_posteriors(self, model='M'):
+	chainsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target+'/'+model+'/chains'
+	pewfilename = chainsdir+'/equal_weighted_post.txt'
+	pewfile = open(pewfilename, mode='r')
+	colnames = pewfile.readline().split()
+	pewfile.close()
+	pew = np.genfromtxt(pewfilename, names=True)
+
+	pewdict = {}
+	for colname in colnames:
+		pewdict[colname] = pew[colname]
+
+	if model.lower() == 'm':
+		self.Pandora_moon_PEWdict = pewdict 
+	elif model.lower() == 'p':
+		self.Pandora_planet_PEWdict = pewdict 
+	elif model.lower() == 'm_eo':
+		self.Pandora_edgeon_moon_PEWdict = pewdict 
+
+
+
+
+
+
 
 
 
@@ -1240,6 +1268,141 @@ def get_isochrone_files():
 		subprocess.Popen('mv dartmouth.tgz '+homepath+'/.isochrones/', shell=True).wait()		
 
 	### pip install gdown==4.4.0
+
+
+
+
+def moon_evidence(self, modelcode='Pandora'):
+	import json 
+
+	if modelcode.lower() == 'pandora':
+		modelsdir = moonpydir+'/UltraNest_fits/Pandora/'+self.target
+	elif modelcode.lower() == 'gefera':
+		modelsdir = moonpydir+'/UltraNest_fits/gefera/'+self.target
+	
+	moon_modeldir = modelsdir+'/M'
+	moon_chainsdir = moon_modeldir+'/chains'
+	moon_infodir = moon_modeldir+'/info'
+	moon_results_filename = moon_infodir+'/results.json'
+	with open(moon_results_filename, 'r') as moon_resultsfile:
+		moon_results = json.load(moon_resultsfile)
+	moon_logz = moon_results['logz']
+
+	planet_modeldir = modelsdir+'/P'
+	planet_chainsdir = planet_modeldir+'/chains'
+	planet_infodir = planet_modeldir+'/info'
+	planet_results_filename = planet_infodir+'/results.json'
+	with open(planet_results_filename, 'r') as planet_resultsfile:
+		planet_results = json.load(planet_resultsfile)
+	planet_logz = planet_results['logz']
+
+	bayes_difference = moon_logz - planet_logz 
+	print('moon model log(Z): ', moon_logz)
+	print('planet only model log(Z): ', planet_logz)
+	print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
+
+	### recall from log rules that log(m) - log(n) = log(m/n)
+	### using the Kass & Rafferty framework:
+	##### a value of 1 - 3.2: "not worth more than a bare mention"
+	##### a value of 3.2 - 10: "substantial evidence"
+	###### a value between 10 - 100: "strong"
+	###### a value > 100: "decisive"
+
+	if bayes_difference < 1:
+		print('Evidence supports the planet-only model.')
+	else:
+		if (bayes_difference >= 1) and (bayes_difference < 3.2):
+			print('Kass & Raftery (1995) says moon model evidence "not worth more than a bare mention."')
+		elif (bayes_difference >= 3.2) and (bayes_difference < 10):
+			print('Kass & Raftery (1995) says "substantial evidence." for the moon model.')
+		elif (bayes_difference >= 10) and (bayes_difference < 100):
+			print('Kass & Raftery (1995) says "strong evidence." for the moon model.')
+		elif bayes_difference >= 100:
+			print('Kass & Raftery (1995) says "decisive evidence" for the moon model.')
+	print(' ')
+
+	self.bayes_factor = bayes_difference
+
+	return bayes_difference
+
+
+def pandora_evidence(self):
+	return self.moon_evidence(modelcode='Pandora')
+
+def gefera_evidence(self):
+	return self.moon_evidence(modelcode='gefera')
+
+
+
+
+
+
+def pandora_model_from_NEA(self):
+	##### generate a model from the NASA Exoplanet Archive
+	#### other fixed parameters
+
+	#### conversion 
+	#u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff, Logg=self.st_logg, MH=self.st_met)
+	#u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff, Logg=self.st_logg)
+	u1, u2 = Claret_best_LDCmatch(Teff=self.st_teff)
+	q1, q2 = ld_invert(u1, u2)
+
+	print('u1, u2 (from Claret) = ', u1, u2)
+	print('converted to q1, q2 = ', q1, q2)
+	#medq1, medq2 = np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2'])
+	#medu1, medu2 = ld_convert(medq1, medq2) 
+
+	#### NOW GENERATE THE MODEL! 	
+	NEAparams = pandora.model_params()
+	
+	NEAparams.R_star = self.st_rad * R_sun.value 
+	NEAparams.per_bary = self.pl_orbper 
+	NEAparams.a_bary = (self.pl_orbsmax * au.value) / (self.st_rad * R_sun.value) # a/Rstar
+	NEAparams.r_planet = (self.pl_rade * R_earth.value) / (self.st_rad * R_sun.value) #Rp/Rstar
+	NEAparams.b_bary = self.pl_imppar
+	#NEAparams.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset']) ### this is not in NEA 
+	NEAparams.t0_bary_offset = 0 #### have to assume that the t0 value is accurate!
+	NEAparams.M_planet = self.pl_bmasse * M_earth.value # kg
+	if np.isfinite(self.pl_orbeccen) and (np.ma.is_masked(self.pl_orbeccen) == False):
+		NEAparams.ecc_bary = self.pl_orbeccen
+	else:
+		NEAparams.ecc_bary = 0.
+		print('WARNING: eccentricity may not be provided by the NASA Exoplanet Archive. Setting to zero.')
+	if np.isfinite(self.pl_orbtper) and (np.ma.is_masked(self.pl_orbtper) == False):
+		NEAparams.w_bary = self.pl_orbtper
+	else:
+		NEAparams.w_bary = 0.
+		print('WARNING: argument of periastron may not be provided by the NASA Exoplanet Archive. Setting to zero.')
+
+	#### moon parameters
+	NEAparams.r_moon = 1e-8 #### PARAM #7 -- satellite radius divided by stellar radius
+	NEAparams.per_moon = 30 #### PARAM #8 -- need to define above
+	NEAparams.tau_moon = 0 #### PARAM #9-- must be between zero and one -- I think this is the phase...
+	NEAparams.Omega_moon = 0 #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+	NEAparams.i_moon = 0 #### PARAM #11 -- between 0 and 180 degrees
+	NEAparams.M_moon = 1e-8 
+	NEAparams.u1 = float(u1) #### PARAM #13 need to define above!
+	NEAparams.u2 = float(u2) #### PARAM #14 need to define above!
+	NEAparams.t0_bary = self.tau0 
+	NEAparams.epochs = len(self.taus) #### needs to be defined above!
+	NEAparams.epoch_duration = 3 #### need to be defined above
+	NEAparams.cadences_per_day = 48 
+	#params.epoch_distance = Pplan 
+	NEAparams.epoch_distance = self.pl_orbper
+	NEAparams.supersampling_factor = 1
+	NEAparams.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
+	NEAparams.hill_sphere_threshold = 1.2 #### what does this mean?
+
+	NEApdtime = pandora.time(NEAparams).grid()
+	NEApdmodel = pandora.moon_model(NEAparams)
+
+	total_flux, planet_flux, moon_flux = NEApdmodel.light_curve(NEApdtime)
+
+	self.pandora_NEA_times = NEApdtime 
+	self.pandora_NEA_fluxes = total_flux 
+
+	return NEApdtime, total_flux
+
 
 
 

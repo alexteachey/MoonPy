@@ -28,7 +28,7 @@ from cofiam import max_order
 from pyluna import *
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
-from _mp_attributes import get_databases, show_function_inputs
+from _mp_attributes import get_databases, show_function_inputs, get_Pandora_posteriors
 from mp_logo import print_logo_big, print_logo_small 
 #from pathmaker import make_pathfile
 
@@ -144,9 +144,9 @@ if os.path.exists(central_data_dir+'/K2_lightcurves') == False:
 
 class MoonpyLC(object):
 
-	from _mp_visuals import plot_lc, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector, animate_FFI
-	from _mp_attributes import reduce_resolution, print_attributes, gen_PRF_plots, get_TIC_neighbors, gen_TESS_starfield, gen_TESS_PRF_starfield, compute_TIC_fluxes, make_NEA_dict, make_LUNA_dict, make_Pandora_dict, make_vespa_starini, make_vespa_fppini, make_vespa_photfile, run_vespa, find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs, get_future_transits
-	from _mp_manipulation import fit, prep_for_CNN, initialize_priors, detrend, gen_batman
+	from _mp_visuals import plot_lc, animate_moon, fold, plot_corner, plot_bestmodel, examine_TPF, genLS, correlated_noise_detector, animate_FFI
+	from _mp_attributes import get_Pandora_posteriors, moon_evidence, pandora_evidence, gefera_evidence, pandora_model_from_NEA, reduce_resolution, print_attributes, gen_PRF_plots, get_TIC_neighbors, gen_TESS_starfield, gen_TESS_PRF_starfield, compute_TIC_fluxes, make_NEA_dict, make_LUNA_dict, make_Pandora_dict, make_vespa_starini, make_vespa_fppini, make_vespa_photfile, run_vespa, find_transit_quarters, find_aliases, get_coords, find_planet_row, get_properties, get_databases, find_taus, mystery_solver, find_neighbors, find_TTVs, get_future_transits
+	from _mp_manipulation import fit, prep_for_ultranest_fit, make_UltraNest_outputdir, prep_for_CNN, initialize_priors, detrend, gen_batman
 	from _mp_planet_fitter import run_planet_fit
 
 
@@ -154,7 +154,7 @@ class MoonpyLC(object):
 	### when you initialize it, you'll either give it the times, fluxes, and errors, OR
 	### you'll provide a targetID and telescope, which will allow you to download the dataset!
 
-	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, lc_sectors=None, usr_dict=None, mask_multiple=10, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', ffi_source='QLP', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', interactive=True, clobber=None):
+	def __init__(self, targetID=None, target_type=None, lc_times=None, lc_fluxes=None, lc_errors=None, lc_flags=None, lc_quarters=None, lc_sectors=None, usr_dict=None, mask_multiple=3, quarters='all', telescope=None, RA=None, Dec=None, coord_format='degrees', search_radius=5, lc_format='pdc', remove_flagged='y', short_cadence=False, ffi='n', ffi_source='QLP', save_lc='y', load_lc='n', download='y', is_neighbor='n', attributes_only='n', interactive=True, clobber=None):
 		
 		global first_kepler, first_k2, first_tess, first_koi			
 		global kepler_NEA_data, kepler_NEA_columns, kepler_exofop_data, kepler_exofop_columns 
@@ -232,7 +232,7 @@ class MoonpyLC(object):
 				try:
 					self.rprstar = usr_dict['rprstar']
 				except:
-					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
 
 				try:
 					self.sma_AU = usr_dict['sma_AU']
@@ -290,7 +290,7 @@ class MoonpyLC(object):
 				try:
 					self.rprstar = usr_dict['rprstar']
 				except:
-					elf.rprstar = float(input('Enter the Rp/Rstar: '))
+					self.rprstar = float(input('Enter the Rp/Rstar: '))
 
 				try:
 					self.sma_AU = usr_dict['sma_AU']
@@ -347,6 +347,11 @@ class MoonpyLC(object):
 			savepath = functimer(k2_URL_generator(find_EPIC_alias(targetID))[2])
 		elif self.telescope.lower() == 'tess':
 			savepath = central_data_dir+'/TESS_lightcurves/'+targetID
+
+		else:
+			if os.path.exists(central_data_dir+'/USER_lightcurves') == False:
+				os.system('mkdir '+central_data_dir+'/USER_lightcurves')
+			savepath = central_data_dir+'/USER_lightcurves/'+targetID
 
 		savepath = nospaces(savepath)
 

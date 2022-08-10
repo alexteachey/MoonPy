@@ -9,6 +9,18 @@ import time
 import os
 import sys
 from mp_batman import run_batman
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
+
+try:
+	import gefera as gf 
+except:
+	print("could not import gefera. You can 'pip install gefera' to rectify this.")
+	print("see: https://github.com/tagordon/gefera")
+
 from scipy.stats import norm 
 try:
 	import pyluna
@@ -20,6 +32,8 @@ try:
 except:
 	print('Unable to load run_pandora')
 
+moonpydir = os.path.realpath(__file__)
+moonpydir = moonpydir[:moonpydir.find('/mp_fit.py')]
 
 
 ### MULTINEST / ULTRANEST CUBE TRANSFORMATIONS
@@ -50,74 +64,6 @@ def transform_gauss(x, mu, sigma):
 	#### redundant with transform_normal above
 	gaussian = norm(loc=mu, scale=sigma)
 	return gaussian.ppf(x)
-
-
-
-
-
-
-
-#### ULTRANEST FUNCTIONS FOR USE WITH PANDORA 
-def ultn_transform(cube):
-	#### this is the equivalent of pymn_prior, I believe.
-	transformed_parameters = np.empty_like(cube)
-
-	##### the loop below uses GLOBALS
-	for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
-		if parprior == 'uniform':
-			transformed_parameters[pidx] = transform_uniform(cube[pidx], partuple[0], partuple[1])
-		elif parprior == 'loguniform':
-			transformed_parameters[pidx] = transform_loguniform(cube[pidx], partuple[0], partuple[1])
-		elif (parprior == 'normal') or (parprior == 'gaussian'):
-			transformed_parameters[pidx] = transform_normal(cube[pidx], partuple[0], partuple[1])
-		elif parprior == 'beta':
-			transformed_parameters[pidx] = transform_beta(cube[pidx], partuple[0], partuple[1])
-		elif parprior == 'truncnorm':
-			transformed_parameters[pidx] = transform_truncated_normal(cube[pidx], partuple[0], partuple[1], partuple[2], partuple[3])
-
-	return transformed_parameters 
-
-
-def ultn_loglike_Pandora(cube):
-
-	ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
-	ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
-
-	for pidx, parlab in enumerate(un_variable_labels):
-		ultn_var_dict[parlab] = cube[pidx]
-
-	for pidx, parlab in enumerate(un_fixed_labels):
-		ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
-
-	"""
-	print('variable dictionary: ')
-	for key in ultn_var_dict.keys():
-		print(key, ultn_var_dict[key])
-	print(' ')
-	print('fixed dictionary: ')
-	for key in ultn_fixed_dict.keys():
-		print(key, ultn_fixed_dict[key])
-	print('')
-	print('')
-	"""
-
-	### now you should be able to run_LUNA(param_dict)
-	#LUNA_times, LUNA_fluxes = pyluna.run_LUNA(data_times, **pymn_param_dict, add_noise='n', show_plots='n')
-	Pandora_total_fluxes, Pandora_planet_fluxes, Pandora_moon_fluxes = run_Pandora(all_times=np.array(data_times), nepochs=nepochs, **ultn_var_dict, **ultn_fixed_dict, model=un_model, input_ang_unit='degrees', add_noise='n', show_plots='n')
-
-	#loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - np.array(data_fluxes)[model_idxs]) / np.array(data_errors)[model_idxs])**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
-	loglikelihood = np.nansum(-0.5 * ((Pandora_total_fluxes - np.array(data_fluxes)) / np.array(data_errors))**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
-
-
-	return loglikelihood 
-
-
-
-
-
-
-
-
 
 
 
@@ -177,10 +123,6 @@ def pymn_loglike_batman(cube):
 
 
 
-
-
-
-
 #### EMCEE FUNCTIONS
 def emcee_lnprior(params):
 
@@ -202,10 +144,6 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 	emcee_var_param_dict = {}
 	emcee_fixed_param_dict = {}
 
-	"""
-	for pidx, parlab in enumerate(mc_param_labels):
-		emcee_param_dict[parlab] = params[pidx]
-	"""
 	try:
 		for pidx, parlab in enumerate(mc_variable_labels):
 			emcee_var_param_dict[parlab] = params[pidx]
@@ -224,8 +162,6 @@ def emcee_lnlike_LUNA(params, data_times, data_fluxes, data_errors):
 
 
 	loglikelihood = np.nansum(-0.5 * ((LUNA_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
-	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
-		#raise Exception('emcee_lnlike_LUNA loglikelihood value is invalid."')
 
 	return loglikelihood 
 
@@ -234,10 +170,7 @@ def emcee_lnlike_batman(params, data_times, data_fluxes, data_errors):
 	emcee_param_dict = {} ### initialize it
 	emcee_var_param_dict = {}
 	emcee_fixed_param_dict = {}
-	"""
-	for pidx, parlab in enumerate(mn_param_labels):
-		emcee_param_dict[parlab] = params[pidx]
-	"""
+
 	for pidx, parlab in enumerate(mc_variable_labels):
 		emcee_var_param_dict[parlab] = params[pidx]
 
@@ -247,9 +180,7 @@ def emcee_lnlike_batman(params, data_times, data_fluxes, data_errors):
 	batman_times, batman_fluxes = run_batman(data_times, **emcee_var_param_dict, **emcee_fixed_param_dict, model=mc_model, add_noise='n', show_plots='n')
 
 	loglikelihood = np.nansum(-0.5 * ((batman_fluxes - data_fluxes) / data_errors)**2) ### SHOULD MAKE THIS BETTER, to super-penalize running out of bounds!
-	#if (np.isfinite(loglikelihood) == False) or type(loglikelihood) != float:
-	#	print("loglikelihood = ", loglikelihood)
-	#	raise Exception('emcee_lnlike_batman loglikelihood value is invalid."')
+
 	return loglikelihood 
 
 
@@ -269,11 +200,6 @@ def emcee_lnprob_batman(params, data_times, data_fluxes, data_errors):
 	if not np.isfinite(lp):
 		return -np.inf 
 	return lp + emcee_lnlike_batman(params, data_times, data_fluxes, data_errors)
-
-
-
-
-
 
 
 
@@ -318,7 +244,6 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	mn_param_dict = param_dict
 	mn_model = model
 
-	#for parlab, parprior, partup in zip(param_labels, param_prior_forms, param_limit_tuple):
 	for parlab in param_dict.keys():
 		parprior, partup = param_dict[parlab][0], param_dict[parlab][1]
 		mn_param_labels.append(parlab)
@@ -340,10 +265,10 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		data_fluxes.append(f)
 		data_errors.append(e)
 
-	outputdir = 'MultiNest_fits'
+	outputdir = moonpydir+'/MultiNest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create MultiNest_fits directory
-	outputdir = outputdir+'/'+str(modelcode)
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
 	outputdir = outputdir+'/'+str(targetID)
@@ -357,9 +282,9 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		os.system('mkdir '+outputdir) ### creates chains directory
 
 
-	if modelcode == 'LUNA':
+	if modelcode.lower() == 'luna':
 		pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-	elif modelcode == "batman":
+	elif modelcode.lower() == "batman":
 		pymultinest.run(LogLikelihood=pymn_loglike_batman, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
 	
 	json.dump(param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
@@ -369,8 +294,6 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 
-
-#def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", nparams=14, modelcode='Pandora', show_plot='y'):
 def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", modelcode='Pandora', resume='resume', show_plot='y'):	
 	import ultranest 
 	import ultranest.stepsampler 
@@ -438,12 +361,6 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			un_variable_prior_forms.append(parprior)
 			un_variable_limit_tuple.append(partup)
 		
-		#if parlab == 'tau':
-		#	wrapped_params.append(True)
-		#else:
-		#	wrapped_params.append(False)
-
-
 
 	for t,f,e in zip(times, fluxes, errors):
 		data_times.append(t)
@@ -452,28 +369,46 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 	data_times, data_fluxes, data_errors = np.array(data_times), np.array(data_fluxes), np.array(data_errors)
 
 
+	print('param_dict.keys() = ', param_dict.keys())
+
 	#### reduce the times to just the ones in the vicinty of the transits.
 	all_taus = []
-	if param_dict['t0_bary'][0] == 'fixed':
-		first_tau = float(param_dict['t0_bary'][1])
-	else:
-		first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
-	per_bary = float(param_dict['per_bary'][1][0])
 
-	if param_dict['Tdur_days'][0] == 'fixed':
-		Tdur_days = float(param_dict['Tdur_days'][1]) 
-	else:
-		Tdur_days = float(param_dict['Tdur_days'][1][0])
+	if modelcode.lower() == 'pandora':
+		if param_dict['t0_bary'][0] == 'fixed':
+			first_tau = float(param_dict['t0_bary'][1])
+		else:
+			first_tau = float(param_dict['t0_bary'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+		per_bary = float(param_dict['per_bary'][1][0])
 
-	while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
-		first_tau = first_tau - per_bary 
-	all_taus.append(first_tau)
+		while np.nanmin(data_times) + per_bary < first_tau: ### implies first_tau is more than one period from the start of the baseline
+			first_tau = first_tau - per_bary 
+		all_taus.append(first_tau)
 
-	while all_taus[-1] < np.nanmax(data_times):
-		all_taus.append(all_taus[-1] + per_bary)
+		while all_taus[-1] < np.nanmax(data_times):
+			all_taus.append(all_taus[-1] + per_bary)	
+			
+
+
+	elif modelcode.lower() == 'gefera':
+		if param_dict['tp'][0] == 'fixed':
+			first_tau = float(param_dict['tp'][1])
+		else:
+			first_tau = float(param_dict['tp'][1][0]) ### list includes the prior type, the expected answer and the sigma in all cases
+		pp = float(param_dict['pp'][1][0])
+
+		while np.nanmin(data_times) + pp < first_tau: ### implies first_tau is more than one period from the start of the baseline
+			first_tau = first_tau - pp 
+		all_taus.append(first_tau)
+
+		while all_taus[-1] < np.nanmax(data_times):
+			all_taus.append(all_taus[-1] + pp)
+
+
 
 	nepochs = 0
-	epoch_duration = 20 * Tdur_days 
+	epoch_duration = 5 #### days
+
 	for ntau, tau in enumerate(all_taus):
 		#### grab the indices within the desired distance.
 		tau_idxs = np.where((data_times > tau - 0.5*epoch_duration) & (data_times <= tau + 0.5*epoch_duration))[0]
@@ -490,38 +425,171 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			model_idxs = np.concatenate((model_idxs, tau_idxs))
 			model_times = np.concatenate((model_times, tau_times))	
 
+
+
+	#### THESE ARE THE DATA YOU ARE GOING TO MODEL!!!
 	data_times, data_fluxes, data_errors = np.array(data_times)[model_idxs], np.array(data_fluxes)[model_idxs], np.array(data_errors)[model_idxs]
 
-	#data_times, data_fluxes, data_errors = np.array(data_times), np.array(data_fluxes), np.array(data_errors)
+	plt.scatter(data_times, data_fluxes, s=20, facecolor='DodgerBlue', edgecolor='k')
+	plt.title('Data to be fit with '+str(modelcode)+' and UltraNest')
+	plt.show()
 
-	outputdir = 'UltraNest_fits'
+	print('NUMBER OF DATA POINTS TO FIT: ', len(data_times))
+
+	### MAKE THE OUTPUT DIRECTORY IF IT DOESN'T ALREADY EXIST
+	outputdir = moonpydir+'/UltraNest_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### create UltraNest_fits directory
-	outputdir = outputdir+'/'+str(modelcode)
+
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates modelcode directory
+
 	outputdir = outputdir+'/'+str(targetID)
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates target directory
-	outputdir = outputdir+'/'+str(un_model)
+
+	outputdir = outputdir+'/'+str(model)
+	print('model: ', model)
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir) ### creates model directory
-	#outputdir = outputdir+'/chains'
-	#if os.path.exists(outputdir) == False:
-	#	os.system('mkdir '+outputdir) ### creates chains directory
+
+	print('outputdir: ', outputdir)
 
 
-	if modelcode == 'Pandora':
 
-		#### MODEL CODE
-		#pymultinest.run(LogLikelihood=pymn_loglike_LUNA, Prior=pymn_prior, n_dims=nparams, n_live_points=nlive, outputfiles_basename=outputdir+'/'+str(targetID), resume=True, verbose=True)
-		
+
+
+	if modelcode.lower() == 'pandora':
+
+		#### DEFINE HERE FOR THE SAKE OF AVOIDING DICTIONARY CALLS -- ALTHOUGH THIS DOESN'T SEEM TO BE SAVING MUCH TIME.
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = [], [], [], [], []
+
+		#prior_ranges, prior_mins = [], []
+		for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
+			if (parprior == 'uniform') or (parprior == 'loguniform'):
+				prior_mins.append(partuple[0])
+				prior_maxes.append(partuple[1])
+				prior_mus.append(None)
+				prior_sigmas.append(None)
+				prior_types.append(parprior)
+
+			elif (parprior == 'normal') or (parprior == 'gaussian'):
+				prior_mins.append(None)
+				prior_maxes.append(None)
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+			elif parprior == 'truncnormal':
+				prior_mins.append(partuple[2])
+				prior_maxes.append(partuple[3])
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = np.array(prior_mins), np.array(prior_maxes), np.array(prior_mus), np.array(prior_sigmas), np.array(prior_types)
+
+
+		def ultn_transform(cube):
+			p = cube.copy()
+
+			for pidx in np.arange(0,len(prior_types),1):
+				if prior_types[pidx] == 'uniform':
+					p[pidx] = transform_uniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif prior_types[pidx] == 'loguniform':
+					p[pidx] = transform_loguniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif (prior_types[pidx] == 'normal') or (prior_types[pidx] == 'gaussian'):
+					p[pidx] = transform_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx]) 
+				elif (prior_types[pidx] == 'truncnorm'):
+					p[pidx] = transform_truncated_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+
+			return p
+
+		def ultn_loglike_Pandora(cube):
+
+			#### THIS FUNCTION GETS CALLED REPEATEDLY! SO
+			##### YOU WALK AROUND IN q1,q2 but model in u1,u2 at every step.
+
+			#ultn_dict = {} #### trying this -- August 5th 2022
+			ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
+			ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
+
+			for pidx, parlab in enumerate(un_variable_labels):
+				ultn_var_dict[parlab] = cube[pidx]
+
+			for pidx, parlab in enumerate(un_fixed_labels):
+				ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+			#### trying this -- August 5th 2022
+			"""
+			for pidx, parlab in enumerate(un_param_labels):
+				if parlab in un_variable_labels:
+					ultn_dict[parlab] = cube[pidx]
+
+				elif parlab in un_fixed_labels:
+					ultn_dict[parlab] = un_param_dict[parlab][1]
+			"""
+
+
+			q1, q2 = ultn_var_dict['q1'], ultn_var_dict['q2']
+			u1, u2 = ld_convert(q1, q2)
+			
+			#### add these to the dictionary
+			ultn_var_dict['u1'] = u1
+			ultn_var_dict['u2'] = u2 
+			#### remove these from the dictionary 
+			ultn_var_dict.pop('q1', None)
+			ultn_var_dict.pop('q2', None) 
+			
+			
+			##### ORIGINAL !!!! 
+			flux_trial_planet, flux_trial_moon, flux_trial_total, xp_trial, yp_trial, xm_trial, ym_trial = pandora.pandora(**ultn_var_dict, **ultn_fixed_dict, 
+		   		epoch_distance = ultn_var_dict['per_bary'],
+		   		supersampling_factor = 1, 
+		   		occult_small_threshold = 0.01, 
+		   		hill_sphere_threshold=1.0,
+		   		numerical_grid=25,
+		   		time=data_times, 
+		   		)
+
+			#### trying this instead
+			"""
+			flux_trial_planet, flux_trial_moon, flux_trial_total, xp_trial, yp_trial, xm_trial, ym_trial = pandora.pandora(**ultn_dict, 
+		   		epoch_distance = ultn_var_dict['per_bary'],
+		   		supersampling_factor = 1, 
+		   		occult_small_threshold = 0.01, 
+		   		hill_sphere_threshold=1.0,
+		   		numerical_grid=25,
+		   		time=data_times, 
+		   		)
+		   	"""
+
+			loglike = -0.5 * np.nansum(((flux_trial_total - data_fluxes) / data_errors)**2)
+
+			return loglike
+
+
+		print(' ')
+		print('X X X X X')
+		print('Now running PANDORA (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
+		print('see: https://github.com/hippke/Pandora')
+		print(' ')
+		print(' fitting with ULTRANEST (Johannes Buchner)	https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+		print('see: https://johannesbuchner.github.io/UltraNest/index.html')
+		print(' ')
+		try:
+			print('Please be sure to cite these works. 謝謝你。')
+		except:
+			print('Please be sure to cite these works.')
+		print('X X X X X')
+		print(' ')
+
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
 		try:
-			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')			
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume', vectorized=True)	
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')										
 			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
-			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
-			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)
 			result_planet_moon = sampler.run(min_num_live_points=nlive)
 
 
@@ -530,26 +598,9 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			os.system('rm -rf '+outputdir)
 			os.system('mkdir '+outputdir) ### creates model directory
 			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
-			sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
-			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
-			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
-			#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)				
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')		
 			result_planet_moon = sampler.run(min_num_live_points=nlive)
-
-			"""
-			except AssertionError:
-				#### remove the outputdir, and make it again
-				os.system('rm -rf '+outputdir)
-				os.system('mkdir '+outputdir) ### creates model directory
-				print('REMOVED THE RECENT CHAIN. STARTING FROM SCRATCH.')
-				sampler = ReactiveNestedSampler(un_param_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
-				sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
-				#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, update_interval_iter_fraction=0.4, max_num_improvement_loops=3)
-				#result_planet_moon = sampler.run(min_num_live_points=nlive, dlogz=0.5, min_ess=400, max_num_improvement_loops=3)				
-				result_planet_moon = sampler.run(min_num_live_points=nlive)
-			"""
-
-
 		
 		try:
 			sampler.print_results()
@@ -558,34 +609,180 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			print(' ')
 			print("WARNING: could not call sampler.print_results().")
 			time.sleep(3)
+		
+
+
+
+
+
+	elif modelcode.lower() == 'gefera':
+
+		#### DEFINE HERE FOR THE SAKE OF AVOIDING DICTIONARY CALLS -- ALTHOUGH THIS DOESN'T SEEM TO BE SAVING MUCH TIME.
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = [], [], [], [], []
+
+		#prior_ranges, prior_mins = [], []
+		for pidx, parlabs, parprior, partuple in zip(np.arange(0,len(un_variable_prior_forms),1), un_variable_labels, un_variable_prior_forms, un_variable_limit_tuple):
+			if (parprior == 'uniform') or (parprior == 'loguniform'):
+				prior_mins.append(partuple[0])
+				prior_maxes.append(partuple[1])
+				prior_mus.append(None)
+				prior_sigmas.append(None)
+				prior_types.append(parprior)
+
+			elif (parprior == 'normal') or (parprior == 'gaussian'):
+				prior_mins.append(None)
+				prior_maxes.append(None)
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+			elif parprior == 'truncnormal':
+				prior_mins.append(partuple[2])
+				prior_maxes.append(partuple[3])
+				prior_mus.append(partuple[0])
+				prior_sigmas.append(partuple[1])
+				prior_types.append(parprior)
+
+		prior_mins, prior_maxes, prior_mus, prior_sigmas, prior_types = np.array(prior_mins), np.array(prior_maxes), np.array(prior_mus), np.array(prior_sigmas), np.array(prior_types)
+
+
+		def ultn_transform(cube):
+			p = cube.copy()
+
+			for pidx in np.arange(0,len(prior_types),1):
+				if prior_types[pidx] == 'uniform':
+					p[pidx] = transform_uniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif prior_types[pidx] == 'loguniform':
+					p[pidx] = transform_loguniform(x=cube[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+				elif (prior_types[pidx] == 'normal') or (prior_types[pidx] == 'gaussian'):
+					p[pidx] = transform_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx]) 
+				elif (prior_types[pidx] == 'truncnorm'):
+					p[pidx] = transform_truncated_normal(x=cube[pidx], mu=prior_mus[pidx], sigma=prior_sigmas[pidx], lower=prior_mins[pidx], upper=prior_maxes[pidx])
+
+			return p
+
+		def ultn_loglike_gefera(cube):
+
+			#### THIS FUNCTION GETS CALLED REPEATEDLY! SO
+			##### YOU WALK AROUND IN q1,q2 but model in u1,u2 at every step.
+
+			ultn_dict = {} #### trying this -- August 5th, 2022 
+			ultn_var_dict = {} #### dictionary of variables, will take the cube as the argument.
+			ultn_fixed_dict = {} ### dictionary of fixed variables, will stay constant for each run.
+
+			for pidx, parlab in enumerate(un_variable_labels):
+				ultn_var_dict[parlab] = cube[pidx]
+
+			for pidx, parlab in enumerate(un_fixed_labels):
+				ultn_fixed_dict[parlab] = un_param_dict[parlab][1] ### grabs the fixed value!
+
+			#### trying this -- August 5th 2022
+			for pidx, parlab in enumerate(un_param_labels):
+				if parlab in un_variable_labels:
+					ultn_dict[parlab] = ultn_var_dict[parlab]
+
+				elif parlab in un_fixed_labels:
+					ultn_dict[parlab] = ultn_fixed_dict[parlab]
+
+
+
+			#planet_orbit = gf.orbits.PrimaryOrbit(ap, tp, ep, pp, wp, ip)
+			planet_orbit = gf.orbits.PrimaryOrbit(a=ultn_dict['ap'], t=ultn_dict['tp'], e=ultn_dict['ep'], p=ultn_dict['pp'], w=ultn_dict['wp'], i=ultn_dict['ip'])
+			moon_orbit = gf.orbits.SatelliteOrbit(a=ultn_dict['am'], t=ultn_dict['tm'], e=ultn_dict['em'], p=ultn_dict['pm'], o=ultn_dict['om'], w=ultn_dict['wm'], i=ultn_dict['im'], m=ultn_dict['mm'])
+			sys = gf.systems.HierarchicalSystem(planet_orbit, moon_orbit)
+			
+			#gefera_flux = sys.lightcurve(t=data_times, u1=ultn_dict['u1'], u2=ultn_dict['u2'], r1=ultn_dict['rp'], r2=ultn_dict['rm']) + 1
+			
+			#loglike = -0.5 * np.nansum(((gefera_flux - data_fluxes) / data_errors)**2) ### original
+			loglike = sys.loglike(y=data_fluxes-1, t=data_times, u1=ultn_dict['u1'], u2=ultn_dict['u2'], r1=ultn_dict['rp'], r2=ultn_dict['rm'], sigma=data_errors)
+			return loglike
+
+
+
+
+		print(' ')
+		print('X X X X X')
+		print('Now running GEFERA (Gordon & Agol 2022) https://ui.adsabs.harvard.edu/abs/2022arXiv220706024G/abstract')
+		print('see: https://github.com/tagordon/gefera')
+		print(' ')
+		print(' fitting with ULTRANEST (Johannes Buchner)	https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+		print('see: https://johannesbuchner.github.io/UltraNest/index.html')
+		print(' ')
 		try:
-			sampler.plot()
+			print('Please be sure to cite these works. 謝謝你。')
+		except:
+			print('Please be sure to cite these works.')
+		print('X X X X X')
+		print(' ')
+
+		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
+		try:
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume', vectorized=True)	
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_gefera, transform=ultn_transform, log_dir=outputdir, resume='resume')										
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
+
+
+		except AssertionError:
+			#try:
+			os.system('rm -rf '+outputdir)
+			os.system('mkdir '+outputdir) ### creates model directory
+			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_gefera, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')		
+			result_planet_moon = sampler.run(min_num_live_points=nlive)
+		
+		try:
+			sampler.print_results()
 		except:
 			traceback.print_exc()
 			print(' ')
-			print('WARNING: could not call sampler.plot().')
+			print("WARNING: could not call sampler.print_results().")
 			time.sleep(3)
-
-			pew = np.genfromtxt(os.getcwd()+'/'+outputdir+'/chains/equal_weighted_post.txt')
-			pewtxt = open(os.getcwd()+'/'+outputdir+'/chains/equal_weighted_post.txt', mode='r')
-			firstline = pewtxt.readline()
-			cols = firstline.split()
-			pewtxt.close()
-			pewdict = {}
-			for ncol,col in enumerate(cols):
-				pewdict[col] = pew.T[ncol][1:]
-				n,bins,edges = plt.hist(pewdict[col], bins=20, facecolor='DodgerBlue', edgecolor='k')
-				plt.xlabel(col)
-				plt.show()
-
-		sampler.plot_trace()
-
-
-	json.dump(un_param_labels, open(outputdir+'/'+str(targetID)+"_params.json", 'w')) ### save parameter names
+		
 
 
 
+	cornerplot(result_planet_moon)
+	plt.savefig(outputdir+'/plots/'+str(targetID)+'_model'+str(model)+'_cornerplot.png', dpi=300)
+	plt.show()
 
+	try:
+		sampler.plot()
+	except:
+		traceback.print_exc()
+		print(' ')
+		print('WARNING: could not call sampler.plot().')
+		time.sleep(3)
+
+	pew = np.genfromtxt(outputdir+'/chains/equal_weighted_post.txt')
+	pewtxt = open(outputdir+'/chains/equal_weighted_post.txt', mode='r')
+
+	firstline = pewtxt.readline()
+	cols = firstline.split()
+	pewtxt.close()
+	pewdict = {}
+	for ncol,col in enumerate(cols):
+		pewdict[col] = pew.T[ncol][1:]
+		n,bins,edges = plt.hist(pewdict[col], bins=20, facecolor='DodgerBlue', edgecolor='k')
+		plt.xlabel(col)
+		plt.show()
+
+	sampler.plot_trace()
+
+	json.dump(un_param_labels, open(outputdir+'/'+str(targetID)+"_model"+str(model)+"_params.json", 'w')) ### save parameter names
+
+	print(' ')
+	print('X X X X X')
+	print('This PANDORA model (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
+	print('was fit using ULTRANEST (Johannes Buchner)https://ui.adsabs.harvard.edu/abs/2021JOSS....6.3001B/abstract')
+	print(' ')
+	try:
+		print('Please be sure to cite these works. 謝謝你。')
+	except:
+		print('Please be sure to cite these works.')
+	print('X X X X X')
+	print(' ')
 
 
 
@@ -656,7 +853,7 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 	outputdir = 'emcee_fits'
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
-	outputdir = outputdir+'/'+str(modelcode)
+	outputdir = outputdir+'/'+str(modelcode.lower())
 	if os.path.exists(outputdir) == False:
 		os.system('mkdir '+outputdir)
 	outputdir = outputdir+'/'+str(targetID)
@@ -733,13 +930,13 @@ def mp_emcee(times, fluxes, errors, param_dict, nwalkers, nsteps, targetID, npar
 	#if continue_query != 'y':
 	#	raise Exception('you opted not to continue.')
 
-	if modelcode == 'LUNA':
+	if modelcode.lower() == 'luna':
 		print('running the sampler with LUNA.')
 		print('nwalkers = ', nwalkers)
 		print("ndim = ", ndim)
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_LUNA, args=(data_times, data_fluxes, data_errors))
 
-	elif modelcode == "batman":
+	elif modelcode.lower() == "batman":
 		print('running the sampler with batman.')
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, emcee_lnprob_batman, args=(data_times, data_fluxes, data_errors))
 

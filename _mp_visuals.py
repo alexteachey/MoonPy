@@ -29,6 +29,11 @@ from pyluna import prepare_files
 from mp_tpf_examiner import *
 from scipy.interpolate import interp1d 
 from mp_animate import * 
+try:
+	import pandoramoon as pandora
+	from pandoramoon.helpers import ld_convert, ld_invert 
+except:
+	print("could not import pandora. You ca 'pip install pandoramoon' to rectify this. ")
 
 
 plt.rcParams["font.family"] = 'serif'
@@ -37,7 +42,9 @@ moonpydir = os.path.realpath(__file__)
 moonpydir = moonpydir[:moonpydir.find('/_mp_visuals.py')]
 
 
-def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
+
+
+def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters='all', folded='n', include_flagged='n', undetrended='y', detrended='y', show_errors='n', show_stats='y', show_neighbors='y', mask_multiple=None, period=None, show_model='y', show_batman='y', show_pandora='y', show_model_residuals='y', time_format='native', pltshow='y', phase_offset=0.0, binned='n'):
 	print('calling _mp_visuals.py/plot_lc().')
 	#if ('detrend_model' not in dir(self)) or (np.any(np.isfinite(np.concatenate(self.detrend_model))) == False):
 	#	detrended = 'n'
@@ -158,14 +165,14 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 	if folded == 'n':
 
 		if nplots == 2:
-			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
-			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+			ax[0].scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
+			ax[1].scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 			ax[0].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))
 			ax[1].set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))			
 
 			if show_errors == 'y':
-				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
-				ax[1].errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+				ax[0].errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, zorder=9, ecolor='k', alpha=0.5, fmt='none')
+				ax[1].errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 
 			if show_model == 'y':
 				try:
@@ -185,15 +192,15 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		elif nplots == 1: ### detrended or undetrended, but not both
 			if detrended == 'y':
-				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax.scatter(plot_stitched_times, stitched_fluxes_detrend, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 				ax.set_xlim(np.nanmin(plot_stitched_times), np.nanmax(plot_stitched_times))							
 				if show_errors == 'y':
-					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax.errorbar(plot_stitched_times, stitched_fluxes_detrend, yerr=stitched_errors_detrend, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 
 			else:
-				ax.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=1)
+				ax.scatter(plot_stitched_times, stitched_fluxes, facecolors=facecolor, edgecolors=edgecolor, s=10, zorder=10)
 				if show_errors == 'y':
-					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=0, alpha=0.5, fmt='none')
+					ax.errorbar(plot_stitched_times, stitched_fluxes, yerr=stitched_errors, ecolor='k', zorder=9, alpha=0.5, fmt='none')
 				if show_model == 'y':
 					try:
 						#ax.plot(plot_stitched_times, np.concatenate(self.detrend_model), color='BlueViolet', linewidth=2, alpha=0.7)
@@ -230,27 +237,27 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 				neighbor_transit_idxs = np.hstack(neighbor_transit_idxs)
 				
 				if (nplots == 2) and (show_neighbors == 'y'):
-					ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
-					ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+					ax[0].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
+					ax[1].scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 
 				elif (nplots == 1) and (show_neighbors == 'y'):
 					if detrended == 'y':
-						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes_detrend[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 					else:
-						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], s=10, marker='x', label=neighbor)
+						ax.scatter(plot_stitched_times[neighbor_transit_idxs], stitched_fluxes[neighbor_transit_idxs], zorder=11, s=10, marker='x', label=neighbor)
 			except:
 				traceback.print_exc()
 
 		### PLOT THE TARGET TRANSITS TOO!
 		if (nplots == 2) and (show_neighbors == 'y'):
-			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
-			ax[1].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')			
+			ax[0].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, zorder=12, marker='x', color='Indigo', label='target')
+			ax[1].scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], zorder=12, s=10, marker='x', color='Indigo', label='target')			
 
 		elif (nplots == 1) and (show_neighbors == 'y'):
 			if detrended == 'y':
-				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')	
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes_detrend[target_transit_idxs], zorder=12, s=10, marker='x', color='Indigo', label='target')	
 			else:
-				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, marker='x', color='Indigo', label='target')
+				ax.scatter(plot_stitched_times[target_transit_idxs], stitched_fluxes[target_transit_idxs], s=10, zorder=12, marker='x', color='Indigo', label='target')
 
 
 
@@ -258,13 +265,242 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 			try:
 				self.gen_batman(folded='n')
 				if nplots == 2:
-					ax[1].plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax[1].plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=0, alpha=0.7, label='planet model')	
 				elif nplots == 1:
-					ax.plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=5, alpha=0.7, label='planet model')	
+					ax.plot(self.bat_times[qstokeep_idxs], self.bat_fluxes[qstokeep_idxs], c='BlueViolet', linewidth=2, zorder=0, alpha=0.7, label='planet model')	
 
 					
 			except:
 				print("COULD NOT GENERATE A BATMAN MODEL FOR THIS PLANET.")
+
+
+		#### NEW AUGUST 2022 -- show a pandora model! 
+		if (show_pandora == 'y') and (detrended == 'y'):
+
+			try:
+				self.get_Pandora_posteriors(model='M')
+			except:
+				print('unable to get Pandora posteriors for model M.')
+
+			try:
+				self.get_Pandora_posteriors(model='P')
+			except:
+				print('unable to get Pandora posteriors for model P.')
+
+			models_available = []
+
+			try:
+				print('Planet posteriors available: ')
+				print(self.Pandora_planet_PEWdict.keys())
+				planet_only_avail = True 
+				models_available.append('P')
+
+				#### compute median values
+				for key in self.Pandora_planet_PEWdict.keys():
+					print('median '+str(key)+': '+str(np.nanmedian(self.Pandora_planet_PEWdict[key])))
+
+			except:
+				print('Planet posteriors not available.')
+				planet_only_avail = False 
+
+			try:
+				print('Moon posteriors available: ')
+				print(self.Pandora_moon_PEWdict.keys())
+				planet_plus_moon_avail = True
+				models_available.append('M')
+
+				#### compute median values
+				for key in self.Pandora_moon_PEWdict.keys():
+					print('median '+str(key)+': '+str(np.nanmedian(self.Pandora_moon_PEWdict[key])))
+
+
+			except:
+				print('Moon posteriors not available.')
+				planet_plus_moon_avail = False 
+
+			print(' ')
+			print('models available: ', models_available)
+			print(' ')
+
+			#if len(models_available) > 0:
+
+
+			ndraws = 100
+			try:
+				moon_model_PEWdict = self.Pandora_moon_PEWdict 
+				nmoon_trials = len(moon_model_PEWdict['q1'])
+			except:
+				pass 
+
+			try:
+				planet_model_PEWdict = self.Pandora_planet_PEWdict 
+				nplanet_trials = len(planet_model_PEWdict['q1'])
+			except:
+				pass 
+
+			#for nidx, random_idx in enumerate(random_idxs):
+			for nidx in np.arange(0,ndraws,1):
+
+				for model in models_available:					
+					if model.lower() == 'p':
+						model_PEWdict = planet_model_PEWdict
+						random_idx = np.random.randint(low=0, high=nplanet_trials)
+					elif model.lower() == 'm':
+						model_PEWdict = moon_model_PEWdict 
+						random_idx = np.random.randint(low=0, high=nmoon_trials)
+
+					#### NOW STEP THROUGH THE POSTERIORS
+					#for nidx, random_idx in enumerate(random_idxs):
+					q1 = model_PEWdict['q1'][random_idx]
+					q2 = model_PEWdict['q2'][random_idx]
+					per_bary = model_PEWdict['per_bary'][random_idx]
+					a_bary = model_PEWdict['a_bary'][random_idx]
+					r_planet = model_PEWdict['r_planet'][random_idx]
+					b_bary = model_PEWdict['b_bary'][random_idx]
+					w_bary = model_PEWdict['w_bary'][random_idx]
+					ecc_bary = model_PEWdict['ecc_bary'][random_idx]
+					t0_bary_offset = model_PEWdict['t0_bary_offset'][random_idx]
+
+					if model.lower() == 'p':
+						#### set the moon values to standard values for no moon present
+						r_moon = 1e-8
+						per_moon = 30 
+						tau_moon = 0
+						Omega_moon = 0
+						i_moon = 0
+						ecc_moon = 0
+						w_moon = 0
+						M_moon = 1e-8 
+
+					elif model.lower() == 'm':
+						#### uses the posteriors! 
+						r_moon = model_PEWdict['r_moon'][random_idx]
+						per_moon = model_PEWdict['per_moon'][random_idx]
+						tau_moon = model_PEWdict['tau_moon'][random_idx]
+						Omega_moon = model_PEWdict['Omega_moon'][random_idx]
+						i_moon = model_PEWdict['i_moon'][random_idx]
+						try:
+							ecc_moon = model_PEWdict['ecc_moon'][random_idx]
+						except:
+							ecc_moon = 0
+						try:
+							w_moon = model_PEWdict['w_moon'][random_idx]
+						except:
+							w_moon = 0 
+						M_moon = model_PEWdict['M_moon'][random_idx]
+
+
+					#### other fixed parameters
+					R_star = self.st_rad * R_sun.value 
+					t0_bary = self.tau0 
+					M_planet = self.pl_bmasse * M_earth.value
+
+					#### conversion 
+					u1, u2 = ld_convert(q1, q2) 
+
+					#### NOW GENERATE THE MODEL! 
+					params = pandora.model_params()
+					
+					params.R_star = float(R_star) #### FIT PARAM #0 
+					params.per_bary = float(per_bary) #### PARAM #1 Pplan [days]
+					params.a_bary = float(a_bary)  #### PARAM #2 
+					params.r_planet = float(r_planet) #### PARAM #3 
+					params.b_bary = float(b_bary) #### PARAM # 4
+					params.t0_bary_offset = float(t0_bary_offset) #### PARAM #5 what is this? 
+					params.M_planet = float(M_planet) #### PARAM #6 [kg]
+					params.ecc_bary = float(ecc_bary)
+					params.w_bary = float(w_bary)
+					#### moon parameters
+					params.r_moon = float(r_moon) #### PARAM #7 -- satellite radius divided by stellar radius
+					params.per_moon = float(per_moon) #### PARAM #8 -- need to define above
+					params.tau_moon = float(tau_moon) #### PARAM #9-- must be between zero and one -- I think this is the phase...
+					params.Omega_moon = float(Omega_moon) #### PARAM # 10 -- longitude of the ascending node??? between 0 and 180 degrees 
+					params.i_moon = float(i_moon) #### PARAM #11 -- between 0 and 180 degrees
+					params.M_moon = float(M_moon) 
+					params.u1 = float(u1) #### PARAM #13 need to define above!
+					params.u2 = float(u2) #### PARAM #14 need to define above!
+
+
+					#### FIXED PARAMETERS -- BUT I"m NOT SURE WHY ... 
+					params.t0_bary = float(t0_bary) #### FIXED?
+
+					#### other inputs
+					params.epochs = len(self.taus) #### needs to be defined above!
+					params.epoch_duration = 3 #### need to be defined above
+					params.cadences_per_day = 48 
+					#params.epoch_distance = Pplan 
+					params.epoch_distance = per_bary 
+					params.supersampling_factor = 1
+					params.occult_small_threshold = 0.1 ### between 0 and 1 -- what is this?
+					params.hill_sphere_threshold = 1.2 #### what does this mean?
+
+					pdtime = pandora.time(params).grid()
+					pdmodel = pandora.moon_model(params)
+
+					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(pdtime)
+					#total_flux, planet_flux, moon_flux = pdmodel.light_curve(all_times)
+					cctimes = np.concatenate(self.times)
+					total_flux, planet_flux, moon_flux = pdmodel.light_curve(cctimes)
+
+					#### plot them!
+					if model.lower() == 'p':
+						model_label = 'Planet'
+						model_color = 'DarkOrange'
+
+					elif model.lower() == 'm':
+						model_label = 'Planet+Moon'
+						model_color = 'BlueViolet'
+
+					if ndraws > 1:
+						linewidth=1
+						alpha=0.2
+					elif ndraws == 1:
+						linewidth=2
+						alpha=0.7
+
+					if nidx == 0:
+						if nplots == 2:
+							ax[1].plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha, label=model_label)	
+						elif nplots == 1:
+							ax.plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha, label=model_label)	
+
+					else:
+						#### don't label
+						if nplots == 2:
+							ax[1].plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha)	
+						elif nplots == 1:
+							ax.plot(cctimes, total_flux, c=model_color, linewidth=linewidth, zorder=0, alpha=alpha)	
+
+
+				"""
+				if print_params == 'y':
+
+					print(" ")
+					print("Rp/Rstar = ", RpRstar)
+					print("transit depth [ppm] = ", RpRstar**2 * 1e6)
+					print("stellar density [kg / m^3] = ", rhostar)
+					print("impact = ", bplan)
+					print("Period [days] = ", Pplan)
+					print("tau_0 [day] = ", tau0)
+					print("q1,q2 = ", q1, q2)
+					if (model == 'M') or (model == "Z"):
+						print("planet density [kg / m^3] = ", rhoplan)
+						print("sat_sma = [Rp] ", sat_sma)
+						print("sat_phase = ", sat_phase)
+						print("sat_inc = ", sat_inc)
+						print("sat_omega = ", sat_omega)
+						print("Msat / Mp = ", MsatMp)
+						print("Rsat / Rp = ", RsatRp)
+					print(" ")
+				"""
+
+
+				#return output_times, output_fluxes 
+				#return total_flux, planet_flux, moon_flux
+
+
+
+
 
 	elif folded == 'y':
 		nplots = 1 #### should only show the detrend -- folding on undetrended is nonsense.
@@ -493,6 +729,124 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 
 		except:
 			print('BATMAN model not available.')
+
+
+
+
+
+
+def animate_moon(self, model='M'):
+
+	#try:
+	self.get_Pandora_posteriors(model=model)
+	model_PEWdict = self.Pandora_moon_PEWdict
+	#except:
+	#	print('unable to get Pandora posteriors for model M.')
+
+	# Call Pandora and get model with these parameters
+	params = pandora.model_params()
+	params.R_star = (self.st_rad * R_sun.value) 
+	medu1, medu2 = ld_invert(np.nanmedian(model_PEWdict['q1']), np.nanmedian(model_PEWdict['q2']))
+	params.u1 = medu1
+	params.u2 = medu2
+
+	# Planet parameters
+	params.per_bary = np.nanmedian(model_PEWdict['per_bary'])
+	params.a_bary = np.nanmedian(model_PEWdict['a_bary'])
+	params.r_planet = np.nanmedian(model_PEWdict['r_planet'])
+	params.b_bary = np.nanmedian(model_PEWdict['b_bary'])
+	params.t0_bary = self.tau0
+	params.t0_bary_offset = np.nanmedian(model_PEWdict['t0_bary_offset'])
+	params.M_planet = (self.pl_bmasse * M_earth.value) 
+	params.w_bary = np.nanmedian(model_PEWdict['w_bary'])
+	params.ecc_bary = np.nanmedian(model_PEWdict['ecc_bary'])
+
+	# Moon parameters
+	params.r_moon = np.nanmedian(model_PEWdict['r_moon'])
+	params.per_moon = np.nanmedian(model_PEWdict['per_moon'])
+	params.tau_moon = np.nanmedian(model_PEWdict['tau_moon'])
+	params.Omega_moon = np.nanmedian(model_PEWdict['Omega_moon'])
+	params.i_moon = np.nanmedian(model_PEWdict['i_moon'])
+	try:
+		params.ecc_moon = np.nanmedian(model_PEWdict['ecc_moon'])
+	except:
+		params.ecc_moon = 0
+	try:
+		params.w_moon = np.nanmedian(model_PEWdict['w_moon'])
+	except:
+		params.w_moon = 0
+	params.M_moon = np.nanmedian(model_PEWdict['M_moon'])
+
+	# Other model parameters
+	params.epochs = len(self.taus)  # [int]
+	params.epoch_duration = 3  # 5  # [days]
+	params.cadences_per_day = 250  # [int]
+	params.epoch_distance = np.nanmedian(model_PEWdict['per_bary'])
+	params.supersampling_factor = 1  # [int]
+	params.occult_small_threshold = 0.01  # [0..1]
+	params.hill_sphere_threshold = 1.2
+
+	# Obtain time grid
+	#pdtime = pandora.time(params).grid()
+	mintime, maxtime = np.nanmin(np.concatenate(self.times)), np.nanmax(np.concatenate(self.times))
+	for ntau, tau in enumerate(self.taus):
+		#### grab times 2 days before and after each tau
+		tau_times = np.linspace(tau-1,tau+1,500)
+		if ntau == 0:
+			pdtime = tau_times
+		else:
+			pdtime = np.concatenate((pdtime, tau_times))
+
+
+
+	# Define model
+	model = pandora.moon_model(params)
+
+	# Evaluate model for each point in time grid
+	flux_total, flux_planet, flux_moon = model.light_curve(pdtime)
+
+	# Get coordinates
+	xp, yp, xm, ym = model.coordinates(pdtime)
+
+	# Create noise and merge with flux
+	"""
+	noise_level = 100e-6  # Gaussian noise to be added to the generated data
+	noise = np.random.normal(0, noise_level, len(pdtime))
+	testdata = noise + flux_total
+	yerr = np.full(len(testdata), noise_level)
+	"""
+
+	# Save model data to disk in 2-column format (time, data) for each time stamp
+	#np.savetxt("output.csv", np.transpose(np.array((time, testdata))), fmt='%8f')
+
+	# Plot synthetic data with and without noise
+	"""
+	plt.plot(pdtime, flux_planet, color="blue")
+	plt.plot(pdtime, flux_moon, color="red")
+	plt.plot(pdtime, flux_total, color="black")
+	plt.scatter(pdtime, testdata, color="black", s=0.5)
+	plt.xlabel("Time (days)")
+	plt.ylabel("Relative flux")
+	plt.show()
+	"""
+
+	# Create video
+	video = model.video(
+	    time=pdtime,
+	    limb_darkening=True, 
+	    teff=self.st_teff,
+	    planet_color="black",
+	    moon_color="black",
+	    ld_circles=100
+	)
+	# Save video to disk
+	video_savepath = self.savepath+"/"+self.target+"_transit_video.mp4"
+	video.save(filename=video_savepath, fps=25, dpi=200)
+	print('video was saved at: '+video_savepath)
+	plt.close()
+
+
+
 
 
 
