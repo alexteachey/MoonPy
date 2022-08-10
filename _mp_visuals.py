@@ -87,6 +87,7 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		elif folded=='y':
 			fig, ax = plt.subplots(2, figsize=(6,8))
 
+
 	else:
 		#### will be just one or the other
 		nplots = 1
@@ -707,10 +708,21 @@ def plot_lc(self, facecolor='LightCoral', edgecolor='k', errorbar='n', quarters=
 		anchored_text = AnchoredText(textstr, loc='lower left')
 		if nplots == 2:
 			ax[0].add_artist(anchored_text)
-			ax[1].legend(loc='lower left')				
+			#ax[1].legend(loc='lower left')				
 		elif nplots == 1:
 			ax.add_artist(anchored_text)
-			ax.legend(loc='upper right')
+			#ax.legend(loc='upper right')
+
+
+
+	if nplots == 2:
+		#ax[0].add_artist(anchored_text)
+		ax[1].legend(loc='lower left')				
+	elif nplots == 1:
+		#ax.add_artist(anchored_text)
+		ax.legend(loc='upper right')	
+
+
 
 	if pltshow == 'y':	
 		plt.show()
