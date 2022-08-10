@@ -83,7 +83,7 @@ MoonPy is built around manipulating light curves as objects. To start, simply im
 
 Then you can initialize an object:
 
-```>>> lc_object=MoonpyLC(targetID=TARGET_NAME, clobber='n')```
+```>>> lc_object=MoonpyLC(targetID='target_name', clobber='n')```
 
 targetID can take a range of common names for stars / planets(e.g. 'Kepler-1625b', 'KOI-5084.01', 'KIC4760478', 'TOI-216.01', 'TIC55652896', 'EPIC201170410'...)
 
