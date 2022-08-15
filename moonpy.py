@@ -196,8 +196,9 @@ class MoonpyLC(object):
 			self.flags = lc_flags
 			self.quarters = lc_quarters 
 
-			if attributes_only == 'n':			
-				targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
+			if attributes_only == 'n':		
+				if type(targetID) == type(None):	
+					targetID = 'USR-'+str(np.random.randint(low=0, high=1e4)+round(np.random.random(), 2))
 				telescope='USER'
 				self.telescope = telescope
 
@@ -645,13 +646,13 @@ class MoonpyLC(object):
 			if telescope.lower() == 'user':
 				lc_times, lc_fluxes, lc_errors, lc_flags, lcquarters = self.times, self.fluxes, self.errors, self.flags, self.quarters
 				NEA_rowidx = np.nan 
-				NEA_data = ascii.read('confirmed_planets.txt')
-				NEA_columns = NEA_data.columns
-				exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
-				exofop_columns = exofop_data.columns
+				#NEA_data = ascii.read('confirmed_planets.txt')
+				#NEA_columns = NEA_data.columns
+				#exofop_data = pandas.read_csv('exofop_toilists.pipe', delimiter='|')
+				#exofop_columns = exofop_data.columns
 
-				self.NEA_data = NEA_data
-				self.NEA_columns = NEA_columns 
+				#self.NEA_data = NEA_data
+				#self.NEA_columns = NEA_columns 
 
 
 			### KEPLER HANDLING
