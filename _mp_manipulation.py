@@ -37,7 +37,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_manipulation.py')]
 
 
 
-def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False, uninformative_priors=[]):
+def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='n', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False, uninformative_priors=[]):
 	print('calling _mp_manipulation.py/fit().')
 	### optional values for code are "multinest" and "emcee"
 
