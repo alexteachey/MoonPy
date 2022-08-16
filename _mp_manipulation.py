@@ -881,7 +881,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 	self.dmeth=dmeth
 	### make sure you get_neighbors() first!
-	self.get_neighbors()
+	if self.telescope.lower() != 'user':
+		self.get_neighbors()
 
 	if self.telescope.lower() != 'kepler':
 		use_holczer == 'n' ### mazeh is only for Kepler targets!
