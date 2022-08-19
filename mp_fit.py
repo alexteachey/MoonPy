@@ -294,10 +294,10 @@ def mp_multinest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 
 
-def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", modelcode='Pandora', resume='resume', show_plot='y'):	
+def mp_ultranest(times, fluxes, errors, param_dict, targetID,  nlive=400, model="M", modelcode='Pandora', resume='resume', show_plot='y'):	
 	import ultranest 
 	import ultranest.stepsampler 
-	from ultranest import ReactiveNestedSampler 
+	from ultranest import NestedSampler, ReactiveNestedSampler 
 	from ultranest.plot import cornerplot 
 
 
@@ -506,6 +506,8 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 
 			return p
 
+		#ultn_transform = np.vectorize(ultn_transform)
+
 		def ultn_loglike_Pandora(cube):
 
 			#### THIS FUNCTION GETS CALLED REPEATEDLY! SO
@@ -570,6 +572,9 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			return loglike
 
 
+		#ultn_loglike_Pandora = np.vectorize(ultn_loglike_Pandora)
+
+
 		print(' ')
 		print('X X X X X')
 		print('Now running PANDORA (Hippke & Heller 2022) https://ui.adsabs.harvard.edu/abs/2022A%26A...662A..37H/abstract')
@@ -586,11 +591,29 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 		print(' ')
 
 		#### PANDORA IS CALLED by calling ultn_loglike_Pandora below
+
+		#### this page: https://johannesbuchner.github.io/UltraNest/ultranest.html?highlight=reactivenestedsampler#ultranest.integrator.ReactiveNestedSampler.run:~:text=of%20arbitrary%20models.-,class,%5Bsource%5D,-Bases%3A%20object
+
 		try:
+			"""
+			#### ORIGINAL IMPLEMENTATION
 			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume', vectorized=True)	
 			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')										
 			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')
 			result_planet_moon = sampler.run(min_num_live_points=nlive)
+			"""
+
+			#### trying this -- August 17th, 2022
+			nfree = len(un_variable_labels)
+			nsteps = 2 * nfree ### see here: https://johannesbuchner.github.io/UltraNest/example-sine-highd.html#:~:text=nsteps%20%3D%202%20*%20len(parameters2)
+			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='resume')	
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=nsteps, adaptive_nsteps='move-distance')
+			result_planet_moon = sampler.run(min_num_live_points=100, min_ess=10000)					
+			
+			#sampler = NestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, num_live_points=100, resume='resume')
+			#sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=nsteps, adaptive_nsteps='move-distance')							
+			#result_planet_moon = sampler.run()	
+
 
 
 		except AssertionError:
@@ -598,9 +621,17 @@ def mp_ultranest(times, fluxes, errors, param_dict, nlive, targetID, model="M", 
 			os.system('rm -rf '+outputdir)
 			os.system('mkdir '+outputdir) ### creates model directory
 			print('COULD NOT RUN THE SAMPLER WITH RESUME=RESUME. TRYING RESUME=OVERWRITE.')
+			
+			nfree = len(un_variable_labels)
+			nsteps = 2 * nfree ### see here: https://johannesbuchner.github.io/UltraNest/example-sine-highd.html#:~:text=nsteps%20%3D%202%20*%20len(parameters2)
 			sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, resume='overwrite')	
-			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=4000, adaptive_nsteps='move-distance')		
+			sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=nsteps, adaptive_nsteps='move-distance')		
 			result_planet_moon = sampler.run(min_num_live_points=nlive)
+
+			#sampler = ReactiveNestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, draw_multiple=False, resume='resume')		
+			#sampler = NestedSampler(un_variable_labels, ultn_loglike_Pandora, transform=ultn_transform, log_dir=outputdir, draw_multiple=False, resume='resume')									
+			#sampler.stepsampler = ultranest.stepsampler.RegionSliceSampler(nsteps=nsteps, adaptive_nsteps='move-distance')
+			#result_planet_moon = sampler.run(min_num_live_points=100, min_ess=10000)	
 		
 		try:
 			sampler.print_results()
