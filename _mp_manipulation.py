@@ -37,7 +37,7 @@ moonpydir = moonpydir[:moonpydir.find('/_mp_manipulation.py')]
 
 
 
-def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='y', segment_length=500, skip_ntqs='y', model='M', nlive=1000, nwalkers=100, nsteps=10000, resume=True, folded=False, uninformative_priors=[]):
+def fit(self, custom_param_dict=None, fitter='ultranest', modelcode='Pandora', segment='n', segment_length=500, skip_ntqs='y', model='M', nlive=400, nwalkers=100, nsteps=10000, resume=True, folded=False, uninformative_priors=[]):
 	print('calling _mp_manipulation.py/fit().')
 	### optional values for code are "multinest" and "emcee"
 
@@ -881,7 +881,8 @@ def detrend(self, dmeth='cofiam', save_lc='y', mask_transits='y', period=None, m
 
 	self.dmeth=dmeth
 	### make sure you get_neighbors() first!
-	self.get_neighbors()
+	if self.telescope.lower() != 'user':
+		self.get_neighbors()
 
 	if self.telescope.lower() != 'kepler':
 		use_holczer == 'n' ### mazeh is only for Kepler targets!

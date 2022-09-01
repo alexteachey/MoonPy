@@ -739,7 +739,10 @@ def find_planet_row(self, alias=None, row_known='n'):
 					NEA_rowidx = self.NEA_rowidx 
 				else:
 					#### THIS HAS TO CHANGE!
-					NEA_rowidx = np.where(self.NEA_data['kepid'] == NEA_targetname)[0]
+					try:
+						NEA_rowidx = np.where(self.NEA_data['kepid'] == NEA_targetname)[0]
+					except:
+						NEA_rowidx = None
 
 			elif str(row_target).lower().startswith('koi'):
 				NEA_targetname = str(row_target[4:])
@@ -1284,25 +1287,28 @@ def moon_evidence(self, modelcode='Pandora'):
 	moon_chainsdir = moon_modeldir+'/chains'
 	moon_infodir = moon_modeldir+'/info'
 	moon_results_filename = moon_infodir+'/results.json'
-	try:
+
+	if os.path.exists(moon_results_filename):
 		with open(moon_results_filename, 'r') as moon_resultsfile:
 			moon_results = json.load(moon_resultsfile)
 		moon_logz = moon_results['logz']
-	except:
-		moon_logz = np.nan 
-		print('moon resultsfile is unavailable.')
+	else:
+		print('moon model is not available.')
+		moon_logz = np.nan
 
 	planet_modeldir = modelsdir+'/p'
 	planet_chainsdir = planet_modeldir+'/chains'
 	planet_infodir = planet_modeldir+'/info'
 	planet_results_filename = planet_infodir+'/results.json'
-	try:
+
+	if os.path.exists(planet_results_filename):
 		with open(planet_results_filename, 'r') as planet_resultsfile:
 			planet_results = json.load(planet_resultsfile)
 		planet_logz = planet_results['logz']
-	except:
-		planet_logz = np.nan
-		print('planet resultsfile is unavailable.')
+	else:
+		print('planet model is not available.')
+		planet_logz = np.nan 
+
 
 	bayes_difference = moon_logz - planet_logz 
 	lnk = bayes_difference 
