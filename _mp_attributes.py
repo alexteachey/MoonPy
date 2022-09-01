@@ -1284,24 +1284,40 @@ def moon_evidence(self, modelcode='Pandora'):
 	moon_chainsdir = moon_modeldir+'/chains'
 	moon_infodir = moon_modeldir+'/info'
 	moon_results_filename = moon_infodir+'/results.json'
-	with open(moon_results_filename, 'r') as moon_resultsfile:
-		moon_results = json.load(moon_resultsfile)
-	moon_logz = moon_results['logz']
+	try:
+		with open(moon_results_filename, 'r') as moon_resultsfile:
+			moon_results = json.load(moon_resultsfile)
+		moon_logz = moon_results['logz']
+	except:
+		moon_logz = np.nan 
+		print('moon resultsfile is unavailable.')
 
 	planet_modeldir = modelsdir+'/p'
 	planet_chainsdir = planet_modeldir+'/chains'
 	planet_infodir = planet_modeldir+'/info'
 	planet_results_filename = planet_infodir+'/results.json'
-	with open(planet_results_filename, 'r') as planet_resultsfile:
-		planet_results = json.load(planet_resultsfile)
-	planet_logz = planet_results['logz']
+	try:
+		with open(planet_results_filename, 'r') as planet_resultsfile:
+			planet_results = json.load(planet_resultsfile)
+		planet_logz = planet_results['logz']
+	except:
+		planet_logz = np.nan
+		print('planet resultsfile is unavailable.')
 
 	bayes_difference = moon_logz - planet_logz 
+	lnk = bayes_difference 
+	bayes_factor = np.exp(lnk)
+	log10_k = np.log10(bayes_factor)
+
 	print(' ')
 	print(' ')
-	print('moon model log(Z): ', moon_logz)
-	print('planet only model log(Z): ', planet_logz)
-	print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
+	print('moon model ln(Zm): ', moon_logz)
+	print('planet only model ln(Zp): ', planet_logz)
+	#print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
+	print('ln(Zm/Zp) = ln(Zm) - ln(Zp) = ln(K) = ', bayes_difference)	
+	print('Bayes Factor K = Zm/Zp = exp[ln(K)] = ', bayes_factor)
+
+
 
 	### recall from log rules that log(m) - log(n) = log(m/n)
 	### using the Kass & Rafferty framework:
@@ -1310,20 +1326,22 @@ def moon_evidence(self, modelcode='Pandora'):
 	###### a value between 10 - 100: "strong"
 	###### a value > 100: "decisive"
 
-	if bayes_difference < 1:
+	#if bayes_difference < 1:
+	if bayes_factor < 1:
 		print('Evidence supports the planet-only model.')
 	else:
-		if (bayes_difference >= 1) and (bayes_difference < 3.2):
+		if (bayes_factor >= 1) and (bayes_difference < 3.2):
 			print('Kass & Raftery (1995) says moon model evidence "not worth more than a bare mention."')
-		elif (bayes_difference >= 3.2) and (bayes_difference < 10):
+		elif (bayes_factor >= 3.2) and (bayes_factor < 10):
 			print('Kass & Raftery (1995) says "substantial evidence" for the moon model.')
-		elif (bayes_difference >= 10) and (bayes_difference < 100):
+		elif (bayes_factor >= 10) and (bayes_factor < 100):
 			print('Kass & Raftery (1995) says "strong evidence" for the moon model.')
-		elif bayes_difference >= 100:
+		elif bayes_factor >= 100:
 			print('Kass & Raftery (1995) says "decisive evidence" for the moon model.')
 
 	print(' ')
 	print('for an explanation, see: https://en.wikipedia.org/wiki/Bayes_factor ')
+	print('and section 3 of Kass & Raftery (1995): https://sites.stat.washington.edu/raftery/Research/PDF/kass1995.pdf ')
 	print(' ')
 
 	self.bayes_factor = bayes_difference
