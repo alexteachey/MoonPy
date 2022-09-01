@@ -1310,17 +1310,16 @@ def moon_evidence(self, modelcode='Pandora'):
 		planet_logz = np.nan 
 
 
-	bayes_difference = moon_logz - planet_logz 
-	lnk = bayes_difference 
-	bayes_factor = np.exp(lnk)
-	log10_k = np.log10(bayes_factor)
+	lnK = moon_logz - planet_logz  ### log(Z) values from UltraNest
+	bayes_factor = np.exp(lnK)
+	log10_K = np.log10(bayes_factor)
 
 	print(' ')
 	print(' ')
 	print('moon model ln(Zm): ', moon_logz)
 	print('planet only model ln(Zp): ', planet_logz)
 	#print('Bayesian evidence difference (Bayes factor) (moon - planet): ', bayes_difference)
-	print('ln(Zm/Zp) = ln(Zm) - ln(Zp) = ln(K) = ', bayes_difference)	
+	print('ln(Zm/Zp) = ln(Zm) - ln(Zp) = ln(K) = ', lnK)	
 	print('Bayes Factor K = Zm/Zp = exp[ln(K)] = ', bayes_factor)
 
 
@@ -1336,7 +1335,7 @@ def moon_evidence(self, modelcode='Pandora'):
 	if bayes_factor < 1:
 		print('Evidence supports the planet-only model.')
 	else:
-		if (bayes_factor >= 1) and (bayes_difference < 3.2):
+		if (bayes_factor >= 1) and (bayes_factor < 3.2):
 			print('Kass & Raftery (1995) says moon model evidence "not worth more than a bare mention."')
 		elif (bayes_factor >= 3.2) and (bayes_factor < 10):
 			print('Kass & Raftery (1995) says "substantial evidence" for the moon model.')
@@ -1350,10 +1349,11 @@ def moon_evidence(self, modelcode='Pandora'):
 	print('and section 3 of Kass & Raftery (1995): https://sites.stat.washington.edu/raftery/Research/PDF/kass1995.pdf ')
 	print(' ')
 
-	self.bayes_factor = bayes_difference
+	self.bayes_factor = bayes_factor 
 
-	return bayes_difference
+	return bayes_factor 
 
+	
 
 def pandora_evidence(self):
 	return self.moon_evidence(modelcode='Pandora')
