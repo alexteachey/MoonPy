@@ -233,26 +233,30 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 	"""
 	
 	#### #NEED TO EVALUATE THE MODEL ON ALL THE TIMES AND FLUXES -- NOT JUST THE UNMASKED TIMES!
-	try:
-		best_model1 = cofiam_function(times=times[all_times_first_half_idxs], fluxes=fluxes[all_times_first_half_idxs], degree=best_degree1, solve=False, cofiam_coefficients=best_coefficients1)[0]
-		model1_worked = True 
-	except:
-		print("COULD NOT COMPUTE best_model1 on the first half of the time series.")
-		model1_worked = False 
-		best_model1 = np.linspace(np.nan, np.nan, len(times[all_times_first_half_idxs]))
+	if (telescope.lower() == 'kepler') or (telescope.lower() == 'k2'):
+		best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
 
-	try:
-		best_model2 = cofiam_function(times=times[all_times_second_half_idxs], fluxes=fluxes[all_times_second_half_idxs], degree=best_degree2, solve=False, cofiam_coefficients=best_coefficients2)[0]
-		model2_worked = True 
-	except:
-		print("COULD NOT COMPUTE best_model2 on the second half of the time series.")
-		model2_worked = False 
-		best_model2 = np.linspace(np.nan, np.nan, len(times[all_times_second_half_idxs]))
+	elif telescope.lower() == 'tess':
+		try:
+			best_model1 = cofiam_function(times=times[all_times_first_half_idxs], fluxes=fluxes[all_times_first_half_idxs], degree=best_degree1, solve=False, cofiam_coefficients=best_coefficients1)[0]
+			model1_worked = True 
+		except:
+			print("COULD NOT COMPUTE best_model1 on the first half of the time series.")
+			model1_worked = False 
+			best_model1 = np.linspace(np.nan, np.nan, len(times[all_times_first_half_idxs]))
+
+		try:
+			best_model2 = cofiam_function(times=times[all_times_second_half_idxs], fluxes=fluxes[all_times_second_half_idxs], degree=best_degree2, solve=False, cofiam_coefficients=best_coefficients2)[0]
+			model2_worked = True 
+		except:
+			print("COULD NOT COMPUTE best_model2 on the second half of the time series.")
+			model2_worked = False 
+			best_model2 = np.linspace(np.nan, np.nan, len(times[all_times_second_half_idxs]))
 
 
-	#### CONCATENATE THEM
-	best_model = np.concatenate((best_model1, best_model2))
-	#best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
+		#### CONCATENATE THEM
+		best_model = np.concatenate((best_model1, best_model2))
+		#best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
 
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model

@@ -5,6 +5,10 @@ import pandas
 import os
 import traceback
 from astropy.io import fits
+from astropy.timeseries import BoxLeastSquares
+from astropy.constants import M_sun, M_jup, R_sun, R_jup
+import astropy.units as u 
+from mp_tools import Kep3_afromp, Tdur 
 import socket 
 try:
 	import exoplanet as xo
@@ -122,6 +126,95 @@ else:
 
 #for nvpi,vpi in enumerate(vetting_priority_idxs):
 #for nkic,kic in enumerate(kics):
+
+
+def run_BLS(self, period_min=1, period_max=None, min_transit_duration=None, estimate_duration=False, period_spacing='log', nperiods=1000, show_plot=True):
+
+
+	if type(period_max) == type(None):
+		### set the period maximum to be equal to the baseline
+		period_max = np.nanmax(np.concatenate(self.times)) - np.nanmin(np.concatenate(self.times))
+
+
+	if period_spacing == 'log':
+		periods_to_search = np.logspace(np.log10(period_min), np.log10(period_max), nperiods) * u.day 
+	else:
+		### linear spacing
+		periods_to_search = np.linspace(period_min, period_max, nperiods) * u.day 
+
+	if np.isfinite(self.smass):
+		smass_kg = self.smass * M_sun.value 
+	else:
+		#### estimate solar
+		smass_kg = M_sun.value 
+
+	try:
+		srad_meters = self.st_rad * R_sun.value 
+	except:
+		srad_meters = R_sun.value 
+
+
+
+	### compute an array of semi-major axes
+	sma_array = Kep3_afromp(period=periods_to_search, m1=smass_kg, m2=M_jup.value) ### array of semi-major axes
+	Tdur_array = []
+	for pts, sa in zip(periods_to_search, sma_array):
+		Tduration = Tdur(period=pts, Rstar=srad_meters, Rplan=R_jup.value, impact=0., sma=sa).value
+		Tdur_array.append(Tduration)
+	Tdur_array = np.array(Tdur_array)
+	print('sma_array: ', sma_array)
+	print(' ')
+	print('Tdur_array: ', Tdur_array)
+
+
+
+	#else:
+	if type(min_transit_duration) == type(None):
+		min_transit_duration = np.nanmedian(Tdur_array)
+
+
+	try:
+		BLS_model = BoxLeastSquares(np.concatenate(self.times) * u.day, np.concatenate(self.fluxes_detrend), dy=np.concatenate(self.errors_detrend)) 
+	except AttributeError:
+		#### need to detrend first!
+		self.detrend()
+		BLS_model = BoxLeastSquares(np.concatenate(self.times) * u.day, np.concatenate(self.fluxes_detrend), dy=np.concatenate(self.errors_detrend))  
+
+	if estimate_duration == True:
+		try:
+			periodogram = BLS_model.power(periods_to_search, durations=Tdur_array)
+		except:
+			print("Unable to use variable transit durations.")
+			print('Using '+str(min_transit_duration)+' for all fits.')
+			periodogram = BLS_model.power(periods_to_search, min_transit_duration) 
+	else:
+		print("Not using duration estimation.")
+		print('Using '+str(min_transit_duration)+' for all fits.')
+		periodogram = BLS_model.power(periods_to_search, min_transit_duration) 
+	max_power_idx = np.argmax(periodogram.power)
+	max_power_period = periods_to_search[max_power_idx]
+
+
+	print('periods_to_search.shape: ', periods_to_search.shape)
+	print(periods_to_search)
+	print(' ')
+	print('periodogram: ', periodogram)
+	#print(periodogram) 
+
+	stats = BLS_model.compute_stats(periodogram.period[max_power_idx], periodogram.duration[max_power_idx], periodogram.transit_time[max_power_idx])
+
+	if show_plot == True:
+		plt.plot(periods_to_search, periodogram.power, color='red')
+		if period_spacing == 'log':
+			plt.xscale('log')
+
+		plt.xlabel('period [days]')
+		plt.ylabel('power')
+		plt.show()
+
+	return stats 
+
+
 
 
 def run_planet_fit(self, period=None, tau0=None, tdur_hours=None, smass=None, smass_err=None, show_plots=True, use_mp_detrend=False, restrict_data=True, fit_neighbors=False, savepath=None):
