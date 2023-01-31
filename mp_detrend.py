@@ -136,53 +136,81 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 
 	if telescope.lower() == 'tess':
 		### you need to detrend the two halves separately!
-		deltats = []
+		unmasked_deltats = []
 		for nut, ut in enumerate(unmasked_times):
 			#if nut == unmasked_times.size-1:
 			#	pass
 			if nut == 0:
 				pass
 			else:
-				deltats.append(unmasked_times[nut] - unmasked_times[nut-1])
+				unmasked_deltats.append(unmasked_times[nut] - unmasked_times[nut-1])
 
-		deltats = np.array(deltats)
-		deltat = np.nanmedian(deltats)
+		unmasked_deltats = np.array(unmasked_deltats)
+		unmasked_deltat = np.nanmedian(unmasked_deltats)
+
+		all_deltats = []
+		for nt, t in enumerate(times):
+			if nt == 0:
+				pass
+			else:
+				all_deltats.append(times[nt] - times[nt-1])
+
+		all_deltats = np.array(all_deltats)
+		all_deltat = np.nanmedian(all_deltats)
+
+
 
 		### identify the largest gap!
-		largest_gap_idx = np.nanargmax(deltats) ### this will be the index of the last(!) data point before the gap
-		first_half_idxs = np.arange(0,largest_gap_idx+1,1)
-		second_half_idxs = np.arange(largest_gap_idx+1,len(unmasked_times),1)
+		unmasked_largest_gap_idx = np.nanargmax(unmasked_deltats) ### this will be the index of the last(!) data point before the gap
+		all_largest_gap_idx = np.nanargmax(all_deltats)
 
-		try:
-			if len(first_half_idxs) > 2:
-				print('detrending first half of the quarter / section.')
-				best_model1, best_degree1, best_DW1, max_degree1 = cofiam_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			if len(second_half_idxs) > 2:
-				print('detrending second half of the quarter / section.')
-				best_model2, best_degree2, best_DW2, max_degree2 = cofiam_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
-			
-			if (len(first_half_idxs) > 2) and (len(second_half_idxs) > 2):
-				best_model = np.concatenate((best_model1, best_model2))
-				best_degree = np.nanmean((best_degree1, best_degree2))
-				best_DW = np.nanmean((best_DW1, best_DW2))
-				max_degree = np.nanmax((max_degree1, max_degree2))
+		first_half_idxs = np.arange(0,unmasked_largest_gap_idx+1,1)
+		second_half_idxs = np.arange(unmasked_largest_gap_idx+1,len(unmasked_times),1)
 
+		all_times_first_half_idxs = np.arange(0,all_largest_gap_idx+1,1)
+		all_times_second_half_idxs = np.arange(all_largest_gap_idx+1,len(times),1)
+
+
+		print('len(first_half_idxs) = ', len(first_half_idxs))
+		print('len(second_half_idxs) = ', len(second_half_idxs))
+
+		#try:
+		if len(first_half_idxs) > 2:
+			print('detrending first half of the quarter / section.')
+			best_model1, best_degree1, best_coefficients1, best_DW1, max_degree1  = cofiam_iterative(np.array(unmasked_times[first_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			#best_model1 = cofiam_function(times=np.array(unmasked_times[first_half_idxs] dtype=np.float64), fluxes=np.array(unmasked_fluxes[first_half_idxs], dtype=np.float64), degree=best_degree1, solve=False, cofiam_coefficients=best_coefficients1)[0]
+
+		if len(second_half_idxs) > 2:
+			print('detrending second half of the quarter / section.')
+			best_model2, best_degree2, best_coefficients2, best_DW2, max_degree2  = cofiam_iterative(np.array(unmasked_times[second_half_idxs], dtype=np.float64), np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), max_degree=int(max_degree))
+			#best_model2 = cofiam_function(times=np.array(unmasked_times[second_half_idxs], dtype=np.float64), fluxes=np.array(unmasked_fluxes[second_half_idxs], dtype=np.float64), degree=best_degree2, solve=False, cofiam_coefficients=best_coefficients2)[0]
+
+		if (len(first_half_idxs) > 2) and (len(second_half_idxs) > 2):
+			best_model = np.concatenate((best_model1, best_model2))
+			best_degree = int(np.nanmean((best_degree1, best_degree2)))
+			best_DW = np.nanmean((best_DW1, best_DW2))
+			max_degree = int(np.nanmax((max_degree1, max_degree2)))
+
+			#best_coefficients = np.nanmean((best_coefficients1, best_coefficients2))
+
+		else:
+			if len(first_half_idxs) < 2:
+				best_model, best_degree, best_coefficients, best_DW, max_degree = best_model2, best_degree2, best_coefficients2, best_DW2, max_degree2
+				unmasked_times, unmasked_fluxes = unmasked_times[second_half_idxs], unmasked_fluxes[second_half_idxs]
+			elif len(second_half_idxs) < 2:
+				best_model, best_degree, best_coefficients, best_DW, max_degree = best_model1, best_degree1, best_coefficients1, best_DW1, max_degree1		
+				unmasked_times, unmasked_fluxes = unmasked_times[first_half_idxs], unmasked_fluxes[first_half_idxs]		
 			else:
-				if len(first_half_idxs) < 2:
-					best_model, best_degree, best_DW, max_degree = best_model2, best_degree2, best_DW2, max_degree2
-					unmasked_times, unmasked_fluxes = unmasked_times[second_half_idxs], unmasked_fluxes[second_half_idxs]
-				elif len(second_half_idxs) < 2:
-					best_model, best_degree, best_DW, max_degree = best_model1, best_degree1, best_DW1, max_degree1		
-					unmasked_times, unmasked_fluxes = unmasked_times[first_half_idxs], unmasked_fluxes[first_half_idxs]		
+				print('len(first_half_idxs) = '+str(len(first_half_idxs))+', len(second_half_idxs) = '+str(len(second_half_idxs)))
+				raise Exception("len(first_half_idxs) < 2 and len(second_half_idxs) < 2! This won't stand man.")
 
-
-		except:
-			traceback.print_exc()
-			print('unable to call cofiam_iterative. Data points likely reduced to zero.')
+		#except:
+		#	traceback.print_exc()
+		#	print('unable to call cofiam_iterative. Data points likely reduced to zero.')
 
 	else: ### self.telescope != 'tess'
 		try:
-			best_model, best_degree, best_coefficients, best_DW, max_degree = functimer(cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
+			best_model, best_degree, best_coefficients, best_DW, max_degree  = functimer(cofiam_iterative(np.array(unmasked_times, dtype=np.float64), np.array(unmasked_fluxes, dtype=np.float64), max_degree=int(max_degree)))
 			print(' ')
 			print(' ')
 		except:
@@ -194,7 +222,7 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 	
 	#### OLD WAY 
 	print('best_degree: ', best_degree)
-	print('best_coefficients.shape: ', best_coefficients.shape)
+	#print('best_coefficients.shape: ', best_coefficients.shape)
 
 	"""
 	cofiam_interp = interp1d(unmasked_times, best_model, bounds_error=False, fill_value='extrapolate')
@@ -204,8 +232,27 @@ def cofiam_detrend(times, fluxes, errors, telescope='kepler', remove_outliers='y
 		best_model = cofiam_interp(np.array(times, dtype=np.float64))
 	"""
 	
-	
-	best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
+	#### #NEED TO EVALUATE THE MODEL ON ALL THE TIMES AND FLUXES -- NOT JUST THE UNMASKED TIMES!
+	try:
+		best_model1 = cofiam_function(times=times[all_times_first_half_idxs], fluxes=fluxes[all_times_first_half_idxs], degree=best_degree1, solve=False, cofiam_coefficients=best_coefficients1)[0]
+		model1_worked = True 
+	except:
+		print("COULD NOT COMPUTE best_model1 on the first half of the time series.")
+		model1_worked = False 
+		best_model1 = np.linspace(np.nan, np.nan, len(times[all_times_first_half_idxs]))
+
+	try:
+		best_model2 = cofiam_function(times=times[all_times_second_half_idxs], fluxes=fluxes[all_times_second_half_idxs], degree=best_degree2, solve=False, cofiam_coefficients=best_coefficients2)[0]
+		model2_worked = True 
+	except:
+		print("COULD NOT COMPUTE best_model2 on the second half of the time series.")
+		model2_worked = False 
+		best_model2 = np.linspace(np.nan, np.nan, len(times[all_times_second_half_idxs]))
+
+
+	#### CONCATENATE THEM
+	best_model = np.concatenate((best_model1, best_model2))
+	#best_model = cofiam_function(times=times, fluxes=fluxes, degree=best_degree, solve=False, cofiam_coefficients=best_coefficients)[0]
 
 	### detrend by dividing out the model
 	flux_detrend = fluxes / best_model
